@@ -12,34 +12,32 @@ pnpm lint             # Lint with Biome
 pnpm format           # Format with Biome
 pnpm check            # Biome lint + format check
 
-# Database (Drizzle + Neon PostgreSQL)
+# Database (Drizzle + PostgreSQL)
 pnpm db:generate      # Generate migrations from schema
 pnpm db:migrate       # Run migrations
 pnpm db:push          # Push schema changes directly
 pnpm db:studio        # Open Drizzle Studio
 
-# Deployment (Cloudflare Workers)
-pnpm deploy           # Deploy to Cloudflare
+# Production
+pnpm start            # Run production server (after build)
 ```
 
 ## Architecture
 
-**TanStack Start full-stack React app** deployed on Cloudflare Workers with Neon PostgreSQL.
+**TanStack Start full-stack React app** deployed on Railway with PostgreSQL.
 
 ### Stack
 - **Framework**: TanStack Start (TanStack Router with SSR support)
-- **Database**: Neon PostgreSQL via Drizzle ORM
+- **Database**: PostgreSQL via Drizzle ORM
 - **Styling**: Tailwind CSS v4 + shadcn/ui components
 - **Linting**: Biome (tabs, double quotes)
-- **Deployment**: Cloudflare Workers (wrangler)
+- **Deployment**: Railway (Node.js)
 
 ### Key Patterns
 
 **File-based routing**: Routes live in `src/routes/`. TanStack Router auto-generates `src/routeTree.gen.ts` - don't edit this file.
 
-**Two database clients exist**:
-- `src/db/index.ts` - Drizzle ORM client using `pg` Pool (for server functions)
-- `src/db.ts` - Neon serverless client (for edge/serverless contexts)
+**Database client**: `src/db/index.ts` - Drizzle ORM client using `pg` Pool (for server functions)
 
 **Schema location**: `src/db/schema.ts` defines Drizzle tables.
 
@@ -53,9 +51,6 @@ pnpm deploy           # Deploy to Cloudflare
 pnpm dlx shadcn@latest add <component>
 ```
 
-### Demo Files
-
-Files prefixed with `demo` are examples and can be deleted.
 # Project Notes
 
 ## shadcn Components
