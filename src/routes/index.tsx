@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PersonStatusBadge } from "@/components/people/PersonStatusBadge";
+import { AddPersonDialog } from "@/components/people/AddPersonDialog";
 import { Eye, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -25,9 +26,12 @@ function PeopleList() {
 		<div className="container mx-auto py-8 px-4">
 			<Card>
 				<CardHeader>
-					<div className="flex items-center gap-3">
-						<Users className="h-6 w-6" />
-						<CardTitle className="text-2xl">People Records</CardTitle>
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-3">
+							<Users className="h-6 w-6" />
+							<CardTitle className="text-2xl">People Records</CardTitle>
+						</div>
+						<AddPersonDialog />
 					</div>
 				</CardHeader>
 				<CardContent>

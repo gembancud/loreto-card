@@ -62,9 +62,17 @@ function PersonDetails() {
 					<CardHeader>
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-4">
-								<div className="bg-muted p-3 rounded-lg">
-									<User className="h-8 w-8" />
-								</div>
+								{person.profilePhoto ? (
+									<img
+										src={person.profilePhoto}
+										alt={`${person.firstName} ${person.lastName}`}
+										className="h-16 w-16 rounded-full object-cover"
+									/>
+								) : (
+									<div className="bg-muted p-3 rounded-full">
+										<User className="h-8 w-8" />
+									</div>
+								)}
 								<div>
 									<CardTitle className="text-2xl">
 										{person.firstName} {person.lastName}
@@ -130,9 +138,9 @@ function PersonDetails() {
 								<div className="p-4 rounded-lg border bg-muted/50">
 									<div className="flex items-center gap-2 mb-1">
 										<MapPin className="h-4 w-4 text-muted-foreground" />
-										<p className="text-sm text-muted-foreground">ZIP Code</p>
+										<p className="text-sm text-muted-foreground">Barangay</p>
 									</div>
-									<p className="font-medium">{person.address.zipCode}</p>
+									<p className="font-medium">{person.address.barangay}</p>
 								</div>
 
 								<div className="p-4 rounded-lg border bg-muted/50 md:col-span-2">

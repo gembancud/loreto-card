@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { LoretoBarangay } from "./barangays";
 
 export type PersonStatus = "active" | "inactive" | "pending";
 
 export interface PersonAddress {
 	street: string;
-	zipCode: string;
+	barangay: LoretoBarangay;
 }
 
 export interface Person {
@@ -15,6 +16,7 @@ export interface Person {
 	address: PersonAddress;
 	phoneNumber: string;
 	status: PersonStatus;
+	profilePhoto?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -27,10 +29,11 @@ const mockPeople: Person[] = [
 		birthdate: "1985-03-15",
 		address: {
 			street: "123 Rizal Street",
-			zipCode: "1000",
+			barangay: "Poblacion",
 		},
 		phoneNumber: "(632) 555-0101",
 		status: "active",
+		profilePhoto: "https://i.pravatar.cc/150?u=maria.santos",
 		createdAt: "2024-01-15T08:30:00Z",
 		updatedAt: "2024-12-01T10:15:00Z",
 	},
@@ -41,10 +44,11 @@ const mockPeople: Person[] = [
 		birthdate: "1990-07-22",
 		address: {
 			street: "456 Bonifacio Avenue",
-			zipCode: "1001",
+			barangay: "Binucayan",
 		},
 		phoneNumber: "(632) 555-0102",
 		status: "active",
+		profilePhoto: "https://i.pravatar.cc/150?u=juan.delacruz",
 		createdAt: "2024-02-10T09:00:00Z",
 		updatedAt: "2024-11-28T14:30:00Z",
 	},
@@ -55,10 +59,11 @@ const mockPeople: Person[] = [
 		birthdate: "1978-11-08",
 		address: {
 			street: "789 Mabini Street",
-			zipCode: "1002",
+			barangay: "Johnson",
 		},
 		phoneNumber: "(632) 555-0103",
 		status: "inactive",
+		profilePhoto: "https://i.pravatar.cc/150?u=rosa.reyes",
 		createdAt: "2024-01-20T11:45:00Z",
 		updatedAt: "2024-10-15T16:20:00Z",
 	},
@@ -69,10 +74,11 @@ const mockPeople: Person[] = [
 		birthdate: "1982-05-30",
 		address: {
 			street: "321 Quezon Boulevard",
-			zipCode: "1003",
+			barangay: "Kasapa",
 		},
 		phoneNumber: "(632) 555-0104",
 		status: "active",
+		profilePhoto: "https://i.pravatar.cc/150?u=jose.garcia",
 		createdAt: "2024-03-05T13:20:00Z",
 		updatedAt: "2024-12-05T09:10:00Z",
 	},
@@ -83,7 +89,7 @@ const mockPeople: Person[] = [
 		birthdate: "1995-09-12",
 		address: {
 			street: "654 Luna Street",
-			zipCode: "1004",
+			barangay: "Katipunan",
 		},
 		phoneNumber: "(632) 555-0105",
 		status: "pending",
@@ -97,7 +103,7 @@ const mockPeople: Person[] = [
 		birthdate: "1988-12-25",
 		address: {
 			street: "987 Del Pilar Avenue",
-			zipCode: "1005",
+			barangay: "Kauswagan",
 		},
 		phoneNumber: "(632) 555-0106",
 		status: "active",
@@ -111,7 +117,7 @@ const mockPeople: Person[] = [
 		birthdate: "1975-06-18",
 		address: {
 			street: "147 Aguinaldo Street",
-			zipCode: "1006",
+			barangay: "Magaud",
 		},
 		phoneNumber: "(632) 555-0107",
 		status: "active",
@@ -125,7 +131,7 @@ const mockPeople: Person[] = [
 		birthdate: "1992-04-05",
 		address: {
 			street: "258 Lapu-Lapu Road",
-			zipCode: "1007",
+			barangay: "Nueva Gracia",
 		},
 		phoneNumber: "(632) 555-0108",
 		status: "inactive",
@@ -139,7 +145,7 @@ const mockPeople: Person[] = [
 		birthdate: "1987-08-14",
 		address: {
 			street: "369 Roxas Boulevard",
-			zipCode: "1008",
+			barangay: "Sabud",
 		},
 		phoneNumber: "(632) 555-0109",
 		status: "active",
@@ -153,7 +159,7 @@ const mockPeople: Person[] = [
 		birthdate: "1980-02-28",
 		address: {
 			street: "741 Taft Avenue",
-			zipCode: "1009",
+			barangay: "San Isidro",
 		},
 		phoneNumber: "(632) 555-0110",
 		status: "pending",
@@ -167,7 +173,7 @@ const mockPeople: Person[] = [
 		birthdate: "1993-10-20",
 		address: {
 			street: "852 Escolta Street",
-			zipCode: "1010",
+			barangay: "San Mariano",
 		},
 		phoneNumber: "(632) 555-0111",
 		status: "active",
@@ -181,7 +187,7 @@ const mockPeople: Person[] = [
 		birthdate: "1976-01-10",
 		address: {
 			street: "963 Makati Avenue",
-			zipCode: "1011",
+			barangay: "San Vicente",
 		},
 		phoneNumber: "(632) 555-0112",
 		status: "active",
@@ -195,7 +201,7 @@ const mockPeople: Person[] = [
 		birthdate: "1989-09-03",
 		address: {
 			street: "159 Buendia Avenue",
-			zipCode: "1012",
+			barangay: "Santa Teresa",
 		},
 		phoneNumber: "(632) 555-0113",
 		status: "inactive",
@@ -209,7 +215,7 @@ const mockPeople: Person[] = [
 		birthdate: "1991-07-17",
 		address: {
 			street: "357 EDSA",
-			zipCode: "1013",
+			barangay: "Santo Nino",
 		},
 		phoneNumber: "(632) 555-0114",
 		status: "active",
@@ -223,7 +229,7 @@ const mockPeople: Person[] = [
 		birthdate: "1984-12-01",
 		address: {
 			street: "468 Shaw Boulevard",
-			zipCode: "1014",
+			barangay: "Santo Tomas",
 		},
 		phoneNumber: "(632) 555-0115",
 		status: "pending",
@@ -237,7 +243,7 @@ const mockPeople: Person[] = [
 		birthdate: "1979-03-26",
 		address: {
 			street: "579 Ortigas Avenue",
-			zipCode: "1015",
+			barangay: "Violanta",
 		},
 		phoneNumber: "(632) 555-0116",
 		status: "active",
@@ -251,7 +257,7 @@ const mockPeople: Person[] = [
 		birthdate: "1996-11-29",
 		address: {
 			street: "680 Ayala Avenue",
-			zipCode: "1016",
+			barangay: "Waloe",
 		},
 		phoneNumber: "(632) 555-0117",
 		status: "active",
@@ -265,7 +271,7 @@ const mockPeople: Person[] = [
 		birthdate: "1986-05-07",
 		address: {
 			street: "791 Gil Puyat Avenue",
-			zipCode: "1017",
+			barangay: "Poblacion",
 		},
 		phoneNumber: "(632) 555-0118",
 		status: "inactive",
@@ -279,7 +285,7 @@ const mockPeople: Person[] = [
 		birthdate: "1994-08-23",
 		address: {
 			street: "802 Aurora Boulevard",
-			zipCode: "1018",
+			barangay: "Binucayan",
 		},
 		phoneNumber: "(632) 555-0119",
 		status: "active",
@@ -293,7 +299,7 @@ const mockPeople: Person[] = [
 		birthdate: "1981-04-16",
 		address: {
 			street: "913 Commonwealth Avenue",
-			zipCode: "1019",
+			barangay: "Johnson",
 		},
 		phoneNumber: "(632) 555-0120",
 		status: "pending",
@@ -306,8 +312,8 @@ const mockPeople: Person[] = [
 		lastName: "Soriano",
 		birthdate: "1977-06-11",
 		address: {
-			street: "024 España Boulevard",
-			zipCode: "1020",
+			street: "024 Espana Boulevard",
+			barangay: "Kasapa",
 		},
 		phoneNumber: "(632) 555-0121",
 		status: "active",
@@ -321,7 +327,7 @@ const mockPeople: Person[] = [
 		birthdate: "1998-02-14",
 		address: {
 			street: "135 Marcos Highway",
-			zipCode: "1021",
+			barangay: "Katipunan",
 		},
 		phoneNumber: "(632) 555-0122",
 		status: "active",
@@ -335,7 +341,7 @@ const mockPeople: Person[] = [
 		birthdate: "1983-10-09",
 		address: {
 			street: "246 Katipunan Avenue",
-			zipCode: "1022",
+			barangay: "Kauswagan",
 		},
 		phoneNumber: "(632) 555-0123",
 		status: "inactive",
@@ -349,7 +355,7 @@ const mockPeople: Person[] = [
 		birthdate: "1990-01-21",
 		address: {
 			street: "357 Macapagal Boulevard",
-			zipCode: "1023",
+			barangay: "Magaud",
 		},
 		phoneNumber: "(632) 555-0124",
 		status: "active",
@@ -363,7 +369,7 @@ const mockPeople: Person[] = [
 		birthdate: "1997-09-27",
 		address: {
 			street: "468 Araneta Avenue",
-			zipCode: "1024",
+			barangay: "Nueva Gracia",
 		},
 		phoneNumber: "(632) 555-0125",
 		status: "pending",
