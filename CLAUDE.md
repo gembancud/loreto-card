@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm dev              # Start dev server on port 3000
-pnpm build            # Production build
+pnpm build            # Production build (outputs to .output/)
 pnpm test             # Run tests (Vitest)
 pnpm lint             # Lint with Biome
 pnpm format           # Format with Biome
