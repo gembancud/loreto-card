@@ -56,3 +56,16 @@ pnpm dlx shadcn@latest add <component>
 ### Demo Files
 
 Files prefixed with `demo` are examples and can be deleted.
+# Project Notes
+
+## shadcn Components
+Claude cannot add shadcn components due to network restrictions. User must manually run:
+```bash
+pnpm dlx shadcn@latest add <component>
+```
+
+## Catching Import/Type Errors
+Biome lint does NOT catch missing imports or type errors. Use:
+- `pnpm build` - full build catches all errors
+- `tsc --noEmit` - typecheck only (faster)
+

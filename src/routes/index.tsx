@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { LORETO_BARANGAYS } from "@/data/barangays";
 import { getPeople, type Person } from "@/data/people";
+import { calculateAge, formatFullName } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
 	component: PeopleList,
@@ -162,6 +163,7 @@ function PeopleList() {
 							<TableHeader className="sticky top-0 bg-background z-10">
 								<TableRow>
 									<TableHead>Name</TableHead>
+									<TableHead>Age</TableHead>
 									<TableHead>Barangay</TableHead>
 									<TableHead>Status</TableHead>
 									<TableHead>Phone</TableHead>
@@ -172,7 +174,7 @@ function PeopleList() {
 								{filteredPeople.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={5}
+											colSpan={6}
 											className="h-24 text-center text-muted-foreground"
 										>
 											No people found matching your filters
@@ -196,8 +198,9 @@ function PeopleList() {
 											}}
 										>
 											<TableCell className="font-medium">
-												{person.firstName} {person.lastName}
+												{formatFullName(person)}
 											</TableCell>
+											<TableCell>{calculateAge(person.birthdate)}</TableCell>
 											<TableCell>{person.address.barangay}</TableCell>
 											<TableCell>
 												<PersonStatusBadge status={person.status} />

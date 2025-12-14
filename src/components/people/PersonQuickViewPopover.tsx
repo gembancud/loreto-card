@@ -1,31 +1,14 @@
 import { Link } from "@tanstack/react-router";
 import { Calendar, MapPin, Pencil, Phone, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PersonStatusBadge } from "./PersonStatusBadge";
 import type { Person } from "@/data/people";
+import { calculateAge, formatDate, formatFullName, isExpired } from "@/lib/utils";
 
 interface PersonQuickViewPopoverProps {
 	person: Person;
 	onClose: () => void;
-}
-
-function calculateAge(birthdate: string): number {
-	const today = new Date();
-	const birth = new Date(birthdate);
-	let age = today.getFullYear() - birth.getFullYear();
-	const monthDiff = today.getMonth() - birth.getMonth();
-	if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-		age--;
-	}
-	return age;
-}
-
-function formatDate(isoDate: string): string {
-	return new Date(isoDate).toLocaleDateString("en-US", {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-	});
 }
 
 export function PersonQuickViewPopover({
@@ -33,6 +16,7 @@ export function PersonQuickViewPopover({
 	onClose,
 }: PersonQuickViewPopoverProps) {
 	const age = calculateAge(person.birthdate);
+	const isSenior = age >= 60;
 
 	return (
 		<div>
@@ -41,7 +25,7 @@ export function PersonQuickViewPopover({
 				{person.profilePhoto ? (
 					<img
 						src={person.profilePhoto}
-						alt={`${person.firstName} ${person.lastName}`}
+						alt={formatFullName(person)}
 						className="h-14 w-14 rounded-full object-cover"
 					/>
 				) : (
@@ -50,9 +34,7 @@ export function PersonQuickViewPopover({
 					</div>
 				)}
 				<div className="flex-1 min-w-0">
-					<h3 className="font-semibold truncate">
-						{person.firstName} {person.lastName}
-					</h3>
+					<h3 className="font-semibold truncate">{formatFullName(person)}</h3>
 					<PersonStatusBadge status={person.status} />
 				</div>
 			</div>
@@ -61,7 +43,9 @@ export function PersonQuickViewPopover({
 			<div className="space-y-2 text-sm">
 				<div className="flex items-center gap-2 text-muted-foreground">
 					<MapPin className="h-4 w-4 flex-shrink-0" />
-					<span className="truncate">{person.address.barangay}</span>
+					<span className="truncate">
+						{person.address.street}, {person.address.barangay}
+					</span>
 				</div>
 				<div className="flex items-center gap-2 text-muted-foreground">
 					<Phone className="h-4 w-4 flex-shrink-0" />
@@ -72,6 +56,101 @@ export function PersonQuickViewPopover({
 					<span>
 						{formatDate(person.birthdate)} ({age} years old)
 					</span>
+				</div>
+			</div>
+
+			{/* Government Services Badges */}
+			<div className="mt-3 pt-3 border-t">
+				<div className="flex flex-wrap gap-1">
+					{person.voter.registered && (
+						<Badge variant="outline" className="text-xs" title={person.voter.idNumber}>
+							{"🗳️ Voter"}
+						</Badge>
+					)}
+					{person.philhealth.registered && (
+						<Badge variant="outline" className="text-xs" title={person.philhealth.idNumber}>
+							{"🏥 PhilHealth"}
+						</Badge>
+					)}
+					{person.sss.registered && (
+						<Badge variant="outline" className="text-xs" title={person.sss.idNumber}>
+							{"🔒 SSS"}
+						</Badge>
+					)}
+					{person.fourPs.registered && (
+						<Badge variant="outline" className="text-xs" title={person.fourPs.idNumber}>
+							{"💰 4Ps"}
+						</Badge>
+					)}
+					{person.pwd.registered && !isExpired(person.pwd.expiryDate) && (
+						<Badge
+							variant="outline"
+							className="text-xs bg-green-50 border-green-200 text-green-700"
+							title={person.pwd.idNumber}
+						>
+							{"♿ PWD"}
+						</Badge>
+					)}
+					{person.pwd.registered && isExpired(person.pwd.expiryDate) && (
+						<Badge
+							variant="outline"
+							className="text-xs bg-red-50 border-red-200 text-red-700"
+							title={person.pwd.idNumber}
+						>
+							{"♿ PWD Expired"}
+						</Badge>
+					)}
+					{person.soloParent.registered && !isExpired(person.soloParent.expiryDate) && (
+						<Badge
+							variant="outline"
+							className="text-xs bg-green-50 border-green-200 text-green-700"
+							title={person.soloParent.idNumber}
+						>
+							{"👨‍👧 Solo Parent"}
+						</Badge>
+					)}
+					{person.soloParent.registered && isExpired(person.soloParent.expiryDate) && (
+						<Badge
+							variant="outline"
+							className="text-xs bg-red-50 border-red-200 text-red-700"
+							title={person.soloParent.idNumber}
+						>
+							{"👨‍👧 Solo Parent Expired"}
+						</Badge>
+					)}
+					{person.pagibig.registered && (
+						<Badge variant="outline" className="text-xs" title={person.pagibig.idNumber}>
+							{"🏠 Pag-IBIG"}
+						</Badge>
+					)}
+					{person.tin.registered && (
+						<Badge variant="outline" className="text-xs" title={person.tin.idNumber}>
+							{"📋 TIN"}
+						</Badge>
+					)}
+					{person.barangayClearance.registered && !isExpired(person.barangayClearance.expiryDate) && (
+						<Badge
+							variant="outline"
+							className="text-xs bg-green-50 border-green-200 text-green-700"
+							title={person.barangayClearance.idNumber}
+						>
+							{"📜 Brgy Valid"}
+						</Badge>
+					)}
+					{person.barangayClearance.registered && isExpired(person.barangayClearance.expiryDate) && (
+						<Badge
+							variant="outline"
+							className="text-xs bg-red-50 border-red-200 text-red-700"
+							title={person.barangayClearance.idNumber}
+						>
+							{"📜 Brgy Expired"}
+						</Badge>
+					)}
+					{isSenior && (
+						<Badge variant="outline" className="text-xs">
+							{"👴 Senior"}
+						</Badge>
+					)}
 				</div>
 			</div>
 
