@@ -7,7 +7,7 @@ export async function getClient() {
     return undefined
   }
   if (!client) {
-    client = await neon(process.env.VITE_DATABASE_URL!)
+    client = await neon(process.env.VITE_DATABASE_URL)
   }
   return client
 }
