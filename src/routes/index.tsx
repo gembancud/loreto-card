@@ -35,7 +35,7 @@ import {
 	type GovServiceKey,
 	personMatchesBadgeFilter,
 } from "@/lib/govServices";
-import { calculateAge, formatFullName } from "@/lib/utils";
+import { calculateAge, formatNameWithInitial } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
 	component: PeopleList,
@@ -237,7 +237,7 @@ function PeopleList() {
 											}}
 										>
 											<TableCell className="font-medium">
-												{formatFullName(person)}
+												{formatNameWithInitial(person)}
 											</TableCell>
 											<TableCell>{calculateAge(person.birthdate)}</TableCell>
 											<TableCell>{person.address.barangay}</TableCell>

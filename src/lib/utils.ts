@@ -43,6 +43,22 @@ export function formatFullName(person: PersonNameParts): string {
 	return parts.join(" ");
 }
 
+/**
+ * Formats a person's name with the middle name abbreviated to an initial.
+ * Example: "Maria Concepcion Santos" becomes "Maria C. Santos"
+ */
+export function formatNameWithInitial(person: PersonNameParts): string {
+	const parts = [person.firstName];
+	if (person.middleName?.trim()) {
+		parts.push(`${person.middleName.trim().charAt(0).toUpperCase()}.`);
+	}
+	parts.push(person.lastName);
+	if (person.suffix) {
+		parts.push(person.suffix);
+	}
+	return parts.join(" ");
+}
+
 export function isExpired(dateString?: string): boolean {
 	if (!dateString) return false;
 	const expiryDate = new Date(dateString);

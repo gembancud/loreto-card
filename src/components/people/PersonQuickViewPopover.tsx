@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PersonStatusBadge } from "./PersonStatusBadge";
 import type { Person } from "@/data/people";
-import { calculateAge, formatDate, formatFullName, isExpired } from "@/lib/utils";
+import { calculateAge, formatDate, formatNameWithInitial, isExpired } from "@/lib/utils";
 
 interface PersonQuickViewPopoverProps {
 	person: Person;
@@ -25,7 +25,7 @@ export function PersonQuickViewPopover({
 				{person.profilePhoto ? (
 					<img
 						src={person.profilePhoto}
-						alt={formatFullName(person)}
+						alt={formatNameWithInitial(person)}
 						className="h-14 w-14 rounded-full object-cover"
 					/>
 				) : (
@@ -34,7 +34,7 @@ export function PersonQuickViewPopover({
 					</div>
 				)}
 				<div className="flex-1 min-w-0">
-					<h3 className="font-semibold truncate">{formatFullName(person)}</h3>
+					<h3 className="font-semibold truncate">{formatNameWithInitial(person)}</h3>
 					<PersonStatusBadge status={person.status} />
 				</div>
 			</div>
