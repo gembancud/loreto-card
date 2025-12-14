@@ -1,11 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Eye, Search, Users, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Pencil, Search, Users, X } from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
 import { AddPersonDialog } from "@/components/people/AddPersonDialog";
+import { PersonQuickViewPopover } from "@/components/people/PersonQuickViewPopover";
 import { PersonStatusBadge } from "@/components/people/PersonStatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverAnchor,
+	PopoverContent,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -22,7 +28,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { LORETO_BARANGAYS } from "@/data/barangays";
-import { getPeople } from "@/data/people";
+import { getPeople, type Person } from "@/data/people";
 
 export const Route = createFileRoute("/")({
 	component: PeopleList,
@@ -31,8 +37,12 @@ export const Route = createFileRoute("/")({
 
 function PeopleList() {
 	const people = Route.useLoaderData();
+	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [barangayFilter, setBarangayFilter] = useState("all");
+	const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+	const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
+	const [popoverOpen, setPopoverOpen] = useState(false);
 
 	const filteredPeople = useMemo(() => {
 		const query = searchQuery.trim().toLowerCase();
@@ -68,6 +78,36 @@ function PeopleList() {
 		setSearchQuery("");
 		setBarangayFilter("all");
 	};
+
+	const handleRowClick = useCallback(
+		(e: React.MouseEvent<HTMLTableRowElement>, person: Person) => {
+			// Ignore clicks on buttons or links
+			const target = e.target as HTMLElement;
+			if (target.closest("button") || target.closest("a")) {
+				return;
+			}
+
+			// On mobile, navigate directly to edit page
+			if (window.innerWidth < 768) {
+				router.navigate({
+					to: "/people/$personId",
+					params: { personId: person.id },
+				});
+				return;
+			}
+
+			// Otherwise, open popover at click position
+			setSelectedPerson(person);
+			setPopoverPosition({ x: e.clientX, y: e.clientY });
+			setPopoverOpen(true);
+		},
+		[router],
+	);
+
+	const handlePopoverClose = useCallback(() => {
+		setPopoverOpen(false);
+		setSelectedPerson(null);
+	}, []);
 
 	return (
 		<div className="h-full flex flex-col p-4">
@@ -125,7 +165,7 @@ function PeopleList() {
 									<TableHead>Barangay</TableHead>
 									<TableHead>Status</TableHead>
 									<TableHead>Phone</TableHead>
-									<TableHead className="text-right">Actions</TableHead>
+									<TableHead className="w-[80px]">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
@@ -140,7 +180,21 @@ function PeopleList() {
 									</TableRow>
 								) : (
 									filteredPeople.map((person) => (
-										<TableRow key={person.id}>
+										<TableRow
+											key={person.id}
+											className="cursor-pointer hover:bg-muted/50"
+											onClick={(e) => handleRowClick(e, person)}
+											tabIndex={0}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													e.preventDefault();
+													router.navigate({
+														to: "/people/$personId",
+														params: { personId: person.id },
+													});
+												}
+											}}
+										>
 											<TableCell className="font-medium">
 												{person.firstName} {person.lastName}
 											</TableCell>
@@ -149,14 +203,14 @@ function PeopleList() {
 												<PersonStatusBadge status={person.status} />
 											</TableCell>
 											<TableCell>{person.phoneNumber}</TableCell>
-											<TableCell className="text-right">
+											<TableCell>
 												<Link
 													to="/people/$personId"
 													params={{ personId: person.id }}
 												>
-													<Button variant="ghost" size="sm" className="gap-2">
-														<Eye className="h-4 w-4" />
-														View
+													<Button variant="ghost" size="icon">
+														<Pencil className="h-4 w-4" />
+														<span className="sr-only">Edit</span>
 													</Button>
 												</Link>
 											</TableCell>
@@ -173,6 +227,34 @@ function PeopleList() {
 					</div>
 				</CardContent>
 			</Card>
+
+			{/* Popover positioned at click location */}
+			<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+				<PopoverAnchor
+					style={{
+						position: "fixed",
+						left: popoverPosition.x,
+						top: popoverPosition.y,
+						width: 0,
+						height: 0,
+					}}
+				/>
+				<PopoverContent
+					side="bottom"
+					align="start"
+					sideOffset={8}
+					collisionPadding={16}
+					onEscapeKeyDown={handlePopoverClose}
+					onPointerDownOutside={handlePopoverClose}
+				>
+					{selectedPerson && (
+						<PersonQuickViewPopover
+							person={selectedPerson}
+							onClose={handlePopoverClose}
+						/>
+					)}
+				</PopoverContent>
+			</Popover>
 		</div>
 	);
 }

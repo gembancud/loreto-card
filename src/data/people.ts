@@ -395,3 +395,32 @@ export const getPersonById = createServerFn({
 		}
 		return person;
 	});
+
+interface UpdatePersonInput {
+	personId: string;
+	updates: Partial<Omit<Person, "id" | "createdAt" | "updatedAt">>;
+}
+
+export const updatePerson = createServerFn({
+	method: "POST",
+})
+	.inputValidator((input: UpdatePersonInput) => input)
+	.handler(async ({ data: { personId, updates } }) => {
+		const personIndex = mockPeople.findIndex((p) => p.id === personId);
+		if (personIndex === -1) {
+			throw new Error(`Person with ID ${personId} not found`);
+		}
+
+		const existingPerson = mockPeople[personIndex];
+		const updatedPerson: Person = {
+			...existingPerson,
+			...updates,
+			address: updates.address
+				? { ...existingPerson.address, ...updates.address }
+				: existingPerson.address,
+			updatedAt: new Date().toISOString(),
+		};
+
+		mockPeople[personIndex] = updatedPerson;
+		return updatedPerson;
+	});
