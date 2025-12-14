@@ -2,6 +2,8 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Pencil, Search, Users, X } from "lucide-react";
 import { useMemo, useState, useCallback } from "react";
 import { AddPersonDialog } from "@/components/people/AddPersonDialog";
+import { BadgeFilterToggle } from "@/components/people/BadgeFilterToggle";
+import { GovServiceBadges } from "@/components/people/GovServiceBadges";
 import { PersonQuickViewPopover } from "@/components/people/PersonQuickViewPopover";
 import { PersonStatusBadge } from "@/components/people/PersonStatusBadge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,10 @@ import {
 } from "@/components/ui/table";
 import { LORETO_BARANGAYS } from "@/data/barangays";
 import { getPeople, type Person } from "@/data/people";
+import {
+	type GovServiceKey,
+	personMatchesBadgeFilter,
+} from "@/lib/govServices";
 import { calculateAge, formatFullName } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -41,6 +47,10 @@ function PeopleList() {
 	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [barangayFilter, setBarangayFilter] = useState("all");
+	const [badgeFilter, setBadgeFilter] = useState<Set<GovServiceKey>>(
+		new Set(),
+	);
+	const [badgeFilterMode, setBadgeFilterMode] = useState<"any" | "all">("any");
 	const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 	const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
 	const [popoverOpen, setPopoverOpen] = useState(false);
@@ -68,17 +78,38 @@ function PeopleList() {
 				return false;
 			}
 
+			// Filter by government services
+			if (!personMatchesBadgeFilter(person, badgeFilter, badgeFilterMode)) {
+				return false;
+			}
+
 			return true;
 		});
-	}, [people, searchQuery, barangayFilter]);
+	}, [people, searchQuery, barangayFilter, badgeFilter, badgeFilterMode]);
 
 	const hasActiveFilters =
-		searchQuery.trim() !== "" || barangayFilter !== "all";
+		searchQuery.trim() !== "" ||
+		barangayFilter !== "all" ||
+		badgeFilter.size > 0;
 
 	const clearFilters = () => {
 		setSearchQuery("");
 		setBarangayFilter("all");
+		setBadgeFilter(new Set());
+		setBadgeFilterMode("any");
 	};
+
+	const handleToggleBadge = useCallback((key: GovServiceKey) => {
+		setBadgeFilter((prev) => {
+			const newSet = new Set(prev);
+			if (newSet.has(key)) {
+				newSet.delete(key);
+			} else {
+				newSet.add(key);
+			}
+			return newSet;
+		});
+	}, []);
 
 	const handleRowClick = useCallback(
 		(e: React.MouseEvent<HTMLTableRowElement>, person: Person) => {
@@ -123,40 +154,48 @@ function PeopleList() {
 					</div>
 				</CardHeader>
 				<CardContent className="flex-1 flex flex-col min-h-0 overflow-hidden">
-					<div className="flex-shrink-0 pb-4 flex flex-wrap gap-3 items-center">
-						<div className="relative flex-1 min-w-[200px]">
-							<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-							<Input
-								placeholder="Search by name..."
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								className="pl-9"
-							/>
+					<div className="flex-shrink-0 pb-4 space-y-3">
+						<div className="flex flex-wrap gap-3 items-center">
+							<div className="relative w-64">
+								<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+								<Input
+									placeholder="Search by name..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									className="pl-9"
+								/>
+							</div>
+							<Select value={barangayFilter} onValueChange={setBarangayFilter}>
+								<SelectTrigger className="w-[200px]">
+									<SelectValue placeholder="Filter by barangay" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">All Barangays</SelectItem>
+									{LORETO_BARANGAYS.map((barangay) => (
+										<SelectItem key={barangay} value={barangay}>
+											{barangay}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							{hasActiveFilters && (
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={clearFilters}
+									className="gap-1"
+								>
+									<X className="h-4 w-4" />
+									Clear filters
+								</Button>
+							)}
 						</div>
-						<Select value={barangayFilter} onValueChange={setBarangayFilter}>
-							<SelectTrigger className="w-[200px]">
-								<SelectValue placeholder="Filter by barangay" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="all">All Barangays</SelectItem>
-								{LORETO_BARANGAYS.map((barangay) => (
-									<SelectItem key={barangay} value={barangay}>
-										{barangay}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						{hasActiveFilters && (
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={clearFilters}
-								className="gap-1"
-							>
-								<X className="h-4 w-4" />
-								Clear filters
-							</Button>
-						)}
+						<BadgeFilterToggle
+							selectedBadges={badgeFilter}
+							onToggleBadge={handleToggleBadge}
+							filterMode={badgeFilterMode}
+							onFilterModeChange={setBadgeFilterMode}
+						/>
 					</div>
 					<div className="flex-1 overflow-auto min-h-0 rounded-md border">
 						<Table>
@@ -165,6 +204,7 @@ function PeopleList() {
 									<TableHead>Name</TableHead>
 									<TableHead>Age</TableHead>
 									<TableHead>Barangay</TableHead>
+									<TableHead>Services</TableHead>
 									<TableHead>Status</TableHead>
 									<TableHead>Phone</TableHead>
 									<TableHead className="w-[80px]">Actions</TableHead>
@@ -174,7 +214,7 @@ function PeopleList() {
 								{filteredPeople.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={6}
+											colSpan={7}
 											className="h-24 text-center text-muted-foreground"
 										>
 											No people found matching your filters
@@ -202,6 +242,9 @@ function PeopleList() {
 											</TableCell>
 											<TableCell>{calculateAge(person.birthdate)}</TableCell>
 											<TableCell>{person.address.barangay}</TableCell>
+											<TableCell>
+												<GovServiceBadges person={person} />
+											</TableCell>
 											<TableCell>
 												<PersonStatusBadge status={person.status} />
 											</TableCell>
