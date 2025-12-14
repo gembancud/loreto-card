@@ -69,3 +69,13 @@ Biome lint does NOT catch missing imports or type errors. Use:
 - `pnpm build` - full build catches all errors
 - `tsc --noEmit` - typecheck only (faster)
 
+## Git Commits with Multi-line Messages
+Heredocs (`<<EOF`) fail in sandbox due to temp file restrictions. Use file-based approach:
+```bash
+# 1. Write commit message to file (use Write tool)
+#    /tmp/claude/commit-msg.txt
+
+# 2. Commit using -F flag
+git commit -F /tmp/claude/commit-msg.txt
+```
+
