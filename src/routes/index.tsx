@@ -23,9 +23,9 @@ function PeopleList() {
 	const people = Route.useLoaderData();
 
 	return (
-		<div className="container mx-auto py-8 px-4">
-			<Card>
-				<CardHeader>
+		<div className="h-full flex flex-col p-4">
+			<Card className="flex-1 flex flex-col min-h-0">
+				<CardHeader className="flex-shrink-0">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
 							<Users className="h-6 w-6" />
@@ -34,39 +34,41 @@ function PeopleList() {
 						<AddPersonDialog />
 					</div>
 				</CardHeader>
-				<CardContent>
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Name</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead>Phone</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{people.map((person) => (
-								<TableRow key={person.id}>
-									<TableCell className="font-medium">
-										{person.firstName} {person.lastName}
-									</TableCell>
-									<TableCell>
-										<PersonStatusBadge status={person.status} />
-									</TableCell>
-									<TableCell>{person.phoneNumber}</TableCell>
-									<TableCell className="text-right">
-										<Link to="/people/$personId" params={{ personId: person.id }}>
-											<Button variant="ghost" size="sm" className="gap-2">
-												<Eye className="h-4 w-4" />
-												View
-											</Button>
-										</Link>
-									</TableCell>
+				<CardContent className="flex-1 flex flex-col min-h-0 overflow-hidden">
+					<div className="flex-1 overflow-auto min-h-0 rounded-md border">
+						<Table>
+							<TableHeader className="sticky top-0 bg-background z-10">
+								<TableRow>
+									<TableHead>Name</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Phone</TableHead>
+									<TableHead className="text-right">Actions</TableHead>
 								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-					<div className="mt-4 text-sm text-muted-foreground text-center">
+							</TableHeader>
+							<TableBody>
+								{people.map((person) => (
+									<TableRow key={person.id}>
+										<TableCell className="font-medium">
+											{person.firstName} {person.lastName}
+										</TableCell>
+										<TableCell>
+											<PersonStatusBadge status={person.status} />
+										</TableCell>
+										<TableCell>{person.phoneNumber}</TableCell>
+										<TableCell className="text-right">
+											<Link to="/people/$personId" params={{ personId: person.id }}>
+												<Button variant="ghost" size="sm" className="gap-2">
+													<Eye className="h-4 w-4" />
+													View
+												</Button>
+											</Link>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					</div>
+					<div className="flex-shrink-0 pt-4 text-sm text-muted-foreground text-center">
 						Total Records: {people.length}
 					</div>
 				</CardContent>
