@@ -206,7 +206,6 @@ function PeopleList() {
 									<TableHead className="w-[15%]">Barangay</TableHead>
 									<TableHead>Services</TableHead>
 									<TableHead className="w-[100px]">Status</TableHead>
-									<TableHead className="w-[120px]">Phone</TableHead>
 									<TableHead className="w-[80px]">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -214,7 +213,7 @@ function PeopleList() {
 								{filteredPeople.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={7}
+											colSpan={6}
 											className="h-24 text-center text-muted-foreground"
 										>
 											No people found matching your filters
@@ -248,7 +247,6 @@ function PeopleList() {
 											<TableCell>
 												<PersonStatusBadge status={person.status} />
 											</TableCell>
-											<TableCell>{person.phoneNumber}</TableCell>
 											<TableCell>
 												<Link
 													to="/people/$personId"
