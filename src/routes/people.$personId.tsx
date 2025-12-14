@@ -205,7 +205,7 @@ function EditPerson() {
 
 	return (
 		<div className="container mx-auto py-8 px-4">
-			<div className="max-w-2xl mx-auto">
+			<div className="max-w-5xl mx-auto">
 				<div className="mb-6">
 					<Link to="/">
 						<Button variant="ghost" className="gap-2">
@@ -218,149 +218,153 @@ function EditPerson() {
 				<Card>
 					<CardContent className="pt-6">
 						<form onSubmit={handleSubmit}>
-							<div className="grid gap-6">
-								{/* Row 1: Photo + First Name and Last Name */}
-								<div className="flex gap-4">
-									<ProfilePhotoUpload
-										value={formData.profilePhoto}
-										onChange={handlePhotoChange}
-									/>
-									<div className="flex-1 grid grid-cols-2 gap-4">
-										<div className="grid gap-2">
-											<Label htmlFor={firstNameId}>First Name</Label>
-											<Input
-												id={firstNameId}
-												name="firstName"
-												value={formData.firstName}
-												onChange={handleInputChange}
-												placeholder="Enter first name"
+							<div className="flex flex-col lg:flex-row gap-8">
+								{/* Left Column: Personal Info */}
+								<div className="w-full lg:w-1/2 flex-shrink-0">
+									<div className="grid gap-6">
+										{/* Photo + 2x2 Name Grid */}
+										<div className="flex gap-4">
+											<ProfilePhotoUpload
+												value={formData.profilePhoto}
+												onChange={handlePhotoChange}
 											/>
+											<div className="flex-1 grid grid-cols-2 gap-4">
+												{/* Row 1: First Name, Middle Name */}
+												<div className="grid gap-2">
+													<Label htmlFor={firstNameId}>First Name</Label>
+													<Input
+														id={firstNameId}
+														name="firstName"
+														value={formData.firstName}
+														onChange={handleInputChange}
+														placeholder="First name"
+													/>
+												</div>
+												<div className="grid gap-2">
+													<Label htmlFor={middleNameId}>Middle Name</Label>
+													<Input
+														id={middleNameId}
+														name="middleName"
+														value={formData.middleName}
+														onChange={handleInputChange}
+														placeholder="Middle (optional)"
+													/>
+												</div>
+												{/* Row 2: Last Name, Suffix */}
+												<div className="grid gap-2">
+													<Label htmlFor={lastNameId}>Last Name</Label>
+													<Input
+														id={lastNameId}
+														name="lastName"
+														value={formData.lastName}
+														onChange={handleInputChange}
+														placeholder="Last name"
+													/>
+												</div>
+												<div className="grid gap-2">
+													<Label htmlFor={suffixId}>Suffix</Label>
+													<Select
+														value={formData.suffix || "none"}
+														onValueChange={(value) =>
+															handleSuffixChange(value === "none" ? "" : value)
+														}
+													>
+														<SelectTrigger id={suffixId} className="w-full">
+															<SelectValue placeholder="None" />
+														</SelectTrigger>
+														<SelectContent>
+															<SelectItem value="none">None</SelectItem>
+															<SelectItem value="Jr.">Jr.</SelectItem>
+															<SelectItem value="Sr.">Sr.</SelectItem>
+															<SelectItem value="II">II</SelectItem>
+															<SelectItem value="III">III</SelectItem>
+															<SelectItem value="IV">IV</SelectItem>
+															<SelectItem value="V">V</SelectItem>
+														</SelectContent>
+													</Select>
+												</div>
+											</div>
 										</div>
+
+										{/* Birthdate and Phone Number */}
+										<div className="grid grid-cols-2 gap-4">
+											<div className="grid gap-2">
+												<Label htmlFor={birthdateId}>Birthdate</Label>
+												<Input
+													id={birthdateId}
+													name="birthdate"
+													type="date"
+													value={formData.birthdate}
+													onChange={handleInputChange}
+												/>
+											</div>
+											<div className="grid gap-2">
+												<Label htmlFor={phoneNumberId}>Phone Number</Label>
+												<Input
+													id={phoneNumberId}
+													name="phoneNumber"
+													value={formData.phoneNumber}
+													onChange={handleInputChange}
+													placeholder="Enter phone number"
+												/>
+											</div>
+										</div>
+
+										{/* Street and Barangay */}
+										<div className="grid grid-cols-2 gap-4">
+											<div className="grid gap-2">
+												<Label htmlFor={streetId}>Street</Label>
+												<Input
+													id={streetId}
+													name="street"
+													value={formData.street}
+													onChange={handleInputChange}
+													placeholder="Enter street address"
+												/>
+											</div>
+											<div className="grid gap-2">
+												<Label htmlFor={barangayId}>Barangay</Label>
+												<Select
+													value={formData.barangay}
+													onValueChange={handleBarangayChange}
+												>
+													<SelectTrigger id={barangayId} className="w-full">
+														<SelectValue placeholder="Select" />
+													</SelectTrigger>
+													<SelectContent>
+														{LORETO_BARANGAYS.map((barangay) => (
+															<SelectItem key={barangay} value={barangay}>
+																{barangay}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</div>
+										</div>
+
+										{/* Status */}
 										<div className="grid gap-2">
-											<Label htmlFor={lastNameId}>Last Name</Label>
-											<Input
-												id={lastNameId}
-												name="lastName"
-												value={formData.lastName}
-												onChange={handleInputChange}
-												placeholder="Enter last name"
-											/>
+											<Label htmlFor={statusId}>Status</Label>
+											<Select
+												value={formData.status}
+												onValueChange={handleStatusChange}
+											>
+												<SelectTrigger id={statusId} className="w-full">
+													<SelectValue placeholder="Select status" />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="pending">Pending</SelectItem>
+													<SelectItem value="active">Active</SelectItem>
+													<SelectItem value="inactive">Inactive</SelectItem>
+												</SelectContent>
+											</Select>
 										</div>
 									</div>
 								</div>
 
-								{/* Row 2: Middle Name and Suffix */}
-								<div className="grid grid-cols-4 gap-4">
-									<div className="col-span-3 grid gap-2">
-										<Label htmlFor={middleNameId}>Middle Name</Label>
-										<Input
-											id={middleNameId}
-											name="middleName"
-											value={formData.middleName}
-											onChange={handleInputChange}
-											placeholder="Enter middle name (optional)"
-										/>
-									</div>
-									<div className="grid gap-2">
-										<Label htmlFor={suffixId}>Suffix</Label>
-										<Select
-											value={formData.suffix || "none"}
-											onValueChange={(value) =>
-												handleSuffixChange(value === "none" ? "" : value)
-											}
-										>
-											<SelectTrigger id={suffixId} className="w-full">
-												<SelectValue placeholder="None" />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="none">None</SelectItem>
-												<SelectItem value="Jr.">Jr.</SelectItem>
-												<SelectItem value="Sr.">Sr.</SelectItem>
-												<SelectItem value="II">II</SelectItem>
-												<SelectItem value="III">III</SelectItem>
-												<SelectItem value="IV">IV</SelectItem>
-												<SelectItem value="V">V</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
-
-								{/* Row 3: Birthdate and Phone Number */}
-								<div className="grid grid-cols-2 gap-4">
-									<div className="grid gap-2">
-										<Label htmlFor={birthdateId}>Birthdate</Label>
-										<Input
-											id={birthdateId}
-											name="birthdate"
-											type="date"
-											value={formData.birthdate}
-											onChange={handleInputChange}
-										/>
-									</div>
-									<div className="grid gap-2">
-										<Label htmlFor={phoneNumberId}>Phone Number</Label>
-										<Input
-											id={phoneNumberId}
-											name="phoneNumber"
-											value={formData.phoneNumber}
-											onChange={handleInputChange}
-											placeholder="Enter phone number"
-										/>
-									</div>
-								</div>
-
-								{/* Row 4: Street and Barangay */}
-								<div className="grid grid-cols-3 gap-4">
-									<div className="col-span-2 grid gap-2">
-										<Label htmlFor={streetId}>Street</Label>
-										<Input
-											id={streetId}
-											name="street"
-											value={formData.street}
-											onChange={handleInputChange}
-											placeholder="Enter street address"
-										/>
-									</div>
-									<div className="grid gap-2">
-										<Label htmlFor={barangayId}>Barangay</Label>
-										<Select
-											value={formData.barangay}
-											onValueChange={handleBarangayChange}
-										>
-											<SelectTrigger id={barangayId} className="w-full">
-												<SelectValue placeholder="Select" />
-											</SelectTrigger>
-											<SelectContent>
-												{LORETO_BARANGAYS.map((barangay) => (
-													<SelectItem key={barangay} value={barangay}>
-														{barangay}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
-
-								{/* Row 5: Status */}
-								<div className="grid gap-2">
-									<Label htmlFor={statusId}>Status</Label>
-									<Select
-										value={formData.status}
-										onValueChange={handleStatusChange}
-									>
-										<SelectTrigger id={statusId} className="w-full">
-											<SelectValue placeholder="Select status" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="pending">Pending</SelectItem>
-											<SelectItem value="active">Active</SelectItem>
-											<SelectItem value="inactive">Inactive</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-
-								{/* Government Services Section */}
-								<div className="grid gap-6 pt-4 border-t">
+								{/* Right Column: Government Services - scrollable on large screens */}
+								<div className="w-full lg:w-1/2 mt-6 lg:mt-0 lg:max-h-[600px] lg:overflow-y-auto lg:border-l lg:pl-8">
+									<div className="grid gap-6">
 									<h3 className="font-semibold text-lg">Government Services</h3>
 
 									{/* Voter Registration */}
@@ -752,23 +756,24 @@ function EditPerson() {
 											</div>
 										)}
 									</div>
+									</div>
 								</div>
+							</div>
 
-								{/* Actions */}
-								<div className="flex justify-end gap-3 pt-4 border-t">
-									<Button
-										type="button"
-										variant="outline"
-										onClick={handleCancel}
-										disabled={isSubmitting}
-									>
-										Cancel
-									</Button>
-									<Button type="submit" disabled={isSubmitting} className="gap-2">
-										<Save className="h-4 w-4" />
-										{isSubmitting ? "Saving..." : "Save Changes"}
-									</Button>
-								</div>
+							{/* Actions - outside two-column layout */}
+							<div className="flex justify-end gap-3 pt-6 mt-6 border-t">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={handleCancel}
+									disabled={isSubmitting}
+								>
+									Cancel
+								</Button>
+								<Button type="submit" disabled={isSubmitting} className="gap-2">
+									<Save className="h-4 w-4" />
+									{isSubmitting ? "Saving..." : "Save Changes"}
+								</Button>
 							</div>
 						</form>
 					</CardContent>

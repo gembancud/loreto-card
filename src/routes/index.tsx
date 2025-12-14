@@ -198,15 +198,15 @@ function PeopleList() {
 						/>
 					</div>
 					<div className="flex-1 overflow-auto min-h-0 rounded-md border">
-						<Table>
+						<Table className="table-fixed">
 							<TableHeader className="sticky top-0 bg-background z-10">
 								<TableRow>
-									<TableHead>Name</TableHead>
-									<TableHead>Age</TableHead>
-									<TableHead>Barangay</TableHead>
+									<TableHead className="w-[20%]">Name</TableHead>
+									<TableHead className="w-[60px]">Age</TableHead>
+									<TableHead className="w-[15%]">Barangay</TableHead>
 									<TableHead>Services</TableHead>
-									<TableHead>Status</TableHead>
-									<TableHead>Phone</TableHead>
+									<TableHead className="w-[100px]">Status</TableHead>
+									<TableHead className="w-[120px]">Phone</TableHead>
 									<TableHead className="w-[80px]">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -242,7 +242,7 @@ function PeopleList() {
 											</TableCell>
 											<TableCell>{calculateAge(person.birthdate)}</TableCell>
 											<TableCell>{person.address.barangay}</TableCell>
-											<TableCell>
+											<TableCell className="overflow-hidden">
 												<GovServiceBadges person={person} />
 											</TableCell>
 											<TableCell>

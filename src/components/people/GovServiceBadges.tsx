@@ -1,11 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import type { Person } from "@/data/people";
 import { type ActiveService, getActiveServices } from "@/lib/govServices";
+import { useLayoutEffect, useRef, useState } from "react";
 
 interface GovServiceBadgesProps {
 	person: Person;
-	maxDisplay?: number;
 }
+
+const GAP = 4; // gap-1 = 4px
+const OVERFLOW_BADGE_WIDTH = 70; // "+N more" estimated width
 
 function ServiceBadge({ service }: { service: ActiveService }) {
 	const baseClasses = "text-sm px-2 py-0.5";
@@ -33,11 +36,75 @@ function ServiceBadge({ service }: { service: ActiveService }) {
 	);
 }
 
-export function GovServiceBadges({
-	person,
-	maxDisplay = 3,
-}: GovServiceBadgesProps) {
+export function GovServiceBadges({ person }: GovServiceBadgesProps) {
 	const activeServices = getActiveServices(person);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const measureRef = useRef<HTMLDivElement>(null);
+	const [maxDisplay, setMaxDisplay] = useState<number | null>(null);
+
+	useLayoutEffect(() => {
+		if (activeServices.length === 0) return;
+
+		const container = containerRef.current;
+		const measureContainer = measureRef.current;
+		if (!container || !measureContainer) return;
+
+		const calculateMaxDisplay = () => {
+			const containerWidth = container.offsetWidth;
+			const badgeElements = measureContainer.children;
+
+			if (badgeElements.length === 0) return;
+
+			// Collect badge widths
+			const badgeWidths: number[] = [];
+			for (let i = 0; i < badgeElements.length; i++) {
+				badgeWidths.push((badgeElements[i] as HTMLElement).offsetWidth);
+			}
+
+			// Calculate how many badges fit
+			let totalWidth = 0;
+			let count = 0;
+
+			for (let i = 0; i < badgeWidths.length; i++) {
+				const badgeWidth = badgeWidths[i];
+				const hasMoreBadges = i < badgeWidths.length - 1;
+				const remainingBadges = badgeWidths.length - 1 - i;
+
+				// If this is the last badge that would fit, we don't need overflow indicator
+				// If there are more badges after this, we need to reserve space for overflow
+				const widthNeeded =
+					totalWidth +
+					badgeWidth +
+					(hasMoreBadges ? GAP + OVERFLOW_BADGE_WIDTH : 0);
+
+				if (widthNeeded <= containerWidth) {
+					totalWidth += badgeWidth + GAP;
+					count++;
+				} else {
+					// Can't fit this badge plus overflow indicator
+					// Check if we can at least fit some badges with overflow
+					break;
+				}
+			}
+
+			// Always show at least 1 badge
+			setMaxDisplay(Math.max(count, 1));
+		};
+
+		// Initial calculation
+		calculateMaxDisplay();
+
+		// Set up ResizeObserver for dynamic updates
+		const resizeObserver = new ResizeObserver(() => {
+			calculateMaxDisplay();
+		});
+
+		resizeObserver.observe(container);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, [activeServices]);
 
 	if (activeServices.length === 0) {
 		return (
@@ -45,9 +112,10 @@ export function GovServiceBadges({
 		);
 	}
 
-	const displayedServices = activeServices.slice(0, maxDisplay);
-	const overflowCount = activeServices.length - maxDisplay;
-	const overflowServices = activeServices.slice(maxDisplay);
+	const displayCount = maxDisplay ?? activeServices.length;
+	const displayedServices = activeServices.slice(0, displayCount);
+	const overflowCount = activeServices.length - displayCount;
+	const overflowServices = activeServices.slice(displayCount);
 
 	// Build tooltip text for overflow indicator
 	const overflowTooltip = overflowServices
@@ -58,19 +126,33 @@ export function GovServiceBadges({
 		.join(", ");
 
 	return (
-		<div className="flex flex-wrap gap-1 items-center">
-			{displayedServices.map((service) => (
-				<ServiceBadge key={service.key} service={service} />
-			))}
-			{overflowCount > 0 && (
-				<Badge
-					variant="outline"
-					className="text-sm px-2 py-0.5 bg-gray-100 text-gray-600 border-gray-300 cursor-help"
-					title={overflowTooltip}
-				>
-					+{overflowCount} more
-				</Badge>
-			)}
-		</div>
+		<>
+			{/* Hidden measurement container */}
+			<div
+				ref={measureRef}
+				className="absolute invisible pointer-events-none flex gap-1"
+				aria-hidden="true"
+			>
+				{activeServices.map((service) => (
+					<ServiceBadge key={service.key} service={service} />
+				))}
+			</div>
+
+			{/* Visible container */}
+			<div ref={containerRef} className="flex gap-1 items-center min-w-0">
+				{displayedServices.map((service) => (
+					<ServiceBadge key={service.key} service={service} />
+				))}
+				{overflowCount > 0 && (
+					<Badge
+						variant="outline"
+						className="text-sm px-2 py-0.5 bg-gray-100 text-gray-600 border-gray-300 cursor-help"
+						title={overflowTooltip}
+					>
+						+{overflowCount} more
+					</Badge>
+				)}
+			</div>
+		</>
 	);
 }
