@@ -78,6 +78,16 @@ Biome lint does NOT catch missing imports or type errors. Use:
 - `pnpm build` - full build catches all errors
 - `tsc --noEmit` - typecheck only (faster)
 
+## Code Navigation with LSP
+Prefer LSP tool over Grep/Read for precise code intelligence:
+- **findReferences** - Find all usages of a function/variable (better than grep for refactoring)
+- **goToDefinition** - Jump to where something is defined (faster than searching)
+- **hover** - Get type info without reading entire file
+- **incomingCalls/outgoingCalls** - Understand call relationships
+
+Use Grep for: text search, finding patterns across files, searching comments/strings.
+Use LSP for: type-aware navigation, refactoring impact analysis, understanding code structure.
+
 ## Git Commits with Multi-line Messages
 Use multi-line strings in double quotes (heredocs fail in sandbox):
 ```bash
