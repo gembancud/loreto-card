@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Pencil, Search, Users, X } from "lucide-react";
-import { useMemo, useState, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AddPersonDialog } from "@/components/people/AddPersonDialog";
 import { BadgeFilterToggle } from "@/components/people/BadgeFilterToggle";
 import { GovServiceBadges } from "@/components/people/GovServiceBadges";
@@ -37,7 +37,7 @@ import {
 } from "@/lib/govServices";
 import { calculateAge, formatNameWithInitial } from "@/lib/utils";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authed/")({
 	component: PeopleList,
 	loader: async () => await getPeople(),
 });
@@ -47,9 +47,7 @@ function PeopleList() {
 	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [barangayFilter, setBarangayFilter] = useState("all");
-	const [badgeFilter, setBadgeFilter] = useState<Set<GovServiceKey>>(
-		new Set(),
-	);
+	const [badgeFilter, setBadgeFilter] = useState<Set<GovServiceKey>>(new Set());
 	const [badgeFilterMode, setBadgeFilterMode] = useState<"any" | "all">("any");
 	const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 	const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });

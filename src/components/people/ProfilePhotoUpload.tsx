@@ -1,5 +1,5 @@
-import { useRef } from "react";
 import { Camera, X } from "lucide-react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 
 interface ProfilePhotoUploadProps {

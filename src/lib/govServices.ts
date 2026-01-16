@@ -138,7 +138,10 @@ export function getActiveServices(person: Person): ActiveService[] {
 /**
  * Check if a person has a specific government service
  */
-export function personHasService(person: Person, serviceKey: GovServiceKey): boolean {
+export function personHasService(
+	person: Person,
+	serviceKey: GovServiceKey,
+): boolean {
 	if (serviceKey === "senior") {
 		return calculateAge(person.birthdate) >= 60;
 	}

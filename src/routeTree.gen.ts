@@ -9,68 +9,160 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as PeoplePersonIdRouteImport } from './routes/people.$personId'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedAdminRouteImport } from './routes/_authed/_admin'
+import { Route as AuthedPeoplePersonIdRouteImport } from './routes/_authed/people.$personId'
+import { Route as AuthedAdminUsersRouteImport } from './routes/_authed/_admin/users'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PeoplePersonIdRoute = PeoplePersonIdRouteImport.update({
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedIndexRoute = AuthedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAdminRoute = AuthedAdminRouteImport.update({
+  id: '/_admin',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedPeoplePersonIdRoute = AuthedPeoplePersonIdRouteImport.update({
   id: '/people/$personId',
   path: '/people/$personId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAdminUsersRoute = AuthedAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthedAdminRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/people/$personId': typeof PeoplePersonIdRoute
+  '/login': typeof LoginRoute
+  '/': typeof AuthedIndexRoute
+  '/users': typeof AuthedAdminUsersRoute
+  '/people/$personId': typeof AuthedPeoplePersonIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/people/$personId': typeof PeoplePersonIdRoute
+  '/login': typeof LoginRoute
+  '/': typeof AuthedIndexRoute
+  '/users': typeof AuthedAdminUsersRoute
+  '/people/$personId': typeof AuthedPeoplePersonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/people/$personId': typeof PeoplePersonIdRoute
+  '/_authed': typeof AuthedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authed/_admin': typeof AuthedAdminRouteWithChildren
+  '/_authed/': typeof AuthedIndexRoute
+  '/_authed/_admin/users': typeof AuthedAdminUsersRoute
+  '/_authed/people/$personId': typeof AuthedPeoplePersonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/people/$personId'
+  fullPaths: '/login' | '/' | '/users' | '/people/$personId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/people/$personId'
-  id: '__root__' | '/' | '/people/$personId'
+  to: '/login' | '/' | '/users' | '/people/$personId'
+  id:
+    | '__root__'
+    | '/_authed'
+    | '/login'
+    | '/_authed/_admin'
+    | '/_authed/'
+    | '/_authed/_admin/users'
+    | '/_authed/people/$personId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  PeoplePersonIdRoute: typeof PeoplePersonIdRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/people/$personId': {
-      id: '/people/$personId'
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authed/': {
+      id: '/_authed/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/_admin': {
+      id: '/_authed/_admin'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthedAdminRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/people/$personId': {
+      id: '/_authed/people/$personId'
       path: '/people/$personId'
       fullPath: '/people/$personId'
-      preLoaderRoute: typeof PeoplePersonIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedPeoplePersonIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/_admin/users': {
+      id: '/_authed/_admin/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthedAdminUsersRouteImport
+      parentRoute: typeof AuthedAdminRoute
     }
   }
 }
 
+interface AuthedAdminRouteChildren {
+  AuthedAdminUsersRoute: typeof AuthedAdminUsersRoute
+}
+
+const AuthedAdminRouteChildren: AuthedAdminRouteChildren = {
+  AuthedAdminUsersRoute: AuthedAdminUsersRoute,
+}
+
+const AuthedAdminRouteWithChildren = AuthedAdminRoute._addFileChildren(
+  AuthedAdminRouteChildren,
+)
+
+interface AuthedRouteChildren {
+  AuthedAdminRoute: typeof AuthedAdminRouteWithChildren
+  AuthedIndexRoute: typeof AuthedIndexRoute
+  AuthedPeoplePersonIdRoute: typeof AuthedPeoplePersonIdRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedAdminRoute: AuthedAdminRouteWithChildren,
+  AuthedIndexRoute: AuthedIndexRoute,
+  AuthedPeoplePersonIdRoute: AuthedPeoplePersonIdRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  PeoplePersonIdRoute: PeoplePersonIdRoute,
+  AuthedRoute: AuthedRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

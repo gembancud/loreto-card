@@ -1,7 +1,7 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { Person } from "@/data/people";
 import { type ActiveService, getActiveServices } from "@/lib/govServices";
-import { useLayoutEffect, useRef, useState } from "react";
 
 interface GovServiceBadgesProps {
 	person: Person;
@@ -68,7 +68,7 @@ export function GovServiceBadges({ person }: GovServiceBadgesProps) {
 			for (let i = 0; i < badgeWidths.length; i++) {
 				const badgeWidth = badgeWidths[i];
 				const hasMoreBadges = i < badgeWidths.length - 1;
-				const remainingBadges = badgeWidths.length - 1 - i;
+				const _remainingBadges = badgeWidths.length - 1 - i;
 
 				// If this is the last badge that would fit, we don't need overflow indicator
 				// If there are more badges after this, we need to reserve space for overflow
@@ -107,9 +107,7 @@ export function GovServiceBadges({ person }: GovServiceBadgesProps) {
 	}, [activeServices]);
 
 	if (activeServices.length === 0) {
-		return (
-			<span className="text-sm text-muted-foreground italic">None</span>
-		);
+		return <span className="text-sm text-muted-foreground italic">None</span>;
 	}
 
 	const displayCount = maxDisplay ?? activeServices.length;

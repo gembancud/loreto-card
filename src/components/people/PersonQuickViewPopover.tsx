@@ -2,9 +2,14 @@ import { Link } from "@tanstack/react-router";
 import { Calendar, MapPin, Pencil, Phone, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PersonStatusBadge } from "./PersonStatusBadge";
 import type { Person } from "@/data/people";
-import { calculateAge, formatDate, formatNameWithInitial, isExpired } from "@/lib/utils";
+import {
+	calculateAge,
+	formatDate,
+	formatNameWithInitial,
+	isExpired,
+} from "@/lib/utils";
+import { PersonStatusBadge } from "./PersonStatusBadge";
 
 interface PersonQuickViewPopoverProps {
 	person: Person;
@@ -34,7 +39,9 @@ export function PersonQuickViewPopover({
 					</div>
 				)}
 				<div className="flex-1 min-w-0">
-					<h3 className="font-semibold truncate">{formatNameWithInitial(person)}</h3>
+					<h3 className="font-semibold truncate">
+						{formatNameWithInitial(person)}
+					</h3>
 					<PersonStatusBadge status={person.status} />
 				</div>
 			</div>
@@ -63,22 +70,38 @@ export function PersonQuickViewPopover({
 			<div className="mt-3 pt-3 border-t">
 				<div className="flex flex-wrap gap-1">
 					{person.voter.registered && (
-						<Badge variant="outline" className="text-xs" title={person.voter.idNumber}>
+						<Badge
+							variant="outline"
+							className="text-xs"
+							title={person.voter.idNumber}
+						>
 							{"🗳️ Voter"}
 						</Badge>
 					)}
 					{person.philhealth.registered && (
-						<Badge variant="outline" className="text-xs" title={person.philhealth.idNumber}>
+						<Badge
+							variant="outline"
+							className="text-xs"
+							title={person.philhealth.idNumber}
+						>
 							{"🏥 PhilHealth"}
 						</Badge>
 					)}
 					{person.sss.registered && (
-						<Badge variant="outline" className="text-xs" title={person.sss.idNumber}>
+						<Badge
+							variant="outline"
+							className="text-xs"
+							title={person.sss.idNumber}
+						>
 							{"🔒 SSS"}
 						</Badge>
 					)}
 					{person.fourPs.registered && (
-						<Badge variant="outline" className="text-xs" title={person.fourPs.idNumber}>
+						<Badge
+							variant="outline"
+							className="text-xs"
+							title={person.fourPs.idNumber}
+						>
 							{"💰 4Ps"}
 						</Badge>
 					)}
@@ -100,52 +123,64 @@ export function PersonQuickViewPopover({
 							{"♿ PWD Expired"}
 						</Badge>
 					)}
-					{person.soloParent.registered && !isExpired(person.soloParent.expiryDate) && (
-						<Badge
-							variant="outline"
-							className="text-xs bg-green-50 border-green-200 text-green-700"
-							title={person.soloParent.idNumber}
-						>
-							{"👨‍👧 Solo Parent"}
-						</Badge>
-					)}
-					{person.soloParent.registered && isExpired(person.soloParent.expiryDate) && (
-						<Badge
-							variant="outline"
-							className="text-xs bg-red-50 border-red-200 text-red-700"
-							title={person.soloParent.idNumber}
-						>
-							{"👨‍👧 Solo Parent Expired"}
-						</Badge>
-					)}
+					{person.soloParent.registered &&
+						!isExpired(person.soloParent.expiryDate) && (
+							<Badge
+								variant="outline"
+								className="text-xs bg-green-50 border-green-200 text-green-700"
+								title={person.soloParent.idNumber}
+							>
+								{"👨‍👧 Solo Parent"}
+							</Badge>
+						)}
+					{person.soloParent.registered &&
+						isExpired(person.soloParent.expiryDate) && (
+							<Badge
+								variant="outline"
+								className="text-xs bg-red-50 border-red-200 text-red-700"
+								title={person.soloParent.idNumber}
+							>
+								{"👨‍👧 Solo Parent Expired"}
+							</Badge>
+						)}
 					{person.pagibig.registered && (
-						<Badge variant="outline" className="text-xs" title={person.pagibig.idNumber}>
+						<Badge
+							variant="outline"
+							className="text-xs"
+							title={person.pagibig.idNumber}
+						>
 							{"🏠 Pag-IBIG"}
 						</Badge>
 					)}
 					{person.tin.registered && (
-						<Badge variant="outline" className="text-xs" title={person.tin.idNumber}>
+						<Badge
+							variant="outline"
+							className="text-xs"
+							title={person.tin.idNumber}
+						>
 							{"📋 TIN"}
 						</Badge>
 					)}
-					{person.barangayClearance.registered && !isExpired(person.barangayClearance.expiryDate) && (
-						<Badge
-							variant="outline"
-							className="text-xs bg-green-50 border-green-200 text-green-700"
-							title={person.barangayClearance.idNumber}
-						>
-							{"📜 Brgy Valid"}
-						</Badge>
-					)}
-					{person.barangayClearance.registered && isExpired(person.barangayClearance.expiryDate) && (
-						<Badge
-							variant="outline"
-							className="text-xs bg-red-50 border-red-200 text-red-700"
-							title={person.barangayClearance.idNumber}
-						>
-							{"📜 Brgy Expired"}
-						</Badge>
-					)}
+					{person.barangayClearance.registered &&
+						!isExpired(person.barangayClearance.expiryDate) && (
+							<Badge
+								variant="outline"
+								className="text-xs bg-green-50 border-green-200 text-green-700"
+								title={person.barangayClearance.idNumber}
+							>
+								{"📜 Brgy Valid"}
+							</Badge>
+						)}
+					{person.barangayClearance.registered &&
+						isExpired(person.barangayClearance.expiryDate) && (
+							<Badge
+								variant="outline"
+								className="text-xs bg-red-50 border-red-200 text-red-700"
+								title={person.barangayClearance.idNumber}
+							>
+								{"📜 Brgy Expired"}
+							</Badge>
+						)}
 					{isSenior && (
 						<Badge variant="outline" className="text-xs">
 							{"👴 Senior"}

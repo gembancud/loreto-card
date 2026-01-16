@@ -45,6 +45,20 @@ pnpm start            # Run production server (after build)
 
 **React Query integration**: Set up in `src/integrations/tanstack-query/` with SSR support via `setupRouterSsrQueryIntegration`.
 
+### Authentication
+
+**OTP-based auth** using phone numbers. Key files:
+- `src/lib/session.ts` - Session config using `@tanstack/react-start/server` useSession
+- `src/data/auth/session.ts` - Server functions: `getSessionData`, `getCurrentUser`, `logout`
+- `src/data/auth/otp.ts` - OTP send/verify server functions
+- `src/routes/login.tsx` - Login page with phone + OTP flow
+
+**Protected routes**: Use `_authed.tsx` layout route which checks session in `beforeLoad` and redirects to `/login` if not authenticated.
+
+**User roles**: `superuser`, `admin`, `user` (defined in schema). Check with `isAdmin()` helper from `src/data/auth/session.ts`.
+
+**After login/logout**: Call `router.invalidate()` to refresh loaders, then `router.navigate()` for client-side redirect.
+
 ### Adding shadcn Components
 
 ```bash

@@ -1,11 +1,12 @@
-import { useId, useState } from "react";
 import { UserPlus } from "lucide-react";
+import { useId, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogFooter,
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -17,10 +18,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { ProfilePhotoUpload } from "./ProfilePhotoUpload";
-import type { PersonStatus } from "@/data/people";
 import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
+import type { PersonStatus } from "@/data/people";
+import { ProfilePhotoUpload } from "./ProfilePhotoUpload";
 
 interface AddPersonFormData {
 	firstName: string;
