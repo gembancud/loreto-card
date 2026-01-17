@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Pagination } from "@/components/ui/pagination";
 import {
 	Table,
 	TableBody,
@@ -19,6 +20,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	cancelVoucher,
 	getMyAssignedBenefits,
@@ -45,17 +47,36 @@ export const Route = createFileRoute("/_authed/vouchers/")({
 	},
 });
 
+const PAGE_SIZE = 10;
+
 function VoucherDashboardPage() {
 	const { providerBenefits, releaserBenefits, myVouchers, myReleasedVouchers } =
 		Route.useLoaderData();
 	const [vouchers, setVouchers] = useState(myVouchers);
 	const [releasedVouchers, setReleasedVouchers] = useState(myReleasedVouchers);
+	const [issuedPage, setIssuedPage] = useState(1);
+	const [releasedPage, setReleasedPage] = useState(1);
 
 	// Sync local state when loader data changes (e.g., after navigation with invalidation)
 	useEffect(() => {
 		setVouchers(myVouchers);
 		setReleasedVouchers(myReleasedVouchers);
+		setIssuedPage(1);
+		setReleasedPage(1);
 	}, [myVouchers, myReleasedVouchers]);
+
+	// Derive paginated data
+	const issuedTotalPages = Math.ceil(vouchers.length / PAGE_SIZE);
+	const releasedTotalPages = Math.ceil(releasedVouchers.length / PAGE_SIZE);
+
+	const paginatedIssuedVouchers = vouchers.slice(
+		(issuedPage - 1) * PAGE_SIZE,
+		issuedPage * PAGE_SIZE,
+	);
+	const paginatedReleasedVouchers = releasedVouchers.slice(
+		(releasedPage - 1) * PAGE_SIZE,
+		releasedPage * PAGE_SIZE,
+	);
 
 	const handleCancel = async (voucherId: string) => {
 		if (!confirm("Are you sure you want to cancel this voucher?")) {
@@ -63,11 +84,18 @@ function VoucherDashboardPage() {
 		}
 		const result = await cancelVoucher({ data: voucherId });
 		if (result.success) {
-			setVouchers((prev) =>
-				prev.map((v) =>
+			setVouchers((prev) => {
+				const updated = prev.map((v) =>
 					v.id === voucherId ? { ...v, status: "cancelled" as const } : v,
-				),
-			);
+				);
+				// Adjust page if current page becomes empty after cancellation
+				// (cancelled vouchers still show, so this handles future filtering scenarios)
+				const newTotalPages = Math.ceil(updated.length / PAGE_SIZE);
+				if (issuedPage > newTotalPages && newTotalPages > 0) {
+					setIssuedPage(newTotalPages);
+				}
+				return updated;
+			});
 		} else {
 			alert(result.error ?? "Failed to cancel voucher");
 		}
@@ -218,105 +246,139 @@ function VoucherDashboardPage() {
 					</Card>
 				)}
 
-				{/* My Issued Vouchers History */}
+				{/* Voucher History */}
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<Send className="h-5 w-5" />
-							My Issued Vouchers
+							<Gift className="h-5 w-5" />
+							Voucher History
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
-						{vouchers.length === 0 ? (
-							<p className="text-center text-muted-foreground py-8">
-								You haven't issued any vouchers yet.
-							</p>
-						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Benefit</TableHead>
-										<TableHead>Person</TableHead>
-										<TableHead>Status</TableHead>
-										<TableHead>Issued</TableHead>
-										<TableHead>Released By</TableHead>
-										<TableHead>Actions</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{vouchers.map((voucher) => (
-										<TableRow key={voucher.id}>
-											<TableCell className="font-medium">
-												{voucher.benefitName}
-											</TableCell>
-											<TableCell>{voucher.personName}</TableCell>
-											<TableCell>{getStatusBadge(voucher.status)}</TableCell>
-											<TableCell>{formatDate(voucher.providedAt)}</TableCell>
-											<TableCell>
-												{voucher.releasedByName ?? "—"}
-												{voucher.releasedAt && (
-													<div className="text-xs text-muted-foreground">
-														{formatDate(voucher.releasedAt)}
-													</div>
-												)}
-											</TableCell>
-											<TableCell>
-												{voucher.status === "pending" && (
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={() => handleCancel(voucher.id)}
-														className="text-destructive"
-													>
-														Cancel
-													</Button>
-												)}
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						)}
-					</CardContent>
-				</Card>
+						<Tabs defaultValue="issued">
+							<TabsList className="mb-4">
+								<TabsTrigger value="issued" className="gap-2">
+									<Send className="h-4 w-4" />
+									Issued
+									{vouchers.length > 0 && (
+										<Badge variant="secondary" className="ml-1">
+											{vouchers.length}
+										</Badge>
+									)}
+								</TabsTrigger>
+								<TabsTrigger value="released" className="gap-2">
+									<CheckCircle className="h-4 w-4" />
+									Released
+									{releasedVouchers.length > 0 && (
+										<Badge variant="secondary" className="ml-1">
+											{releasedVouchers.length}
+										</Badge>
+									)}
+								</TabsTrigger>
+							</TabsList>
 
-				{/* My Released Vouchers History */}
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<CheckCircle className="h-5 w-5" />
-							My Released Vouchers
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{releasedVouchers.length === 0 ? (
-							<p className="text-center text-muted-foreground py-8">
-								You haven't released any vouchers yet.
-							</p>
-						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Benefit</TableHead>
-										<TableHead>Person</TableHead>
-										<TableHead>Provided By</TableHead>
-										<TableHead>Released</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{releasedVouchers.map((voucher) => (
-										<TableRow key={voucher.id}>
-											<TableCell className="font-medium">
-												{voucher.benefitName}
-											</TableCell>
-											<TableCell>{voucher.personName}</TableCell>
-											<TableCell>{voucher.providedByName}</TableCell>
-											<TableCell>{formatDate(voucher.releasedAt)}</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						)}
+							<TabsContent value="issued">
+								{vouchers.length === 0 ? (
+									<p className="text-center text-muted-foreground py-8">
+										You haven't issued any vouchers yet.
+									</p>
+								) : (
+									<>
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead>Benefit</TableHead>
+													<TableHead>Person</TableHead>
+													<TableHead>Status</TableHead>
+													<TableHead>Issued</TableHead>
+													<TableHead>Released By</TableHead>
+													<TableHead>Actions</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{paginatedIssuedVouchers.map((voucher) => (
+													<TableRow key={voucher.id}>
+														<TableCell className="font-medium">
+															{voucher.benefitName}
+														</TableCell>
+														<TableCell>{voucher.personName}</TableCell>
+														<TableCell>{getStatusBadge(voucher.status)}</TableCell>
+														<TableCell>{formatDate(voucher.providedAt)}</TableCell>
+														<TableCell>
+															{voucher.releasedByName ?? "—"}
+															{voucher.releasedAt && (
+																<div className="text-xs text-muted-foreground">
+																	{formatDate(voucher.releasedAt)}
+																</div>
+															)}
+														</TableCell>
+														<TableCell>
+															{voucher.status === "pending" && (
+																<Button
+																	variant="ghost"
+																	size="sm"
+																	onClick={() => handleCancel(voucher.id)}
+																	className="text-destructive"
+																>
+																	Cancel
+																</Button>
+															)}
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+										<Pagination
+											currentPage={issuedPage}
+											totalPages={issuedTotalPages}
+											totalItems={vouchers.length}
+											pageSize={PAGE_SIZE}
+											onPageChange={setIssuedPage}
+										/>
+									</>
+								)}
+							</TabsContent>
+
+							<TabsContent value="released">
+								{releasedVouchers.length === 0 ? (
+									<p className="text-center text-muted-foreground py-8">
+										You haven't released any vouchers yet.
+									</p>
+								) : (
+									<>
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead>Benefit</TableHead>
+													<TableHead>Person</TableHead>
+													<TableHead>Provided By</TableHead>
+													<TableHead>Released</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{paginatedReleasedVouchers.map((voucher) => (
+													<TableRow key={voucher.id}>
+														<TableCell className="font-medium">
+															{voucher.benefitName}
+														</TableCell>
+														<TableCell>{voucher.personName}</TableCell>
+														<TableCell>{voucher.providedByName}</TableCell>
+														<TableCell>{formatDate(voucher.releasedAt)}</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+										<Pagination
+											currentPage={releasedPage}
+											totalPages={releasedTotalPages}
+											totalItems={releasedVouchers.length}
+											pageSize={PAGE_SIZE}
+											onPageChange={setReleasedPage}
+										/>
+									</>
+								)}
+							</TabsContent>
+						</Tabs>
 					</CardContent>
 				</Card>
 

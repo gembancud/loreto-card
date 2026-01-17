@@ -215,12 +215,12 @@ export const getMyReleasedVouchers = createServerFn({ method: "GET" }).handler(
 			.map((v) => ({
 				id: v.id,
 				benefitId: v.benefitId,
-				benefitName: v.benefit!.name,
+				benefitName: v.benefit?.name ?? "",
 				personId: v.personId,
-				personName: buildPersonName(v.person!),
+				personName: buildPersonName(v.person ?? { firstName: "", lastName: "" }),
 				status: v.status as VoucherStatus,
 				providedById: v.providedById,
-				providedByName: `${v.providedBy!.firstName} ${v.providedBy!.lastName}`,
+				providedByName: `${v.providedBy?.firstName ?? ""} ${v.providedBy?.lastName ?? ""}`,
 				providedAt: v.providedAt,
 				releasedById: v.releasedById,
 				releasedByName: v.releasedBy
