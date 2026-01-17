@@ -565,6 +565,43 @@ interface FindPendingVoucherInput {
 	personId: string;
 }
 
+// Get all vouchers for a specific person
+export const getVouchersForPerson = createServerFn({ method: "GET" })
+	.inputValidator((personId: string) => personId)
+	.handler(async ({ data: personId }): Promise<VoucherListItem[]> => {
+		await requireAuth();
+
+		const personVouchers = await db.query.vouchers.findMany({
+			with: {
+				benefit: true,
+				person: true,
+				providedBy: true,
+				releasedBy: true,
+			},
+			where: eq(vouchers.personId, personId),
+			orderBy: (vouchers, { desc }) => [desc(vouchers.providedAt)],
+		});
+
+		return personVouchers.map((v) => ({
+			id: v.id,
+			benefitId: v.benefitId,
+			benefitName: v.benefit.name,
+			personId: v.personId,
+			personName: buildPersonName(v.person),
+			status: v.status as VoucherStatus,
+			providedById: v.providedById,
+			providedByName: `${v.providedBy.firstName} ${v.providedBy.lastName}`,
+			providedAt: v.providedAt,
+			releasedById: v.releasedById,
+			releasedByName: v.releasedBy
+				? `${v.releasedBy.firstName} ${v.releasedBy.lastName}`
+				: null,
+			releasedAt: v.releasedAt,
+			notes: v.notes,
+			createdAt: v.createdAt,
+		}));
+	});
+
 // Find a pending voucher for a specific person and benefit (for secure release flow)
 export const findPendingVoucherForRelease = createServerFn({ method: "POST" })
 	.inputValidator((data: FindPendingVoucherInput) => data)

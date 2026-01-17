@@ -1,12 +1,14 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, CheckCircle, Clock, Save, XCircle } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { ProfilePhotoUpload } from "@/components/people/ProfilePhotoUpload";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Pagination } from "@/components/ui/pagination";
 import {
 	Select,
 	SelectContent,
@@ -14,6 +16,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
 import {
 	type GovServiceRecord,
@@ -21,10 +31,17 @@ import {
 	type PersonStatus,
 	updatePerson,
 } from "@/data/people";
+import { getVouchersForPerson, type VoucherListItem } from "@/data/vouchers";
 
 export const Route = createFileRoute("/_authed/people/$personId")({
 	component: EditPerson,
-	loader: async ({ params }) => await getPersonById({ data: params.personId }),
+	loader: async ({ params }) => {
+		const [person, vouchers] = await Promise.all([
+			getPersonById({ data: params.personId }),
+			getVouchersForPerson({ data: params.personId }),
+		]);
+		return { person, vouchers };
+	},
 });
 
 interface EditPersonFormData {
@@ -51,10 +68,13 @@ interface EditPersonFormData {
 	barangayClearance: GovServiceRecord;
 }
 
+const VOUCHERS_PAGE_SIZE = 5;
+
 function EditPerson() {
-	const person = Route.useLoaderData();
+	const { person, vouchers } = Route.useLoaderData();
 	const router = useRouter();
 	const id = useId();
+	const [vouchersPage, setVouchersPage] = useState(1);
 
 	const [formData, setFormData] = useState<EditPersonFormData>({
 		firstName: "",
@@ -986,7 +1006,128 @@ function EditPerson() {
 						</form>
 					</CardContent>
 				</Card>
+
+				{/* Vouchers Section */}
+				<VouchersSection
+					vouchers={vouchers}
+					currentPage={vouchersPage}
+					onPageChange={setVouchersPage}
+				/>
 			</div>
 		</div>
+	);
+}
+
+// Helper functions for vouchers display
+function formatDate(date: Date | null) {
+	if (!date) return "—";
+	return new Date(date).toLocaleDateString("en-PH", {
+		year: "numeric",
+		month: "short",
+		day: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+}
+
+function getStatusBadge(status: string) {
+	switch (status) {
+		case "pending":
+			return (
+				<Badge variant="outline" className="gap-1">
+					<Clock className="h-3 w-3" />
+					Pending
+				</Badge>
+			);
+		case "released":
+			return (
+				<Badge className="gap-1 bg-green-100 text-green-800 hover:bg-green-100">
+					<CheckCircle className="h-3 w-3" />
+					Released
+				</Badge>
+			);
+		case "cancelled":
+			return (
+				<Badge variant="destructive" className="gap-1">
+					<XCircle className="h-3 w-3" />
+					Cancelled
+				</Badge>
+			);
+		default:
+			return <Badge>{status}</Badge>;
+	}
+}
+
+interface VouchersSectionProps {
+	vouchers: VoucherListItem[];
+	currentPage: number;
+	onPageChange: (page: number) => void;
+}
+
+function VouchersSection({
+	vouchers,
+	currentPage,
+	onPageChange,
+}: VouchersSectionProps) {
+	const totalPages = Math.ceil(vouchers.length / VOUCHERS_PAGE_SIZE);
+	const paginatedVouchers = vouchers.slice(
+		(currentPage - 1) * VOUCHERS_PAGE_SIZE,
+		currentPage * VOUCHERS_PAGE_SIZE,
+	);
+
+	return (
+		<Card className="mt-8">
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					Vouchers
+					{vouchers.length > 0 && (
+						<Badge variant="secondary">{vouchers.length}</Badge>
+					)}
+				</CardTitle>
+			</CardHeader>
+			<CardContent>
+				{vouchers.length === 0 ? (
+					<p className="text-center text-muted-foreground py-8">
+						No vouchers have been issued for this person.
+					</p>
+				) : (
+					<>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Benefit</TableHead>
+									<TableHead>Status</TableHead>
+									<TableHead>Issued</TableHead>
+									<TableHead>Provided By</TableHead>
+									<TableHead>Released</TableHead>
+									<TableHead>Released By</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{paginatedVouchers.map((voucher) => (
+									<TableRow key={voucher.id}>
+										<TableCell className="font-medium">
+											{voucher.benefitName}
+										</TableCell>
+										<TableCell>{getStatusBadge(voucher.status)}</TableCell>
+										<TableCell>{formatDate(voucher.providedAt)}</TableCell>
+										<TableCell>{voucher.providedByName}</TableCell>
+										<TableCell>{formatDate(voucher.releasedAt)}</TableCell>
+										<TableCell>{voucher.releasedByName ?? "—"}</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+						<Pagination
+							currentPage={currentPage}
+							totalPages={totalPages}
+							totalItems={vouchers.length}
+							pageSize={VOUCHERS_PAGE_SIZE}
+							onPageChange={onPageChange}
+						/>
+					</>
+				)}
+			</CardContent>
+		</Card>
 	);
 }
