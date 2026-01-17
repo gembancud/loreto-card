@@ -194,6 +194,45 @@ export const getMyIssuedVouchers = createServerFn({ method: "GET" }).handler(
 	},
 );
 
+// Get vouchers released by current user (releaser history)
+export const getMyReleasedVouchers = createServerFn({ method: "GET" }).handler(
+	async (): Promise<VoucherListItem[]> => {
+		const currentUser = await requireAuth();
+
+		const myVouchers = await db.query.vouchers.findMany({
+			with: {
+				benefit: true,
+				person: true,
+				providedBy: true,
+				releasedBy: true,
+			},
+			where: eq(vouchers.releasedById, currentUser.userId),
+			orderBy: (vouchers, { desc }) => [desc(vouchers.releasedAt)],
+		});
+
+		return myVouchers
+			.filter((v) => v.benefit && v.person && v.providedBy)
+			.map((v) => ({
+				id: v.id,
+				benefitId: v.benefitId,
+				benefitName: v.benefit!.name,
+				personId: v.personId,
+				personName: buildPersonName(v.person!),
+				status: v.status as VoucherStatus,
+				providedById: v.providedById,
+				providedByName: `${v.providedBy!.firstName} ${v.providedBy!.lastName}`,
+				providedAt: v.providedAt,
+				releasedById: v.releasedById,
+				releasedByName: v.releasedBy
+					? `${v.releasedBy.firstName} ${v.releasedBy.lastName}`
+					: null,
+				releasedAt: v.releasedAt,
+				notes: v.notes,
+				createdAt: v.createdAt,
+			}));
+	},
+);
+
 interface CreateVoucherInput {
 	benefitId: string;
 	personId: string;

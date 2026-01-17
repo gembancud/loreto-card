@@ -23,15 +23,15 @@ import {
 	cancelVoucher,
 	getMyAssignedBenefits,
 	getMyIssuedVouchers,
+	getMyReleasedVouchers,
 } from "@/data/vouchers";
 
 export const Route = createFileRoute("/_authed/vouchers/")({
 	component: VoucherDashboardPage,
 	loader: async () => {
-		const [assignedBenefits, myVouchers] = await Promise.all([
-			getMyAssignedBenefits(),
-			getMyIssuedVouchers(),
-		]);
+		const [assignedBenefits, myVouchers, myReleasedVouchers] = await Promise.all(
+			[getMyAssignedBenefits(), getMyIssuedVouchers(), getMyReleasedVouchers()],
+		);
 
 		// Separate provider and releaser benefits
 		const providerBenefits = assignedBenefits.filter(
@@ -41,19 +41,21 @@ export const Route = createFileRoute("/_authed/vouchers/")({
 			(b) => b.role === "releaser",
 		);
 
-		return { providerBenefits, releaserBenefits, myVouchers };
+		return { providerBenefits, releaserBenefits, myVouchers, myReleasedVouchers };
 	},
 });
 
 function VoucherDashboardPage() {
-	const { providerBenefits, releaserBenefits, myVouchers } =
+	const { providerBenefits, releaserBenefits, myVouchers, myReleasedVouchers } =
 		Route.useLoaderData();
 	const [vouchers, setVouchers] = useState(myVouchers);
+	const [releasedVouchers, setReleasedVouchers] = useState(myReleasedVouchers);
 
 	// Sync local state when loader data changes (e.g., after navigation with invalidation)
 	useEffect(() => {
 		setVouchers(myVouchers);
-	}, [myVouchers]);
+		setReleasedVouchers(myReleasedVouchers);
+	}, [myVouchers, myReleasedVouchers]);
 
 	const handleCancel = async (voucherId: string) => {
 		if (!confirm("Are you sure you want to cancel this voucher?")) {
@@ -278,10 +280,51 @@ function VoucherDashboardPage() {
 					</CardContent>
 				</Card>
 
+				{/* My Released Vouchers History */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<CheckCircle className="h-5 w-5" />
+							My Released Vouchers
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						{releasedVouchers.length === 0 ? (
+							<p className="text-center text-muted-foreground py-8">
+								You haven't released any vouchers yet.
+							</p>
+						) : (
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Benefit</TableHead>
+										<TableHead>Person</TableHead>
+										<TableHead>Provided By</TableHead>
+										<TableHead>Released</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{releasedVouchers.map((voucher) => (
+										<TableRow key={voucher.id}>
+											<TableCell className="font-medium">
+												{voucher.benefitName}
+											</TableCell>
+											<TableCell>{voucher.personName}</TableCell>
+											<TableCell>{voucher.providedByName}</TableCell>
+											<TableCell>{formatDate(voucher.releasedAt)}</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+						)}
+					</CardContent>
+				</Card>
+
 				{/* Empty state if user has no assignments */}
 				{providerBenefits.length === 0 &&
 					releaserBenefits.length === 0 &&
-					vouchers.length === 0 && (
+					vouchers.length === 0 &&
+					releasedVouchers.length === 0 && (
 						<Card>
 							<CardContent className="py-12 text-center text-muted-foreground">
 								<Gift className="h-12 w-12 mx-auto mb-4 opacity-50" />
