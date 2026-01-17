@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Gift, Send } from "lucide-react";
-import { useId, useState } from "react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { ArrowLeft, ChevronsUpDown, Gift, Send, X } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -9,8 +9,22 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import {
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { type Person, searchPeople } from "@/data/people";
 import { createVoucher, getMyAssignedBenefits } from "@/data/vouchers";
 
 export const Route = createFileRoute("/_authed/vouchers/provide/$benefitId")({
@@ -29,31 +43,75 @@ export const Route = createFileRoute("/_authed/vouchers/provide/$benefitId")({
 	},
 });
 
+function buildPersonName(person: Person): string {
+	const parts = [person.firstName];
+	if (person.middleName) parts.push(person.middleName);
+	parts.push(person.lastName);
+	if (person.suffix) parts.push(person.suffix);
+	return parts.join(" ");
+}
+
 function ProvideVoucherPage() {
 	const { benefit } = Route.useLoaderData();
-	const navigate = useNavigate();
+	const router = useRouter();
 	const id = useId();
-	const [personId, setPersonId] = useState("");
 	const [notes, setNotes] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	// Person search state
+	const [open, setOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState<Person[]>([]);
+	const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+	const [isSearching, setIsSearching] = useState(false);
+
+	// Debounced search
+	useEffect(() => {
+		if (!searchQuery.trim()) {
+			setSearchResults([]);
+			return;
+		}
+
+		const timer = setTimeout(async () => {
+			setIsSearching(true);
+			try {
+				const results = await searchPeople({ data: searchQuery.trim() });
+				setSearchResults(results);
+			} catch (err) {
+				console.error("Search failed:", err);
+				setSearchResults([]);
+			} finally {
+				setIsSearching(false);
+			}
+		}, 300);
+
+		return () => clearTimeout(timer);
+	}, [searchQuery]);
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError(null);
+
+		if (!selectedPerson) {
+			setError("Please select a person");
+			return;
+		}
+
 		setIsSubmitting(true);
 
 		try {
 			const result = await createVoucher({
 				data: {
 					benefitId: benefit.id,
-					personId: personId.trim(),
+					personId: selectedPerson.id,
 					notes: notes.trim() || undefined,
 				},
 			});
 
 			if (result.success) {
-				navigate({ to: "/vouchers" });
+				await router.invalidate();
+				router.navigate({ to: "/vouchers" });
 			} else {
 				setError(result.error ?? "Failed to create voucher");
 			}
@@ -124,18 +182,88 @@ function ProvideVoucherPage() {
 
 						<form onSubmit={handleSubmit} className="space-y-4">
 							<div className="space-y-2">
-								<Label htmlFor={`${id}-personId`}>Person ID / Reference</Label>
-								<Input
-									id={`${id}-personId`}
-									placeholder="Enter person ID or reference number"
-									value={personId}
-									onChange={(e) => setPersonId(e.target.value)}
-									required
-								/>
-								<p className="text-xs text-muted-foreground">
-									Enter the unique identifier for the beneficiary (e.g., citizen
-									ID, senior citizen number, etc.)
-								</p>
+								<Label>Person *</Label>
+								{selectedPerson ? (
+									<div className="flex items-center justify-between rounded-md border p-3">
+										<div>
+											<p className="font-medium">
+												{buildPersonName(selectedPerson)}
+											</p>
+											<p className="text-sm text-muted-foreground">
+												{selectedPerson.phoneNumber}
+											</p>
+										</div>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											onClick={() => {
+												setSelectedPerson(null);
+												setSearchQuery("");
+											}}
+										>
+											<X className="h-4 w-4" />
+											<span className="sr-only">Clear selection</span>
+										</Button>
+									</div>
+								) : (
+									<Popover open={open} onOpenChange={setOpen}>
+										<PopoverTrigger asChild>
+											<Button
+												variant="outline"
+												role="combobox"
+												aria-expanded={open}
+												className="w-full justify-between"
+											>
+												Search by name or phone...
+												<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-[400px] p-0" align="start">
+											<Command shouldFilter={false}>
+												<CommandInput
+													placeholder="Search by name or phone..."
+													value={searchQuery}
+													onValueChange={setSearchQuery}
+												/>
+												<CommandList>
+													{isSearching && (
+														<div className="py-6 text-center text-sm text-muted-foreground">
+															Searching...
+														</div>
+													)}
+													{!isSearching &&
+														searchQuery &&
+														searchResults.length === 0 && (
+															<CommandEmpty>No people found.</CommandEmpty>
+														)}
+													{!isSearching && searchResults.length > 0 && (
+														<CommandGroup>
+															{searchResults.map((person) => (
+																<CommandItem
+																	key={person.id}
+																	value={person.id}
+																	onSelect={() => {
+																		setSelectedPerson(person);
+																		setOpen(false);
+																		setSearchQuery("");
+																	}}
+																>
+																		<div className="flex flex-col">
+																		<span>{buildPersonName(person)}</span>
+																		<span className="text-sm text-muted-foreground">
+																			{person.phoneNumber}
+																		</span>
+																	</div>
+																</CommandItem>
+															))}
+														</CommandGroup>
+													)}
+												</CommandList>
+											</Command>
+										</PopoverContent>
+									</Popover>
+								)}
 							</div>
 
 							<div className="space-y-2">
@@ -159,7 +287,7 @@ function ProvideVoucherPage() {
 									type="button"
 									variant="outline"
 									className="flex-1"
-									onClick={() => navigate({ to: "/vouchers" })}
+									onClick={() => router.navigate({ to: "/vouchers" })}
 								>
 									Cancel
 								</Button>

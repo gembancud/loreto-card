@@ -7,7 +7,7 @@ import {
 	Send,
 	XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,10 +49,19 @@ export const Route = createFileRoute("/_authed/vouchers/")({
 });
 
 function VoucherDashboardPage() {
-	const { providerBenefits, pendingToRelease, myVouchers } =
+	const { providerBenefits, releaserBenefits, pendingToRelease, myVouchers } =
 		Route.useLoaderData();
 	const [pending, setPending] = useState(pendingToRelease);
 	const [vouchers, setVouchers] = useState(myVouchers);
+
+	// Sync local state when loader data changes (e.g., after navigation with invalidation)
+	useEffect(() => {
+		setPending(pendingToRelease);
+	}, [pendingToRelease]);
+
+	useEffect(() => {
+		setVouchers(myVouchers);
+	}, [myVouchers]);
 
 	const handleRelease = async (voucherId: string) => {
 		const result = await releaseVoucher({ data: voucherId });
@@ -177,6 +186,47 @@ function VoucherDashboardPage() {
 					</Card>
 				)}
 
+				{/* Benefits I Can Release */}
+				{releaserBenefits.length > 0 && (
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<CheckCircle className="h-5 w-5" />
+								Benefits I Can Release
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+								{releaserBenefits.map((benefit) => (
+									<Card key={benefit.id} className="relative">
+										<CardContent className="p-4">
+											<div className="space-y-2">
+												<h3 className="font-semibold">{benefit.name}</h3>
+												{benefit.description && (
+													<p className="text-sm text-muted-foreground">
+														{benefit.description}
+													</p>
+												)}
+												<div className="flex gap-2 text-sm text-muted-foreground">
+													{benefit.valuePesos && (
+														<span>₱{benefit.valuePesos.toLocaleString()}</span>
+													)}
+													{benefit.quantity && (
+														<span>{benefit.quantity} units</span>
+													)}
+												</div>
+												<p className="text-xs text-muted-foreground mt-2">
+													You can release vouchers for this benefit when providers issue them.
+												</p>
+											</div>
+										</CardContent>
+									</Card>
+								))}
+							</div>
+						</CardContent>
+					</Card>
+				)}
+
 				{/* Pending Vouchers to Release */}
 				{pending.length > 0 && (
 					<Card>
@@ -191,7 +241,7 @@ function VoucherDashboardPage() {
 								<TableHeader>
 									<TableRow>
 										<TableHead>Benefit</TableHead>
-										<TableHead>Person ID</TableHead>
+										<TableHead>Person</TableHead>
 										<TableHead>Provided By</TableHead>
 										<TableHead>Date</TableHead>
 										<TableHead>Action</TableHead>
@@ -203,7 +253,7 @@ function VoucherDashboardPage() {
 											<TableCell className="font-medium">
 												{voucher.benefitName}
 											</TableCell>
-											<TableCell>{voucher.personId}</TableCell>
+											<TableCell>{voucher.personName}</TableCell>
 											<TableCell>{voucher.providedByName}</TableCell>
 											<TableCell>{formatDate(voucher.providedAt)}</TableCell>
 											<TableCell>
@@ -242,7 +292,7 @@ function VoucherDashboardPage() {
 								<TableHeader>
 									<TableRow>
 										<TableHead>Benefit</TableHead>
-										<TableHead>Person ID</TableHead>
+										<TableHead>Person</TableHead>
 										<TableHead>Status</TableHead>
 										<TableHead>Issued</TableHead>
 										<TableHead>Released By</TableHead>
@@ -255,7 +305,7 @@ function VoucherDashboardPage() {
 											<TableCell className="font-medium">
 												{voucher.benefitName}
 											</TableCell>
-											<TableCell>{voucher.personId}</TableCell>
+											<TableCell>{voucher.personName}</TableCell>
 											<TableCell>{getStatusBadge(voucher.status)}</TableCell>
 											<TableCell>{formatDate(voucher.providedAt)}</TableCell>
 											<TableCell>
@@ -288,6 +338,7 @@ function VoucherDashboardPage() {
 
 				{/* Empty state if user has no assignments */}
 				{providerBenefits.length === 0 &&
+					releaserBenefits.length === 0 &&
 					pending.length === 0 &&
 					vouchers.length === 0 && (
 						<Card>
