@@ -1,5 +1,5 @@
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import { Gift, LogOut, Settings, Ticket, User } from "lucide-react";
+import { Gift, LogOut, Settings, Ticket, User, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,32 +35,72 @@ export default function Header() {
 
 	const isAdmin = session?.role === "admin" || session?.role === "superuser";
 
+	const isActive = (path: string) => {
+		if (path === "/") {
+			return (
+				location.pathname === "/" || location.pathname.startsWith("/people")
+			);
+		}
+		return location.pathname.startsWith(path);
+	};
+
 	return (
 		<header className="border-b bg-white px-6 py-4">
 			<div className="flex items-center justify-between">
-				<Link to="/" className="text-xl font-semibold text-gray-900">
-					Loreto Card
-				</Link>
+				{/* Left group: logo + main nav */}
+				<div className="flex items-center gap-6">
+					<Link to="/" className="text-xl font-semibold text-gray-900">
+						Loreto Card
+					</Link>
 
+					{session && (
+						<nav className="flex items-center gap-1">
+							<Link to="/">
+								<Button
+									variant="ghost"
+									size="sm"
+									className={`gap-2 ${isActive("/") ? "bg-muted" : ""}`}
+								>
+									<Users className="h-4 w-4" />
+									<span className="hidden sm:inline">People</span>
+								</Button>
+							</Link>
+
+							<Link to="/vouchers">
+								<Button
+									variant="ghost"
+									size="sm"
+									className={`gap-2 ${isActive("/vouchers") ? "bg-muted" : ""}`}
+								>
+									<Ticket className="h-4 w-4" />
+									<span className="hidden sm:inline">Vouchers</span>
+								</Button>
+							</Link>
+
+							<Link to="/benefits">
+								<Button
+									variant="ghost"
+									size="sm"
+									className={`gap-2 ${isActive("/benefits") ? "bg-muted" : ""}`}
+								>
+									<Gift className="h-4 w-4" />
+									<span className="hidden sm:inline">Benefits</span>
+								</Button>
+							</Link>
+						</nav>
+					)}
+				</div>
+
+				{/* Right group: admin + user menu */}
 				{session && (
 					<div className="flex items-center gap-3">
-						<Link to="/vouchers">
-							<Button variant="ghost" size="sm" className="gap-2">
-								<Ticket className="h-4 w-4" />
-								<span className="hidden sm:inline">Vouchers</span>
-							</Button>
-						</Link>
-
-						<Link to="/benefits">
-							<Button variant="ghost" size="sm" className="gap-2">
-								<Gift className="h-4 w-4" />
-								<span className="hidden sm:inline">Benefits</span>
-							</Button>
-						</Link>
-
 						{isAdmin && (
 							<Link to="/users">
-								<Button variant="ghost" size="sm" className="gap-2">
+								<Button
+									variant="ghost"
+									size="sm"
+									className={`gap-2 ${isActive("/users") ? "bg-muted" : ""}`}
+								>
 									<Settings className="h-4 w-4" />
 									<span className="hidden sm:inline">Users</span>
 								</Button>
