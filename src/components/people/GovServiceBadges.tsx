@@ -68,7 +68,6 @@ export function GovServiceBadges({ person }: GovServiceBadgesProps) {
 			for (let i = 0; i < badgeWidths.length; i++) {
 				const badgeWidth = badgeWidths[i];
 				const hasMoreBadges = i < badgeWidths.length - 1;
-				const _remainingBadges = badgeWidths.length - 1 - i;
 
 				// If this is the last badge that would fit, we don't need overflow indicator
 				// If there are more badges after this, we need to reserve space for overflow

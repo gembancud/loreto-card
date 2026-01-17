@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import {
 	boolean,
+	date,
 	integer,
 	pgTable,
 	serial,
@@ -15,6 +16,42 @@ export const todos = pgTable("todos", {
 	title: text("title").notNull(),
 	createdAt: timestamp("created_at").defaultNow(),
 });
+
+// People (residents/beneficiaries)
+export const people = pgTable("people", {
+	id: uuid("id").primaryKey().defaultRandom(),
+	firstName: text("first_name").notNull(),
+	middleName: text("middle_name"),
+	lastName: text("last_name").notNull(),
+	suffix: text("suffix"),
+	birthdate: date("birthdate").notNull(),
+	street: text("street").notNull(),
+	purok: text("purok"),
+	barangay: text("barangay").notNull(),
+	phoneNumber: text("phone_number").notNull(),
+	status: text("status").notNull().default("active"), // active | inactive | pending
+	profilePhoto: text("profile_photo"),
+	createdAt: timestamp("created_at").defaultNow(),
+	updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Person government identifications (normalized)
+export const personIdentifications = pgTable(
+	"person_identifications",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		personId: uuid("person_id")
+			.notNull()
+			.references(() => people.id, { onDelete: "cascade" }),
+		type: text("type").notNull(), // voter | philhealth | sss | fourPs | pwd | soloParent | pagibig | tin | barangayClearance
+		idNumber: text("id_number"),
+		issueDate: date("issue_date"),
+		expiryDate: date("expiry_date"),
+		createdAt: timestamp("created_at").defaultNow(),
+		updatedAt: timestamp("updated_at").defaultNow(),
+	},
+	(table) => [unique().on(table.personId, table.type)],
+);
 
 // Government departments
 export const departments = pgTable("departments", {
@@ -97,7 +134,9 @@ export const vouchers = pgTable("vouchers", {
 	benefitId: uuid("benefit_id")
 		.notNull()
 		.references(() => benefits.id),
-	personId: text("person_id").notNull(), // References people
+	personId: uuid("person_id")
+		.notNull()
+		.references(() => people.id),
 	status: text("status").notNull().default("pending"), // pending | released | cancelled
 	providedById: uuid("provided_by_id")
 		.notNull()
@@ -110,6 +149,21 @@ export const vouchers = pgTable("vouchers", {
 });
 
 // Relations for query builder
+export const peopleRelations = relations(people, ({ many }) => ({
+	identifications: many(personIdentifications),
+	vouchers: many(vouchers),
+}));
+
+export const personIdentificationsRelations = relations(
+	personIdentifications,
+	({ one }) => ({
+		person: one(people, {
+			fields: [personIdentifications.personId],
+			references: [people.id],
+		}),
+	}),
+);
+
 export const departmentsRelations = relations(departments, ({ many }) => ({
 	users: many(users),
 	benefits: many(benefits),
@@ -160,6 +214,10 @@ export const vouchersRelations = relations(vouchers, ({ one }) => ({
 		fields: [vouchers.benefitId],
 		references: [benefits.id],
 	}),
+	person: one(people, {
+		fields: [vouchers.personId],
+		references: [people.id],
+	}),
 	providedBy: one(users, {
 		fields: [vouchers.providedById],
 		references: [users.id],
@@ -173,6 +231,23 @@ export const vouchersRelations = relations(vouchers, ({ one }) => ({
 }));
 
 // Type exports for use in application code
+export type DbPerson = typeof people.$inferSelect;
+export type NewPerson = typeof people.$inferInsert;
+export type PersonStatus = "active" | "inactive" | "pending";
+
+export type PersonIdentification = typeof personIdentifications.$inferSelect;
+export type NewPersonIdentification = typeof personIdentifications.$inferInsert;
+export type IdentificationType =
+	| "voter"
+	| "philhealth"
+	| "sss"
+	| "fourPs"
+	| "pwd"
+	| "soloParent"
+	| "pagibig"
+	| "tin"
+	| "barangayClearance";
+
 export type Department = typeof departments.$inferSelect;
 export type NewDepartment = typeof departments.$inferInsert;
 

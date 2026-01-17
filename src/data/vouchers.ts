@@ -80,6 +80,7 @@ export interface VoucherListItem {
 	benefitId: string;
 	benefitName: string;
 	personId: string;
+	personName: string;
 	status: VoucherStatus;
 	providedById: string;
 	providedByName: string;
@@ -89,6 +90,20 @@ export interface VoucherListItem {
 	releasedAt: Date | null;
 	notes: string | null;
 	createdAt: Date | null;
+}
+
+// Helper to build person full name
+function buildPersonName(person: {
+	firstName: string;
+	middleName: string | null;
+	lastName: string;
+	suffix: string | null;
+}): string {
+	const parts = [person.firstName];
+	if (person.middleName) parts.push(person.middleName);
+	parts.push(person.lastName);
+	if (person.suffix) parts.push(person.suffix);
+	return parts.join(" ");
 }
 
 // Get pending vouchers for benefits where current user is a releaser
@@ -111,6 +126,7 @@ export const getPendingVouchersToRelease = createServerFn({
 	const pendingVouchers = await db.query.vouchers.findMany({
 		with: {
 			benefit: true,
+			person: true,
 			providedBy: true,
 			releasedBy: true,
 		},
@@ -126,6 +142,7 @@ export const getPendingVouchersToRelease = createServerFn({
 		benefitId: v.benefitId,
 		benefitName: v.benefit.name,
 		personId: v.personId,
+		personName: buildPersonName(v.person),
 		status: v.status as VoucherStatus,
 		providedById: v.providedById,
 		providedByName: `${v.providedBy.firstName} ${v.providedBy.lastName}`,
@@ -148,6 +165,7 @@ export const getMyIssuedVouchers = createServerFn({ method: "GET" }).handler(
 		const myVouchers = await db.query.vouchers.findMany({
 			with: {
 				benefit: true,
+				person: true,
 				providedBy: true,
 				releasedBy: true,
 			},
@@ -160,6 +178,7 @@ export const getMyIssuedVouchers = createServerFn({ method: "GET" }).handler(
 			benefitId: v.benefitId,
 			benefitName: v.benefit.name,
 			personId: v.personId,
+			personName: buildPersonName(v.person),
 			status: v.status as VoucherStatus,
 			providedById: v.providedById,
 			providedByName: `${v.providedBy.firstName} ${v.providedBy.lastName}`,
@@ -230,6 +249,7 @@ export const createVoucher = createServerFn({ method: "POST" })
 			const voucherWithRelations = await db.query.vouchers.findFirst({
 				with: {
 					benefit: true,
+					person: true,
 					providedBy: true,
 					releasedBy: true,
 				},
@@ -247,6 +267,7 @@ export const createVoucher = createServerFn({ method: "POST" })
 					benefitId: voucherWithRelations.benefitId,
 					benefitName: voucherWithRelations.benefit.name,
 					personId: voucherWithRelations.personId,
+					personName: buildPersonName(voucherWithRelations.person),
 					status: voucherWithRelations.status as VoucherStatus,
 					providedById: voucherWithRelations.providedById,
 					providedByName: `${voucherWithRelations.providedBy.firstName} ${voucherWithRelations.providedBy.lastName}`,
@@ -442,6 +463,7 @@ export const getVouchersForBenefit = createServerFn({ method: "GET" })
 		const allVouchers = await db.query.vouchers.findMany({
 			with: {
 				benefit: true,
+				person: true,
 				providedBy: true,
 				releasedBy: true,
 			},
@@ -454,6 +476,7 @@ export const getVouchersForBenefit = createServerFn({ method: "GET" })
 			benefitId: v.benefitId,
 			benefitName: v.benefit.name,
 			personId: v.personId,
+			personName: buildPersonName(v.person),
 			status: v.status as VoucherStatus,
 			providedById: v.providedById,
 			providedByName: `${v.providedBy.firstName} ${v.providedBy.lastName}`,
