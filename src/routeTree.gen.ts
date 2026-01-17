@@ -13,8 +13,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as AuthedAdminRouteImport } from './routes/_authed/_admin'
+import { Route as AuthedVouchersIndexRouteImport } from './routes/_authed/vouchers/index'
 import { Route as AuthedPeoplePersonIdRouteImport } from './routes/_authed/people.$personId'
 import { Route as AuthedAdminUsersRouteImport } from './routes/_authed/_admin/users'
+import { Route as AuthedAdminBenefitsRouteImport } from './routes/_authed/_admin/benefits'
+import { Route as AuthedVouchersProvideBenefitIdRouteImport } from './routes/_authed/vouchers/provide.$benefitId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -34,6 +37,11 @@ const AuthedAdminRoute = AuthedAdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedVouchersIndexRoute = AuthedVouchersIndexRouteImport.update({
+  id: '/vouchers/',
+  path: '/vouchers/',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedPeoplePersonIdRoute = AuthedPeoplePersonIdRouteImport.update({
   id: '/people/$personId',
   path: '/people/$personId',
@@ -44,18 +52,35 @@ const AuthedAdminUsersRoute = AuthedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthedAdminRoute,
 } as any)
+const AuthedAdminBenefitsRoute = AuthedAdminBenefitsRouteImport.update({
+  id: '/benefits',
+  path: '/benefits',
+  getParentRoute: () => AuthedAdminRoute,
+} as any)
+const AuthedVouchersProvideBenefitIdRoute =
+  AuthedVouchersProvideBenefitIdRouteImport.update({
+    id: '/vouchers/provide/$benefitId',
+    path: '/vouchers/provide/$benefitId',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/': typeof AuthedIndexRoute
+  '/benefits': typeof AuthedAdminBenefitsRoute
   '/users': typeof AuthedAdminUsersRoute
   '/people/$personId': typeof AuthedPeoplePersonIdRoute
+  '/vouchers': typeof AuthedVouchersIndexRoute
+  '/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthedIndexRoute
+  '/benefits': typeof AuthedAdminBenefitsRoute
   '/users': typeof AuthedAdminUsersRoute
   '/people/$personId': typeof AuthedPeoplePersonIdRoute
+  '/vouchers': typeof AuthedVouchersIndexRoute
+  '/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -63,22 +88,42 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authed/_admin': typeof AuthedAdminRouteWithChildren
   '/_authed/': typeof AuthedIndexRoute
+  '/_authed/_admin/benefits': typeof AuthedAdminBenefitsRoute
   '/_authed/_admin/users': typeof AuthedAdminUsersRoute
   '/_authed/people/$personId': typeof AuthedPeoplePersonIdRoute
+  '/_authed/vouchers/': typeof AuthedVouchersIndexRoute
+  '/_authed/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/login' | '/' | '/users' | '/people/$personId'
+  fullPaths:
+    | '/login'
+    | '/'
+    | '/benefits'
+    | '/users'
+    | '/people/$personId'
+    | '/vouchers'
+    | '/vouchers/provide/$benefitId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/' | '/users' | '/people/$personId'
+  to:
+    | '/login'
+    | '/'
+    | '/benefits'
+    | '/users'
+    | '/people/$personId'
+    | '/vouchers'
+    | '/vouchers/provide/$benefitId'
   id:
     | '__root__'
     | '/_authed'
     | '/login'
     | '/_authed/_admin'
     | '/_authed/'
+    | '/_authed/_admin/benefits'
     | '/_authed/_admin/users'
     | '/_authed/people/$personId'
+    | '/_authed/vouchers/'
+    | '/_authed/vouchers/provide/$benefitId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -116,6 +161,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedAdminRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/vouchers/': {
+      id: '/_authed/vouchers/'
+      path: '/vouchers'
+      fullPath: '/vouchers'
+      preLoaderRoute: typeof AuthedVouchersIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/people/$personId': {
       id: '/_authed/people/$personId'
       path: '/people/$personId'
@@ -130,14 +182,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedAdminUsersRouteImport
       parentRoute: typeof AuthedAdminRoute
     }
+    '/_authed/_admin/benefits': {
+      id: '/_authed/_admin/benefits'
+      path: '/benefits'
+      fullPath: '/benefits'
+      preLoaderRoute: typeof AuthedAdminBenefitsRouteImport
+      parentRoute: typeof AuthedAdminRoute
+    }
+    '/_authed/vouchers/provide/$benefitId': {
+      id: '/_authed/vouchers/provide/$benefitId'
+      path: '/vouchers/provide/$benefitId'
+      fullPath: '/vouchers/provide/$benefitId'
+      preLoaderRoute: typeof AuthedVouchersProvideBenefitIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
   }
 }
 
 interface AuthedAdminRouteChildren {
+  AuthedAdminBenefitsRoute: typeof AuthedAdminBenefitsRoute
   AuthedAdminUsersRoute: typeof AuthedAdminUsersRoute
 }
 
 const AuthedAdminRouteChildren: AuthedAdminRouteChildren = {
+  AuthedAdminBenefitsRoute: AuthedAdminBenefitsRoute,
   AuthedAdminUsersRoute: AuthedAdminUsersRoute,
 }
 
@@ -149,12 +217,16 @@ interface AuthedRouteChildren {
   AuthedAdminRoute: typeof AuthedAdminRouteWithChildren
   AuthedIndexRoute: typeof AuthedIndexRoute
   AuthedPeoplePersonIdRoute: typeof AuthedPeoplePersonIdRoute
+  AuthedVouchersIndexRoute: typeof AuthedVouchersIndexRoute
+  AuthedVouchersProvideBenefitIdRoute: typeof AuthedVouchersProvideBenefitIdRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedAdminRoute: AuthedAdminRouteWithChildren,
   AuthedIndexRoute: AuthedIndexRoute,
   AuthedPeoplePersonIdRoute: AuthedPeoplePersonIdRoute,
+  AuthedVouchersIndexRoute: AuthedVouchersIndexRoute,
+  AuthedVouchersProvideBenefitIdRoute: AuthedVouchersProvideBenefitIdRoute,
 }
 
 const AuthedRouteWithChildren =

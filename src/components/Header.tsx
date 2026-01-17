@@ -1,5 +1,5 @@
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import { LogOut, Settings, User } from "lucide-react";
+import { Gift, LogOut, Settings, Ticket, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,9 @@ export default function Header() {
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 
 	useEffect(() => {
-		getSessionData().then(setSession);
+		if (location.pathname) {
+			getSessionData().then(setSession);
+		}
 	}, [location.pathname]);
 
 	const handleLogout = async () => {
@@ -42,13 +44,28 @@ export default function Header() {
 
 				{session && (
 					<div className="flex items-center gap-3">
+						<Link to="/vouchers">
+							<Button variant="ghost" size="sm" className="gap-2">
+								<Ticket className="h-4 w-4" />
+								<span className="hidden sm:inline">Vouchers</span>
+							</Button>
+						</Link>
+
 						{isAdmin && (
-							<Link to="/users">
-								<Button variant="ghost" size="sm" className="gap-2">
-									<Settings className="h-4 w-4" />
-									<span className="hidden sm:inline">Manage Users</span>
-								</Button>
-							</Link>
+							<>
+								<Link to="/benefits">
+									<Button variant="ghost" size="sm" className="gap-2">
+										<Gift className="h-4 w-4" />
+										<span className="hidden sm:inline">Benefits</span>
+									</Button>
+								</Link>
+								<Link to="/users">
+									<Button variant="ghost" size="sm" className="gap-2">
+										<Settings className="h-4 w-4" />
+										<span className="hidden sm:inline">Users</span>
+									</Button>
+								</Link>
+							</>
 						)}
 
 						<Popover>
