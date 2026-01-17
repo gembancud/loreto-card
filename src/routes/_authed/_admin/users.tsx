@@ -36,7 +36,10 @@ import {
 	type UserListItem,
 	updateUser,
 } from "@/data/auth/users";
-import { getActiveDepartments, type DepartmentListItem } from "@/data/departments";
+import {
+	type DepartmentListItem,
+	getActiveDepartments,
+} from "@/data/departments";
 import type { UserRole } from "@/db/schema";
 
 export const Route = createFileRoute("/_authed/_admin/users")({
@@ -52,7 +55,11 @@ export const Route = createFileRoute("/_authed/_admin/users")({
 });
 
 function UsersPage() {
-	const { users: initialUsers, currentUser, departments } = Route.useLoaderData();
+	const {
+		users: initialUsers,
+		currentUser,
+		departments,
+	} = Route.useLoaderData();
 	const [users, setUsers] = useState(initialUsers);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editingUser, setEditingUser] = useState<UserListItem | null>(null);

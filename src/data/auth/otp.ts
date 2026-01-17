@@ -59,6 +59,20 @@ export const sendOtp = createServerFn({ method: "POST" })
 			};
 		}
 
+		// In dev mode, skip SMS and use a fixed code
+		if (import.meta.env.DEV) {
+			const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+			await db.insert(otpVerifications).values({
+				phoneNumber: normalizedPhone,
+				code: "123456",
+				expiresAt,
+				attempts: 0,
+				verified: false,
+			});
+			console.log(`[DEV] OTP for ${normalizedPhone}: 123456`);
+			return { success: true };
+		}
+
 		// Call Semaphore API to send OTP
 		const apiKey = process.env.SEMAPHORE_API_KEY;
 		if (!apiKey) {
@@ -153,8 +167,8 @@ export const verifyOtp = createServerFn({ method: "POST" })
 			.set({ attempts: otpRecord.attempts + 1 })
 			.where(eq(otpVerifications.id, otpRecord.id));
 
-		// Verify code
-		if (otpRecord.code !== data.code) {
+		// Verify code (bypass in dev mode - any code works)
+		if (!import.meta.env.DEV && otpRecord.code !== data.code) {
 			return { success: false, error: "Invalid code" };
 		}
 

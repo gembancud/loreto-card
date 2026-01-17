@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getMyAssignedBenefits, createVoucher } from "@/data/vouchers";
+import { createVoucher, getMyAssignedBenefits } from "@/data/vouchers";
 
 export const Route = createFileRoute("/_authed/vouchers/provide/$benefitId")({
 	component: ProvideVoucherPage,
@@ -21,7 +21,9 @@ export const Route = createFileRoute("/_authed/vouchers/provide/$benefitId")({
 			(b) => b.id === params.benefitId && b.role === "provider",
 		);
 		if (!benefit) {
-			throw new Error("Benefit not found or you are not authorized to provide it");
+			throw new Error(
+				"Benefit not found or you are not authorized to provide it",
+			);
 		}
 		return { benefit };
 	},

@@ -33,28 +33,37 @@ import {
 } from "@/components/ui/table";
 import { getCurrentUser } from "@/data/auth/session";
 import {
+	type BenefitListItem,
 	createBenefit,
 	deactivateBenefit,
-	type BenefitListItem,
 	getBenefits,
 	getDepartmentUsersForAssignment,
 	updateBenefit,
 } from "@/data/benefits";
 
-export const Route = createFileRoute("/_authed/_admin/benefits")({
+export const Route = createFileRoute("/_authed/benefits")({
 	component: BenefitsPage,
 	loader: async () => {
-		const [benefits, currentUser, departmentUsers] = await Promise.all([
+		const [benefits, currentUser] = await Promise.all([
 			getBenefits(),
 			getCurrentUser(),
-			getDepartmentUsersForAssignment({ data: undefined }),
 		]);
-		return { benefits, currentUser, departmentUsers };
+		// Only fetch department users for admins/superusers (needed for management UI)
+		const canManage =
+			currentUser?.role === "admin" || currentUser?.role === "superuser";
+		const departmentUsers = canManage
+			? await getDepartmentUsersForAssignment({ data: undefined })
+			: [];
+		return { benefits, currentUser, departmentUsers, canManage };
 	},
 });
 
 function BenefitsPage() {
-	const { benefits: initialBenefits, departmentUsers } = Route.useLoaderData();
+	const {
+		benefits: initialBenefits,
+		departmentUsers,
+		canManage,
+	} = Route.useLoaderData();
 	const [benefits, setBenefits] = useState(initialBenefits);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editingBenefit, setEditingBenefit] = useState<BenefitListItem | null>(
@@ -78,7 +87,9 @@ function BenefitsPage() {
 			const result = await deactivateBenefit({ data: benefit.id });
 			if (result.success) {
 				setBenefits((prev) =>
-					prev.map((b) => (b.id === benefit.id ? { ...b, isActive: false } : b)),
+					prev.map((b) =>
+						b.id === benefit.id ? { ...b, isActive: false } : b,
+					),
 				);
 			}
 		} else {
@@ -118,28 +129,30 @@ function BenefitsPage() {
 						</Button>
 					</Link>
 
-					<Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-						<DialogTrigger asChild>
-							<Button className="gap-2">
-								<Plus className="h-4 w-4" />
-								Add Benefit
-							</Button>
-						</DialogTrigger>
-						<DialogContent className="max-w-2xl">
-							<BenefitForm
-								departmentUsers={departmentUsers}
-								onSuccess={handleBenefitCreated}
-								onCancel={() => setIsAddDialogOpen(false)}
-							/>
-						</DialogContent>
-					</Dialog>
+					{canManage && (
+						<Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+							<DialogTrigger asChild>
+								<Button className="gap-2">
+									<Plus className="h-4 w-4" />
+									Add Benefit
+								</Button>
+							</DialogTrigger>
+							<DialogContent className="max-w-2xl">
+								<BenefitForm
+									departmentUsers={departmentUsers}
+									onSuccess={handleBenefitCreated}
+									onCancel={() => setIsAddDialogOpen(false)}
+								/>
+							</DialogContent>
+						</Dialog>
+					)}
 				</div>
 
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
 							<Gift className="h-5 w-5" />
-							Benefits Management
+							{canManage ? "Benefits Management" : "Benefits"}
 						</CardTitle>
 					</CardHeader>
 					<CardContent>
@@ -151,18 +164,19 @@ function BenefitsPage() {
 									<TableHead>Providers</TableHead>
 									<TableHead>Releasers</TableHead>
 									<TableHead>Status</TableHead>
-									<TableHead>Actions</TableHead>
+									{canManage && <TableHead>Actions</TableHead>}
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{benefits.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={6}
+											colSpan={canManage ? 6 : 5}
 											className="text-center text-muted-foreground py-8"
 										>
-											No benefits found. Create your first benefit to get
-											started.
+											{canManage
+												? "No benefits found. Create your first benefit to get started."
+												: "No benefits available for your department."}
 										</TableCell>
 									</TableRow>
 								) : (
@@ -216,46 +230,48 @@ function BenefitsPage() {
 													{benefit.isActive ? "Active" : "Inactive"}
 												</span>
 											</TableCell>
-											<TableCell>
-												<div className="flex gap-2">
-													<Dialog
-														open={editingBenefit?.id === benefit.id}
-														onOpenChange={(open) =>
-															setEditingBenefit(open ? benefit : null)
-														}
-													>
-														<DialogTrigger asChild>
-															<Button variant="ghost" size="icon">
-																<Pencil className="h-4 w-4" />
-															</Button>
-														</DialogTrigger>
-														<DialogContent className="max-w-2xl">
-															<BenefitForm
-																benefit={benefit}
-																departmentUsers={departmentUsers}
-																onSuccess={handleBenefitUpdated}
-																onCancel={() => setEditingBenefit(null)}
-															/>
-														</DialogContent>
-													</Dialog>
-													<Button
-														variant="ghost"
-														size="icon"
-														onClick={() => handleToggleActive(benefit)}
-														title={
-															benefit.isActive
-																? "Deactivate benefit"
-																: "Activate benefit"
-														}
-													>
-														{benefit.isActive ? (
-															<ToggleRight className="h-4 w-4 text-green-500" />
-														) : (
-															<ToggleLeft className="h-4 w-4 text-red-500" />
-														)}
-													</Button>
-												</div>
-											</TableCell>
+											{canManage && (
+												<TableCell>
+													<div className="flex gap-2">
+														<Dialog
+															open={editingBenefit?.id === benefit.id}
+															onOpenChange={(open) =>
+																setEditingBenefit(open ? benefit : null)
+															}
+														>
+															<DialogTrigger asChild>
+																<Button variant="ghost" size="icon">
+																	<Pencil className="h-4 w-4" />
+																</Button>
+															</DialogTrigger>
+															<DialogContent className="max-w-2xl">
+																<BenefitForm
+																	benefit={benefit}
+																	departmentUsers={departmentUsers}
+																	onSuccess={handleBenefitUpdated}
+																	onCancel={() => setEditingBenefit(null)}
+																/>
+															</DialogContent>
+														</Dialog>
+														<Button
+															variant="ghost"
+															size="icon"
+															onClick={() => handleToggleActive(benefit)}
+															title={
+																benefit.isActive
+																	? "Deactivate benefit"
+																	: "Activate benefit"
+															}
+														>
+															{benefit.isActive ? (
+																<ToggleRight className="h-4 w-4 text-green-500" />
+															) : (
+																<ToggleLeft className="h-4 w-4 text-red-500" />
+															)}
+														</Button>
+													</div>
+												</TableCell>
+											)}
 										</TableRow>
 									))
 								)}
@@ -298,6 +314,14 @@ function BenefitForm({
 	);
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	// Detect users assigned to both provider AND releaser roles
+	const duplicateUserIds = providerIds.filter((id) => releaserIds.includes(id));
+	const hasDuplicates = duplicateUserIds.length > 0;
+	const duplicateUserNames = duplicateUserIds
+		.map((id) => departmentUsers.find((u) => u.id === id)?.name)
+		.filter(Boolean)
+		.join(", ");
 
 	const handleProviderToggle = (userId: string) => {
 		setProviderIds((prev) =>
@@ -369,7 +393,9 @@ function BenefitForm({
 					data: {
 						name,
 						description: description || undefined,
-						valuePesos: valuePesos ? Number.parseInt(valuePesos, 10) : undefined,
+						valuePesos: valuePesos
+							? Number.parseInt(valuePesos, 10)
+							: undefined,
 						quantity: quantity ? Number.parseInt(quantity, 10) : undefined,
 						providerIds,
 						releaserIds,
@@ -392,7 +418,9 @@ function BenefitForm({
 	return (
 		<form onSubmit={handleSubmit}>
 			<DialogHeader>
-				<DialogTitle>{isEditing ? "Edit Benefit" : "Add New Benefit"}</DialogTitle>
+				<DialogTitle>
+					{isEditing ? "Edit Benefit" : "Add New Benefit"}
+				</DialogTitle>
 				<DialogDescription>
 					{isEditing
 						? "Update benefit information and assignments."
@@ -421,7 +449,9 @@ function BenefitForm({
 				</div>
 				<div className="grid grid-cols-2 gap-4">
 					<div className="grid gap-2">
-						<Label htmlFor={`${id}-valuePesos`}>Value in Pesos (optional)</Label>
+						<Label htmlFor={`${id}-valuePesos`}>
+							Value in Pesos (optional)
+						</Label>
 						<Input
 							id={`${id}-valuePesos`}
 							type="number"
@@ -497,13 +527,18 @@ function BenefitForm({
 					</div>
 				</div>
 
+				{hasDuplicates && (
+					<p className="text-sm text-destructive">
+						A user cannot be both provider and releaser: {duplicateUserNames}
+					</p>
+				)}
 				{error && <p className="text-sm text-destructive">{error}</p>}
 			</div>
 			<DialogFooter>
 				<Button type="button" variant="outline" onClick={onCancel}>
 					Cancel
 				</Button>
-				<Button type="submit" disabled={isSubmitting}>
+				<Button type="submit" disabled={isSubmitting || hasDuplicates}>
 					{isSubmitting
 						? isEditing
 							? "Saving..."

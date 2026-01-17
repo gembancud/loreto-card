@@ -63,23 +63,25 @@ export const getActiveDepartments = createServerFn({ method: "GET" }).handler(
 
 export const getDepartmentById = createServerFn({ method: "GET" })
 	.inputValidator((departmentId: string) => departmentId)
-	.handler(async ({ data: departmentId }): Promise<DepartmentListItem | null> => {
-		await requireAdmin();
+	.handler(
+		async ({ data: departmentId }): Promise<DepartmentListItem | null> => {
+			await requireAdmin();
 
-		const dept = await db.query.departments.findFirst({
-			where: eq(departments.id, departmentId),
-		});
+			const dept = await db.query.departments.findFirst({
+				where: eq(departments.id, departmentId),
+			});
 
-		if (!dept) return null;
+			if (!dept) return null;
 
-		return {
-			id: dept.id,
-			name: dept.name,
-			code: dept.code,
-			isActive: dept.isActive,
-			createdAt: dept.createdAt,
-		};
-	});
+			return {
+				id: dept.id,
+				name: dept.name,
+				code: dept.code,
+				isActive: dept.isActive,
+				createdAt: dept.createdAt,
+			};
+		},
+	);
 
 interface CreateDepartmentInput {
 	name: string;
@@ -91,7 +93,11 @@ export const createDepartment = createServerFn({ method: "POST" })
 	.handler(
 		async ({
 			data,
-		}): Promise<{ success: boolean; error?: string; department?: DepartmentListItem }> => {
+		}): Promise<{
+			success: boolean;
+			error?: string;
+			department?: DepartmentListItem;
+		}> => {
 			await requireAdmin();
 
 			// Check if code already exists

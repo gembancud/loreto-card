@@ -3,9 +3,9 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type BenefitAssignmentRole,
-	type VoucherStatus,
 	benefitAssignments,
 	benefits,
+	type VoucherStatus,
 	vouchers,
 } from "@/db/schema";
 import { getAppSession, type SessionData } from "@/lib/session";
@@ -187,7 +187,11 @@ export const createVoucher = createServerFn({ method: "POST" })
 	.handler(
 		async ({
 			data,
-		}): Promise<{ success: boolean; error?: string; voucher?: VoucherListItem }> => {
+		}): Promise<{
+			success: boolean;
+			error?: string;
+			voucher?: VoucherListItem;
+		}> => {
 			const currentUser = await requireAuth();
 
 			// Verify user is a provider for this benefit

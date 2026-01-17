@@ -51,21 +51,20 @@ export default function Header() {
 							</Button>
 						</Link>
 
+						<Link to="/benefits">
+							<Button variant="ghost" size="sm" className="gap-2">
+								<Gift className="h-4 w-4" />
+								<span className="hidden sm:inline">Benefits</span>
+							</Button>
+						</Link>
+
 						{isAdmin && (
-							<>
-								<Link to="/benefits">
-									<Button variant="ghost" size="sm" className="gap-2">
-										<Gift className="h-4 w-4" />
-										<span className="hidden sm:inline">Benefits</span>
-									</Button>
-								</Link>
-								<Link to="/users">
-									<Button variant="ghost" size="sm" className="gap-2">
-										<Settings className="h-4 w-4" />
-										<span className="hidden sm:inline">Users</span>
-									</Button>
-								</Link>
-							</>
+							<Link to="/users">
+								<Button variant="ghost" size="sm" className="gap-2">
+									<Settings className="h-4 w-4" />
+									<span className="hidden sm:inline">Users</span>
+								</Button>
+							</Link>
 						)}
 
 						<Popover>

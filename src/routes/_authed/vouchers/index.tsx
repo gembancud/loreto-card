@@ -37,8 +37,12 @@ export const Route = createFileRoute("/_authed/vouchers/")({
 		]);
 
 		// Separate provider and releaser benefits
-		const providerBenefits = assignedBenefits.filter((b) => b.role === "provider");
-		const releaserBenefits = assignedBenefits.filter((b) => b.role === "releaser");
+		const providerBenefits = assignedBenefits.filter(
+			(b) => b.role === "provider",
+		);
+		const releaserBenefits = assignedBenefits.filter(
+			(b) => b.role === "releaser",
+		);
 
 		return { providerBenefits, releaserBenefits, pendingToRelease, myVouchers };
 	},

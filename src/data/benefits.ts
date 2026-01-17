@@ -9,16 +9,22 @@ import {
 } from "@/db/schema";
 import { getAppSession, type SessionData } from "@/lib/session";
 
-// Helper to verify current user is admin or superuser, returns session data
-async function requireAdmin(): Promise<SessionData> {
+// Helper to verify current user is authenticated, returns session data
+async function requireAuth(): Promise<SessionData> {
 	const session = await getAppSession();
 	if (!session.data.userId) {
 		throw new Error("Unauthorized: Not authenticated");
 	}
-	if (session.data.role !== "admin" && session.data.role !== "superuser") {
+	return session.data as SessionData;
+}
+
+// Helper to verify current user is admin or superuser, returns session data
+async function requireAdmin(): Promise<SessionData> {
+	const session = await requireAuth();
+	if (session.role !== "admin" && session.role !== "superuser") {
 		throw new Error("Unauthorized: Admin access required");
 	}
-	return session.data as SessionData;
+	return session;
 }
 
 export interface BenefitAssignmentItem {
@@ -42,10 +48,10 @@ export interface BenefitListItem {
 	releasers: BenefitAssignmentItem[];
 }
 
-// Get benefits for user's department (admin sees own dept, superuser sees all)
+// Get benefits for user's department (users/admins see own dept, superuser sees all)
 export const getBenefits = createServerFn({ method: "GET" }).handler(
 	async (): Promise<BenefitListItem[]> => {
-		const currentUser = await requireAdmin();
+		const currentUser = await requireAuth();
 		const isSuperuser = currentUser.role === "superuser";
 
 		const allBenefits = await db.query.benefits.findMany({
@@ -166,7 +172,11 @@ export const createBenefit = createServerFn({ method: "POST" })
 	.handler(
 		async ({
 			data,
-		}): Promise<{ success: boolean; error?: string; benefit?: BenefitListItem }> => {
+		}): Promise<{
+			success: boolean;
+			error?: string;
+			benefit?: BenefitListItem;
+		}> => {
 			const currentUser = await requireAdmin();
 			const isSuperuser = currentUser.role === "superuser";
 
@@ -177,6 +187,18 @@ export const createBenefit = createServerFn({ method: "POST" })
 
 			if (!departmentId) {
 				return { success: false, error: "Department is required" };
+			}
+
+			// Validate no user is assigned to both provider AND releaser roles
+			const duplicateUserIds = data.providerIds.filter((id) =>
+				data.releaserIds.includes(id),
+			);
+			if (duplicateUserIds.length > 0) {
+				return {
+					success: false,
+					error:
+						"A user cannot be both provider and releaser for the same benefit",
+				};
 			}
 
 			// Validate that assigned users are in the same department (for admins)
@@ -276,12 +298,23 @@ export const updateBenefit = createServerFn({ method: "POST" })
 			return { success: false, error: "Benefit not found" };
 		}
 
+		// Validate no user is assigned to both provider AND releaser roles
+		if (providerIds !== undefined && releaserIds !== undefined) {
+			const duplicateUserIds = providerIds.filter((id) =>
+				releaserIds.includes(id),
+			);
+			if (duplicateUserIds.length > 0) {
+				return {
+					success: false,
+					error:
+						"A user cannot be both provider and releaser for the same benefit",
+				};
+			}
+		}
+
 		// Validate new user assignments (for admins)
 		if (!isSuperuser) {
-			const allUserIds = [
-				...(providerIds ?? []),
-				...(releaserIds ?? []),
-			];
+			const allUserIds = [...(providerIds ?? []), ...(releaserIds ?? [])];
 			if (allUserIds.length > 0) {
 				const assignedUsers = await db.query.users.findMany({
 					where: inArray(users.id, allUserIds),
@@ -342,7 +375,9 @@ export const updateBenefit = createServerFn({ method: "POST" })
 export const deactivateBenefit = createServerFn({ method: "POST" })
 	.inputValidator((benefitId: string) => benefitId)
 	.handler(
-		async ({ data: benefitId }): Promise<{ success: boolean; error?: string }> => {
+		async ({
+			data: benefitId,
+		}): Promise<{ success: boolean; error?: string }> => {
 			const currentUser = await requireAdmin();
 			const isSuperuser = currentUser.role === "superuser";
 
@@ -395,7 +430,10 @@ export const getDepartmentUsersForAssignment = createServerFn({ method: "GET" })
 					eq(users.departmentId, targetDeptId),
 					eq(users.isActive, true),
 				),
-				orderBy: (users, { asc }) => [asc(users.lastName), asc(users.firstName)],
+				orderBy: (users, { asc }) => [
+					asc(users.lastName),
+					asc(users.firstName),
+				],
 			});
 
 			return deptUsers.map((u) => ({
