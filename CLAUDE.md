@@ -15,8 +15,8 @@ pnpm check            # Biome lint + format check
 # Database (Drizzle + PostgreSQL)
 pnpm db:generate      # Generate migrations from schema
 pnpm db:migrate       # Run migrations
-pnpm db:push          # Push schema changes directly
 pnpm db:studio        # Open Drizzle Studio
+# NOTE: Do NOT use db:push - always use db:generate + db:migrate
 
 # Production
 pnpm start            # Run production server (after build)
@@ -58,6 +58,26 @@ pnpm start            # Run production server (after build)
 **User roles**: `superuser`, `admin`, `user` (defined in schema). Check with `isAdmin()` helper from `src/data/auth/session.ts`.
 
 **After login/logout**: Call `router.invalidate()` to refresh loaders, then `router.navigate()` for client-side redirect.
+
+### User Roles & Permissions
+
+Users are assigned to **departments** (government offices). Role permissions:
+
+| Action | User | Admin | Superuser |
+|--------|------|-------|-----------|
+| Access admin area | No | Yes | Yes |
+| View users | No | Own department only | All |
+| Create/edit/deactivate users | No | No | Yes |
+| Manage departments | No | Yes | Yes |
+
+**Department scoping**: Admins only see users within their own department. Superusers see all users across all departments. Admins without a department assignment can only see themselves.
+
+**Session data** includes `departmentId` - set on login from the user's record.
+
+**Key files**:
+- `src/data/auth/users.ts` - User CRUD with department scoping logic
+- `src/data/departments.ts` - Department CRUD
+- `src/db/seed.ts` - Seeds 16 municipal departments for Loreto
 
 ### Adding shadcn Components
 

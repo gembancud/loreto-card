@@ -36,21 +36,23 @@ import {
 	type UserListItem,
 	updateUser,
 } from "@/data/auth/users";
+import { getActiveDepartments, type DepartmentListItem } from "@/data/departments";
 import type { UserRole } from "@/db/schema";
 
 export const Route = createFileRoute("/_authed/_admin/users")({
 	component: UsersPage,
 	loader: async () => {
-		const [users, currentUser] = await Promise.all([
+		const [users, currentUser, departments] = await Promise.all([
 			getUsers(),
 			getCurrentUser(),
+			getActiveDepartments(),
 		]);
-		return { users, currentUser };
+		return { users, currentUser, departments };
 	},
 });
 
 function UsersPage() {
-	const { users: initialUsers, currentUser } = Route.useLoaderData();
+	const { users: initialUsers, currentUser, departments } = Route.useLoaderData();
 	const [users, setUsers] = useState(initialUsers);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editingUser, setEditingUser] = useState<UserListItem | null>(null);
@@ -106,6 +108,7 @@ function UsersPage() {
 							</DialogTrigger>
 							<DialogContent>
 								<AddUserForm
+									departments={departments}
 									onSuccess={handleUserCreated}
 									onCancel={() => setIsAddDialogOpen(false)}
 								/>
@@ -124,6 +127,7 @@ function UsersPage() {
 								<TableRow>
 									<TableHead>Name</TableHead>
 									<TableHead>Phone</TableHead>
+									<TableHead>Department</TableHead>
 									<TableHead>Role</TableHead>
 									<TableHead>Status</TableHead>
 									{isSuperuser && <TableHead>Actions</TableHead>}
@@ -133,7 +137,7 @@ function UsersPage() {
 								{users.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={isSuperuser ? 5 : 4}
+											colSpan={isSuperuser ? 6 : 5}
 											className="text-center text-muted-foreground py-8"
 										>
 											No users found
@@ -146,6 +150,9 @@ function UsersPage() {
 												{user.firstName} {user.lastName}
 											</TableCell>
 											<TableCell>{user.phoneNumber}</TableCell>
+											<TableCell className="text-muted-foreground">
+												{user.departmentName ?? "—"}
+											</TableCell>
 											<TableCell className="capitalize">{user.role}</TableCell>
 											<TableCell>
 												<span
@@ -175,6 +182,7 @@ function UsersPage() {
 															<DialogContent>
 																<EditUserForm
 																	user={user}
+																	departments={departments}
 																	onSuccess={handleUserUpdated}
 																	onCancel={() => setEditingUser(null)}
 																/>
@@ -214,16 +222,18 @@ function UsersPage() {
 }
 
 interface AddUserFormProps {
+	departments: DepartmentListItem[];
 	onSuccess: (user: UserListItem) => void;
 	onCancel: () => void;
 }
 
-function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
+function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 	const id = useId();
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [role, setRole] = useState<UserRole>("user");
+	const [departmentId, setDepartmentId] = useState<string>("");
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -234,7 +244,13 @@ function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
 
 		try {
 			const result = await createUser({
-				data: { phoneNumber, firstName, lastName, role },
+				data: {
+					phoneNumber,
+					firstName,
+					lastName,
+					role,
+					departmentId: departmentId || undefined,
+				},
 			});
 			if (result.success && result.user) {
 				onSuccess(result.user);
@@ -291,6 +307,21 @@ function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
 					</div>
 				</div>
 				<div className="grid gap-2">
+					<Label htmlFor={`${id}-department`}>Department</Label>
+					<Select value={departmentId} onValueChange={setDepartmentId}>
+						<SelectTrigger>
+							<SelectValue placeholder="Select department" />
+						</SelectTrigger>
+						<SelectContent>
+							{departments.map((dept) => (
+								<SelectItem key={dept.id} value={dept.id}>
+									{dept.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="grid gap-2">
 					<Label htmlFor={`${id}-role`}>Role</Label>
 					<Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
 						<SelectTrigger>
@@ -319,16 +350,25 @@ function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
 
 interface EditUserFormProps {
 	user: UserListItem;
+	departments: DepartmentListItem[];
 	onSuccess: (user: UserListItem) => void;
 	onCancel: () => void;
 }
 
-function EditUserForm({ user, onSuccess, onCancel }: EditUserFormProps) {
+function EditUserForm({
+	user,
+	departments,
+	onSuccess,
+	onCancel,
+}: EditUserFormProps) {
 	const id = useId();
 	const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber);
 	const [firstName, setFirstName] = useState(user.firstName);
 	const [lastName, setLastName] = useState(user.lastName);
 	const [role, setRole] = useState<UserRole>(user.role);
+	const [departmentId, setDepartmentId] = useState<string>(
+		user.departmentId ?? "",
+	);
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -341,16 +381,25 @@ function EditUserForm({ user, onSuccess, onCancel }: EditUserFormProps) {
 			const result = await updateUser({
 				data: {
 					userId: user.id,
-					updates: { phoneNumber, firstName, lastName, role },
+					updates: {
+						phoneNumber,
+						firstName,
+						lastName,
+						role,
+						departmentId: departmentId || null,
+					},
 				},
 			});
 			if (result.success) {
+				const selectedDept = departments.find((d) => d.id === departmentId);
 				onSuccess({
 					...user,
 					phoneNumber,
 					firstName,
 					lastName,
 					role,
+					departmentId: departmentId || null,
+					departmentName: selectedDept?.name ?? null,
 				});
 			} else {
 				setError(result.error ?? "Failed to update user");
@@ -399,6 +448,21 @@ function EditUserForm({ user, onSuccess, onCancel }: EditUserFormProps) {
 							required
 						/>
 					</div>
+				</div>
+				<div className="grid gap-2">
+					<Label htmlFor={`${id}-department`}>Department</Label>
+					<Select value={departmentId} onValueChange={setDepartmentId}>
+						<SelectTrigger>
+							<SelectValue placeholder="Select department" />
+						</SelectTrigger>
+						<SelectContent>
+							{departments.map((dept) => (
+								<SelectItem key={dept.id} value={dept.id}>
+									{dept.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</div>
 				<div className="grid gap-2">
 					<Label htmlFor={`${id}-role`}>Role</Label>

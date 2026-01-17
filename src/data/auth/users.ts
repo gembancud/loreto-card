@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { type UserRole, users } from "@/db/schema";
-import { getAppSession } from "@/lib/session";
+import { getAppSession, type SessionData } from "@/lib/session";
 import { normalizePhoneNumber } from "./otp";
 
 // Helper to verify current user is superuser
@@ -13,8 +13,8 @@ async function requireSuperuser(): Promise<void> {
 	}
 }
 
-// Helper to verify current user is admin or superuser
-async function requireAdmin(): Promise<void> {
+// Helper to verify current user is admin or superuser, returns session data
+async function requireAdmin(): Promise<SessionData> {
 	const session = await getAppSession();
 	if (!session.data.userId) {
 		throw new Error("Unauthorized: Not authenticated");
@@ -22,6 +22,7 @@ async function requireAdmin(): Promise<void> {
 	if (session.data.role !== "admin" && session.data.role !== "superuser") {
 		throw new Error("Unauthorized: Admin access required");
 	}
+	return session.data as SessionData;
 }
 
 export interface UserListItem {
@@ -30,15 +31,26 @@ export interface UserListItem {
 	firstName: string;
 	lastName: string;
 	role: UserRole;
+	departmentId: string | null;
+	departmentName: string | null;
 	isActive: boolean;
 	createdAt: Date | null;
 }
 
 export const getUsers = createServerFn({ method: "GET" }).handler(
 	async (): Promise<UserListItem[]> => {
-		await requireAdmin();
+		const currentUser = await requireAdmin();
+
+		// Superusers see all users, admins only see users in their department
+		const isSuperuser = currentUser.role === "superuser";
 
 		const allUsers = await db.query.users.findMany({
+			with: { department: true },
+			where: isSuperuser
+				? undefined
+				: currentUser.departmentId
+					? eq(users.departmentId, currentUser.departmentId)
+					: eq(users.id, currentUser.userId), // Admin with no dept only sees themselves
 			orderBy: (users, { asc }) => [asc(users.lastName), asc(users.firstName)],
 		});
 
@@ -48,6 +60,8 @@ export const getUsers = createServerFn({ method: "GET" }).handler(
 			firstName: user.firstName,
 			lastName: user.lastName,
 			role: user.role as UserRole,
+			departmentId: user.departmentId,
+			departmentName: user.department?.name ?? null,
 			isActive: user.isActive,
 			createdAt: user.createdAt,
 		}));
@@ -57,10 +71,21 @@ export const getUsers = createServerFn({ method: "GET" }).handler(
 export const getUserById = createServerFn({ method: "GET" })
 	.inputValidator((userId: string) => userId)
 	.handler(async ({ data: userId }): Promise<UserListItem | null> => {
-		await requireAdmin();
+		const currentUser = await requireAdmin();
+
+		// Superusers can view any user, admins can only view users in their department
+		const isSuperuser = currentUser.role === "superuser";
 
 		const user = await db.query.users.findFirst({
-			where: eq(users.id, userId),
+			with: { department: true },
+			where: isSuperuser
+				? eq(users.id, userId)
+				: currentUser.departmentId
+					? and(
+							eq(users.id, userId),
+							eq(users.departmentId, currentUser.departmentId),
+						)
+					: and(eq(users.id, userId), eq(users.id, currentUser.userId)),
 		});
 
 		if (!user) return null;
@@ -71,6 +96,8 @@ export const getUserById = createServerFn({ method: "GET" })
 			firstName: user.firstName,
 			lastName: user.lastName,
 			role: user.role as UserRole,
+			departmentId: user.departmentId,
+			departmentName: user.department?.name ?? null,
 			isActive: user.isActive,
 			createdAt: user.createdAt,
 		};
@@ -81,6 +108,7 @@ interface CreateUserInput {
 	firstName: string;
 	lastName: string;
 	role: UserRole;
+	departmentId?: string;
 }
 
 export const createUser = createServerFn({ method: "POST" })
@@ -109,8 +137,15 @@ export const createUser = createServerFn({ method: "POST" })
 					firstName: data.firstName,
 					lastName: data.lastName,
 					role: data.role,
+					departmentId: data.departmentId ?? null,
 				})
 				.returning();
+
+			// Fetch with department to get the name
+			const userWithDept = await db.query.users.findFirst({
+				with: { department: true },
+				where: eq(users.id, newUser.id),
+			});
 
 			return {
 				success: true,
@@ -120,6 +155,8 @@ export const createUser = createServerFn({ method: "POST" })
 					firstName: newUser.firstName,
 					lastName: newUser.lastName,
 					role: newUser.role as UserRole,
+					departmentId: newUser.departmentId,
+					departmentName: userWithDept?.department?.name ?? null,
 					isActive: newUser.isActive,
 					createdAt: newUser.createdAt,
 				},
@@ -134,6 +171,7 @@ interface UpdateUserInput {
 		firstName?: string;
 		lastName?: string;
 		role?: UserRole;
+		departmentId?: string | null;
 		isActive?: boolean;
 	};
 }

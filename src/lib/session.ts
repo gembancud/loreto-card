@@ -7,6 +7,7 @@ export interface SessionData {
 	firstName: string;
 	lastName: string;
 	role: UserRole;
+	departmentId: string | null;
 }
 
 export function getAppSession() {

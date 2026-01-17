@@ -188,6 +188,7 @@ export const verifyOtp = createServerFn({ method: "POST" })
 			firstName: user.firstName,
 			lastName: user.lastName,
 			role: user.role as "superuser" | "admin" | "user",
+			departmentId: user.departmentId,
 		});
 
 		return { success: true };
