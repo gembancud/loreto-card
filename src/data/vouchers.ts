@@ -234,6 +234,22 @@ export const createVoucher = createServerFn({ method: "POST" })
 				return { success: false, error: "This benefit is no longer active" };
 			}
 
+			// Check for existing pending voucher for same person-benefit
+			const existingPending = await db.query.vouchers.findFirst({
+				where: and(
+					eq(vouchers.benefitId, data.benefitId),
+					eq(vouchers.personId, data.personId),
+					eq(vouchers.status, "pending"),
+				),
+			});
+
+			if (existingPending) {
+				return {
+					success: false,
+					error: "This person already has a pending voucher for this benefit",
+				};
+			}
+
 			// Create voucher
 			const [newVoucher] = await db
 				.insert(vouchers)
@@ -490,3 +506,96 @@ export const getVouchersForBenefit = createServerFn({ method: "GET" })
 			createdAt: v.createdAt,
 		}));
 	});
+
+export interface PendingVoucherForRelease {
+	id: string;
+	benefitId: string;
+	benefitName: string;
+	personId: string;
+	personName: string;
+	providedById: string;
+	providedByName: string;
+	providedAt: Date | null;
+	notes: string | null;
+}
+
+interface FindPendingVoucherInput {
+	benefitId: string;
+	personId: string;
+}
+
+// Find a pending voucher for a specific person and benefit (for secure release flow)
+export const findPendingVoucherForRelease = createServerFn({ method: "POST" })
+	.inputValidator((data: FindPendingVoucherInput) => data)
+	.handler(
+		async ({
+			data,
+		}): Promise<{
+			success: boolean;
+			error?: string;
+			voucher?: PendingVoucherForRelease;
+		}> => {
+			const currentUser = await requireAuth();
+
+			// Verify user is a releaser for this benefit
+			const assignment = await db.query.benefitAssignments.findFirst({
+				with: { benefit: true },
+				where: and(
+					eq(benefitAssignments.benefitId, data.benefitId),
+					eq(benefitAssignments.userId, currentUser.userId),
+					eq(benefitAssignments.role, "releaser"),
+				),
+			});
+
+			if (!assignment) {
+				return {
+					success: false,
+					error: "Not authorized to release this benefit",
+				};
+			}
+
+			// Find pending voucher for this person-benefit
+			const voucher = await db.query.vouchers.findFirst({
+				with: {
+					benefit: true,
+					person: true,
+					providedBy: true,
+				},
+				where: and(
+					eq(vouchers.benefitId, data.benefitId),
+					eq(vouchers.personId, data.personId),
+					eq(vouchers.status, "pending"),
+				),
+			});
+
+			if (!voucher) {
+				return {
+					success: false,
+					error: "No pending voucher found for this person",
+				};
+			}
+
+			// Check separation of duties
+			if (voucher.providedById === currentUser.userId) {
+				return {
+					success: false,
+					error: "You cannot release a voucher you provided",
+				};
+			}
+
+			return {
+				success: true,
+				voucher: {
+					id: voucher.id,
+					benefitId: voucher.benefitId,
+					benefitName: voucher.benefit.name,
+					personId: voucher.personId,
+					personName: buildPersonName(voucher.person),
+					providedById: voucher.providedById,
+					providedByName: `${voucher.providedBy.firstName} ${voucher.providedBy.lastName}`,
+					providedAt: voucher.providedAt,
+					notes: voucher.notes,
+				},
+			};
+		},
+	);

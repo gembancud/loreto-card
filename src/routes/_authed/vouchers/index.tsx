@@ -23,16 +23,13 @@ import {
 	cancelVoucher,
 	getMyAssignedBenefits,
 	getMyIssuedVouchers,
-	getPendingVouchersToRelease,
-	releaseVoucher,
 } from "@/data/vouchers";
 
 export const Route = createFileRoute("/_authed/vouchers/")({
 	component: VoucherDashboardPage,
 	loader: async () => {
-		const [assignedBenefits, pendingToRelease, myVouchers] = await Promise.all([
+		const [assignedBenefits, myVouchers] = await Promise.all([
 			getMyAssignedBenefits(),
-			getPendingVouchersToRelease(),
 			getMyIssuedVouchers(),
 		]);
 
@@ -44,33 +41,19 @@ export const Route = createFileRoute("/_authed/vouchers/")({
 			(b) => b.role === "releaser",
 		);
 
-		return { providerBenefits, releaserBenefits, pendingToRelease, myVouchers };
+		return { providerBenefits, releaserBenefits, myVouchers };
 	},
 });
 
 function VoucherDashboardPage() {
-	const { providerBenefits, releaserBenefits, pendingToRelease, myVouchers } =
+	const { providerBenefits, releaserBenefits, myVouchers } =
 		Route.useLoaderData();
-	const [pending, setPending] = useState(pendingToRelease);
 	const [vouchers, setVouchers] = useState(myVouchers);
 
 	// Sync local state when loader data changes (e.g., after navigation with invalidation)
 	useEffect(() => {
-		setPending(pendingToRelease);
-	}, [pendingToRelease]);
-
-	useEffect(() => {
 		setVouchers(myVouchers);
 	}, [myVouchers]);
-
-	const handleRelease = async (voucherId: string) => {
-		const result = await releaseVoucher({ data: voucherId });
-		if (result.success) {
-			setPending((prev) => prev.filter((v) => v.id !== voucherId));
-		} else {
-			alert(result.error ?? "Failed to release voucher");
-		}
-	};
 
 	const handleCancel = async (voucherId: string) => {
 		if (!confirm("Are you sure you want to cancel this voucher?")) {
@@ -215,61 +198,20 @@ function VoucherDashboardPage() {
 														<span>{benefit.quantity} units</span>
 													)}
 												</div>
-												<p className="text-xs text-muted-foreground mt-2">
-													You can release vouchers for this benefit when providers issue them.
-												</p>
+												<Link
+													to="/vouchers/release/$benefitId"
+													params={{ benefitId: benefit.id }}
+												>
+													<Button className="w-full mt-2 gap-2">
+														<CheckCircle className="h-4 w-4" />
+														Release Voucher
+													</Button>
+												</Link>
 											</div>
 										</CardContent>
 									</Card>
 								))}
 							</div>
-						</CardContent>
-					</Card>
-				)}
-
-				{/* Pending Vouchers to Release */}
-				{pending.length > 0 && (
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2">
-								<Clock className="h-5 w-5" />
-								Pending Vouchers to Release ({pending.length})
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Benefit</TableHead>
-										<TableHead>Person</TableHead>
-										<TableHead>Provided By</TableHead>
-										<TableHead>Date</TableHead>
-										<TableHead>Action</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{pending.map((voucher) => (
-										<TableRow key={voucher.id}>
-											<TableCell className="font-medium">
-												{voucher.benefitName}
-											</TableCell>
-											<TableCell>{voucher.personName}</TableCell>
-											<TableCell>{voucher.providedByName}</TableCell>
-											<TableCell>{formatDate(voucher.providedAt)}</TableCell>
-											<TableCell>
-												<Button
-													size="sm"
-													onClick={() => handleRelease(voucher.id)}
-													className="gap-1"
-												>
-													<CheckCircle className="h-4 w-4" />
-													Release
-												</Button>
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
 						</CardContent>
 					</Card>
 				)}
@@ -339,7 +281,6 @@ function VoucherDashboardPage() {
 				{/* Empty state if user has no assignments */}
 				{providerBenefits.length === 0 &&
 					releaserBenefits.length === 0 &&
-					pending.length === 0 &&
 					vouchers.length === 0 && (
 						<Card>
 							<CardContent className="py-12 text-center text-muted-foreground">
