@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ import {
 	updateBenefit,
 } from "@/data/benefits";
 
-export const Route = createFileRoute("/_authed/benefits")({
+export const Route = createFileRoute("/_authed/benefits/")({
 	component: BenefitsPage,
 	loader: async () => {
 		const [benefits, currentUser] = await Promise.all([
@@ -57,6 +57,7 @@ function BenefitsPage() {
 		departmentUsers,
 		canManage,
 	} = Route.useLoaderData();
+	const navigate = useNavigate();
 	const [benefits, setBenefits] = useState(initialBenefits);
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editingBenefit, setEditingBenefit] = useState<BenefitListItem | null>(
@@ -165,10 +166,24 @@ function BenefitsPage() {
 									</TableRow>
 								) : (
 									benefits.map((benefit) => (
-										<TableRow key={benefit.id}>
+										<TableRow
+											key={benefit.id}
+											className={
+												canManage ? "cursor-pointer hover:bg-muted/50" : ""
+											}
+											onClick={
+												canManage
+													? () =>
+															navigate({
+																to: "/benefits/$benefitId",
+																params: { benefitId: benefit.id },
+															})
+													: undefined
+											}
+										>
 											<TableCell>
 												<div>
-													<div className="font-medium">{benefit.name}</div>
+													<span className="font-medium">{benefit.name}</span>
 													{benefit.description && (
 														<div className="text-sm text-muted-foreground">
 															{benefit.description}
@@ -215,7 +230,7 @@ function BenefitsPage() {
 												</span>
 											</TableCell>
 											{canManage && (
-												<TableCell>
+												<TableCell onClick={(e) => e.stopPropagation()}>
 													<div className="flex gap-2">
 														<Dialog
 															open={editingBenefit?.id === benefit.id}

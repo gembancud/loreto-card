@@ -12,10 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
-import { Route as AuthedBenefitsRouteImport } from './routes/_authed/benefits'
 import { Route as AuthedAdminRouteImport } from './routes/_authed/_admin'
 import { Route as AuthedVouchersIndexRouteImport } from './routes/_authed/vouchers/index'
+import { Route as AuthedBenefitsIndexRouteImport } from './routes/_authed/benefits/index'
 import { Route as AuthedPeoplePersonIdRouteImport } from './routes/_authed/people.$personId'
+import { Route as AuthedBenefitsBenefitIdRouteImport } from './routes/_authed/benefits/$benefitId'
 import { Route as AuthedAdminUsersRouteImport } from './routes/_authed/_admin/users'
 import { Route as AuthedVouchersReleaseBenefitIdRouteImport } from './routes/_authed/vouchers/release.$benefitId'
 import { Route as AuthedVouchersProvideBenefitIdRouteImport } from './routes/_authed/vouchers/provide.$benefitId'
@@ -34,11 +35,6 @@ const AuthedIndexRoute = AuthedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthedRoute,
 } as any)
-const AuthedBenefitsRoute = AuthedBenefitsRouteImport.update({
-  id: '/benefits',
-  path: '/benefits',
-  getParentRoute: () => AuthedRoute,
-} as any)
 const AuthedAdminRoute = AuthedAdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => AuthedRoute,
@@ -48,9 +44,19 @@ const AuthedVouchersIndexRoute = AuthedVouchersIndexRouteImport.update({
   path: '/vouchers/',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedBenefitsIndexRoute = AuthedBenefitsIndexRouteImport.update({
+  id: '/benefits/',
+  path: '/benefits/',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedPeoplePersonIdRoute = AuthedPeoplePersonIdRouteImport.update({
   id: '/people/$personId',
   path: '/people/$personId',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedBenefitsBenefitIdRoute = AuthedBenefitsBenefitIdRouteImport.update({
+  id: '/benefits/$benefitId',
+  path: '/benefits/$benefitId',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedAdminUsersRoute = AuthedAdminUsersRouteImport.update({
@@ -73,20 +79,22 @@ const AuthedVouchersProvideBenefitIdRoute =
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
-  '/benefits': typeof AuthedBenefitsRoute
   '/': typeof AuthedIndexRoute
   '/users': typeof AuthedAdminUsersRoute
+  '/benefits/$benefitId': typeof AuthedBenefitsBenefitIdRoute
   '/people/$personId': typeof AuthedPeoplePersonIdRoute
+  '/benefits': typeof AuthedBenefitsIndexRoute
   '/vouchers': typeof AuthedVouchersIndexRoute
   '/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
   '/vouchers/release/$benefitId': typeof AuthedVouchersReleaseBenefitIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
-  '/benefits': typeof AuthedBenefitsRoute
   '/': typeof AuthedIndexRoute
   '/users': typeof AuthedAdminUsersRoute
+  '/benefits/$benefitId': typeof AuthedBenefitsBenefitIdRoute
   '/people/$personId': typeof AuthedPeoplePersonIdRoute
+  '/benefits': typeof AuthedBenefitsIndexRoute
   '/vouchers': typeof AuthedVouchersIndexRoute
   '/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
   '/vouchers/release/$benefitId': typeof AuthedVouchersReleaseBenefitIdRoute
@@ -96,10 +104,11 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authed/_admin': typeof AuthedAdminRouteWithChildren
-  '/_authed/benefits': typeof AuthedBenefitsRoute
   '/_authed/': typeof AuthedIndexRoute
   '/_authed/_admin/users': typeof AuthedAdminUsersRoute
+  '/_authed/benefits/$benefitId': typeof AuthedBenefitsBenefitIdRoute
   '/_authed/people/$personId': typeof AuthedPeoplePersonIdRoute
+  '/_authed/benefits/': typeof AuthedBenefitsIndexRoute
   '/_authed/vouchers/': typeof AuthedVouchersIndexRoute
   '/_authed/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
   '/_authed/vouchers/release/$benefitId': typeof AuthedVouchersReleaseBenefitIdRoute
@@ -108,20 +117,22 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/login'
-    | '/benefits'
     | '/'
     | '/users'
+    | '/benefits/$benefitId'
     | '/people/$personId'
+    | '/benefits'
     | '/vouchers'
     | '/vouchers/provide/$benefitId'
     | '/vouchers/release/$benefitId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
-    | '/benefits'
     | '/'
     | '/users'
+    | '/benefits/$benefitId'
     | '/people/$personId'
+    | '/benefits'
     | '/vouchers'
     | '/vouchers/provide/$benefitId'
     | '/vouchers/release/$benefitId'
@@ -130,10 +141,11 @@ export interface FileRouteTypes {
     | '/_authed'
     | '/login'
     | '/_authed/_admin'
-    | '/_authed/benefits'
     | '/_authed/'
     | '/_authed/_admin/users'
+    | '/_authed/benefits/$benefitId'
     | '/_authed/people/$personId'
+    | '/_authed/benefits/'
     | '/_authed/vouchers/'
     | '/_authed/vouchers/provide/$benefitId'
     | '/_authed/vouchers/release/$benefitId'
@@ -167,13 +179,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
-    '/_authed/benefits': {
-      id: '/_authed/benefits'
-      path: '/benefits'
-      fullPath: '/benefits'
-      preLoaderRoute: typeof AuthedBenefitsRouteImport
-      parentRoute: typeof AuthedRoute
-    }
     '/_authed/_admin': {
       id: '/_authed/_admin'
       path: ''
@@ -188,11 +193,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedVouchersIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/benefits/': {
+      id: '/_authed/benefits/'
+      path: '/benefits'
+      fullPath: '/benefits'
+      preLoaderRoute: typeof AuthedBenefitsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/people/$personId': {
       id: '/_authed/people/$personId'
       path: '/people/$personId'
       fullPath: '/people/$personId'
       preLoaderRoute: typeof AuthedPeoplePersonIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/benefits/$benefitId': {
+      id: '/_authed/benefits/$benefitId'
+      path: '/benefits/$benefitId'
+      fullPath: '/benefits/$benefitId'
+      preLoaderRoute: typeof AuthedBenefitsBenefitIdRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/_admin/users': {
@@ -233,9 +252,10 @@ const AuthedAdminRouteWithChildren = AuthedAdminRoute._addFileChildren(
 
 interface AuthedRouteChildren {
   AuthedAdminRoute: typeof AuthedAdminRouteWithChildren
-  AuthedBenefitsRoute: typeof AuthedBenefitsRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
+  AuthedBenefitsBenefitIdRoute: typeof AuthedBenefitsBenefitIdRoute
   AuthedPeoplePersonIdRoute: typeof AuthedPeoplePersonIdRoute
+  AuthedBenefitsIndexRoute: typeof AuthedBenefitsIndexRoute
   AuthedVouchersIndexRoute: typeof AuthedVouchersIndexRoute
   AuthedVouchersProvideBenefitIdRoute: typeof AuthedVouchersProvideBenefitIdRoute
   AuthedVouchersReleaseBenefitIdRoute: typeof AuthedVouchersReleaseBenefitIdRoute
@@ -243,9 +263,10 @@ interface AuthedRouteChildren {
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedAdminRoute: AuthedAdminRouteWithChildren,
-  AuthedBenefitsRoute: AuthedBenefitsRoute,
   AuthedIndexRoute: AuthedIndexRoute,
+  AuthedBenefitsBenefitIdRoute: AuthedBenefitsBenefitIdRoute,
   AuthedPeoplePersonIdRoute: AuthedPeoplePersonIdRoute,
+  AuthedBenefitsIndexRoute: AuthedBenefitsIndexRoute,
   AuthedVouchersIndexRoute: AuthedVouchersIndexRoute,
   AuthedVouchersProvideBenefitIdRoute: AuthedVouchersProvideBenefitIdRoute,
   AuthedVouchersReleaseBenefitIdRoute: AuthedVouchersReleaseBenefitIdRoute,

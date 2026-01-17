@@ -108,6 +108,11 @@ Prefer LSP tool over Grep/Read for precise code intelligence:
 Use Grep for: text search, finding patterns across files, searching comments/strings.
 Use LSP for: type-aware navigation, refactoring impact analysis, understanding code structure.
 
+## Linting Rules
+- **NEVER use `biome-ignore` comments** - Fix the underlying issue instead of suppressing it
+- If a lint rule seems incorrect, use patterns that satisfy it (e.g., `void variable;` for useEffect deps used as triggers)
+- Suppressing lints creates code smells and hides real problems
+
 ## Git Commits with Multi-line Messages
 Use multi-line strings in double quotes (heredocs fail in sandbox):
 ```bash

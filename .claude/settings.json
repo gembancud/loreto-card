@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "! grep -rq 'biome-ignore' src/ || { echo 'Remove biome-ignore comments from code' >&2; exit 2; } && pnpm lint 2>&1 && pnpm check 2>&1 && pnpm exec tsc --noEmit 2>&1 || { echo 'Fix lint/type errors before stopping' >&2; exit 2; }",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
