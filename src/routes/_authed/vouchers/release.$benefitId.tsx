@@ -5,10 +5,12 @@ import {
 	ChevronsUpDown,
 	Clock,
 	Gift,
+	ScanLine,
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { QrScannerDialog } from "@/components/qr/QrScannerDialog";
 import {
 	Card,
 	CardContent,
@@ -29,7 +31,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { type Person, searchPeople } from "@/data/people";
+import { getPersonById, type Person, searchPeople } from "@/data/people";
 import {
 	findPendingVoucherForRelease,
 	getMyAssignedBenefits,
@@ -74,6 +76,10 @@ function ReleaseVoucherPage() {
 	const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 	const [isSearching, setIsSearching] = useState(false);
 
+	// QR scanner state
+	const [scannerOpen, setScannerOpen] = useState(false);
+	const [isLoadingPerson, setIsLoadingPerson] = useState(false);
+
 	// Voucher lookup state
 	const [pendingVoucher, setPendingVoucher] =
 		useState<PendingVoucherForRelease | null>(null);
@@ -102,6 +108,21 @@ function ReleaseVoucherPage() {
 
 		return () => clearTimeout(timer);
 	}, [searchQuery]);
+
+	const handleQrScan = async (personId: string) => {
+		setIsLoadingPerson(true);
+		setError(null);
+		setLookupError(null);
+		try {
+			const person = await getPersonById({ data: personId });
+			setSelectedPerson(person);
+		} catch (err) {
+			console.error("Failed to load person:", err);
+			setError("Person not found. Please try manual search.");
+		} finally {
+			setIsLoadingPerson(false);
+		}
+	};
 
 	// Look up pending voucher when person is selected
 	useEffect(() => {
@@ -234,7 +255,11 @@ function ReleaseVoucherPage() {
 						<div className="space-y-4">
 							<div className="space-y-2">
 								<p className="text-sm font-medium">Search for Person *</p>
-								{selectedPerson ? (
+								{isLoadingPerson ? (
+									<div className="flex items-center justify-center rounded-md border p-3 text-muted-foreground">
+										Loading person...
+									</div>
+								) : selectedPerson ? (
 									<div className="flex items-center justify-between rounded-md border p-3">
 										<div>
 											<p className="font-medium">
@@ -260,62 +285,74 @@ function ReleaseVoucherPage() {
 										</Button>
 									</div>
 								) : (
-									<Popover open={open} onOpenChange={setOpen}>
-										<PopoverTrigger asChild>
-											<Button
-												variant="outline"
-												role="combobox"
-												aria-expanded={open}
-												className="w-full justify-between"
-											>
-												Search by name or phone...
-												<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-											</Button>
-										</PopoverTrigger>
-										<PopoverContent className="w-[400px] p-0" align="start">
-											<Command shouldFilter={false}>
-												<CommandInput
-													placeholder="Search by name or phone..."
-													value={searchQuery}
-													onValueChange={setSearchQuery}
-												/>
-												<CommandList>
-													{isSearching && (
-														<div className="py-6 text-center text-sm text-muted-foreground">
-															Searching...
-														</div>
-													)}
-													{!isSearching &&
-														searchQuery &&
-														searchResults.length === 0 && (
-															<CommandEmpty>No people found.</CommandEmpty>
+									<div className="flex gap-2">
+										<Popover open={open} onOpenChange={setOpen}>
+											<PopoverTrigger asChild>
+												<Button
+													variant="outline"
+													role="combobox"
+													aria-expanded={open}
+													className="flex-1 justify-between"
+												>
+													Search by name or phone...
+													<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+												</Button>
+											</PopoverTrigger>
+											<PopoverContent className="w-[400px] p-0" align="start">
+												<Command shouldFilter={false}>
+													<CommandInput
+														placeholder="Search by name or phone..."
+														value={searchQuery}
+														onValueChange={setSearchQuery}
+													/>
+													<CommandList>
+														{isSearching && (
+															<div className="py-6 text-center text-sm text-muted-foreground">
+																Searching...
+															</div>
 														)}
-													{!isSearching && searchResults.length > 0 && (
-														<CommandGroup>
-															{searchResults.map((person) => (
-																<CommandItem
-																	key={person.id}
-																	value={person.id}
-																	onSelect={() => {
-																		setSelectedPerson(person);
-																		setOpen(false);
-																		setSearchQuery("");
-																	}}
-																>
-																	<div className="flex flex-col">
-																		<span>{buildPersonName(person)}</span>
-																		<span className="text-sm text-muted-foreground">
-																			{person.phoneNumber}
-																		</span>
-																	</div>
-																</CommandItem>
-															))}
-														</CommandGroup>
-													)}
-												</CommandList>
-											</Command>
-										</PopoverContent>
-									</Popover>
+														{!isSearching &&
+															searchQuery &&
+															searchResults.length === 0 && (
+																<CommandEmpty>No people found.</CommandEmpty>
+															)}
+														{!isSearching && searchResults.length > 0 && (
+															<CommandGroup>
+																{searchResults.map((person) => (
+																	<CommandItem
+																		key={person.id}
+																		value={person.id}
+																		onSelect={() => {
+																			setSelectedPerson(person);
+																			setOpen(false);
+																			setSearchQuery("");
+																		}}
+																	>
+																		<div className="flex flex-col">
+																			<span>{buildPersonName(person)}</span>
+																			<span className="text-sm text-muted-foreground">
+																				{person.phoneNumber}
+																			</span>
+																		</div>
+																	</CommandItem>
+																))}
+															</CommandGroup>
+														)}
+													</CommandList>
+												</Command>
+											</PopoverContent>
+										</Popover>
+										<Button
+											type="button"
+											variant="outline"
+											size="icon"
+											onClick={() => setScannerOpen(true)}
+											title="Scan QR Code"
+										>
+											<ScanLine className="h-4 w-4" />
+											<span className="sr-only">Scan QR Code</span>
+										</Button>
+									</div>
 								)}
 							</div>
 
@@ -393,6 +430,12 @@ function ReleaseVoucherPage() {
 						</div>
 					</CardContent>
 				</Card>
+
+				<QrScannerDialog
+					open={scannerOpen}
+					onOpenChange={setScannerOpen}
+					onScan={handleQrScan}
+				/>
 			</div>
 		</div>
 	);

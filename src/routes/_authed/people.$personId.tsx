@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle, Clock, Save, XCircle } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { ProfilePhotoUpload } from "@/components/people/ProfilePhotoUpload";
+import { QrDownloadButton } from "@/components/qr/QrDownloadButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -231,13 +232,17 @@ function EditPerson() {
 	return (
 		<div className="container mx-auto py-8 px-4">
 			<div className="max-w-5xl mx-auto">
-				<div className="mb-6">
+				<div className="mb-6 flex justify-between items-center">
 					<Link to="/">
 						<Button variant="ghost" className="gap-2">
 							<ArrowLeft className="h-4 w-4" />
 							Back to People
 						</Button>
 					</Link>
+					<QrDownloadButton
+						personId={person.id}
+						personName={`${person.firstName} ${person.lastName}`}
+					/>
 				</div>
 
 				<Card>
