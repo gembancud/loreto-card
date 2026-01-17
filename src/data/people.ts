@@ -171,20 +171,30 @@ export const updatePerson = createServerFn({
 		// Build update values for person table
 		const personUpdates: Partial<DbPerson> = {};
 
-		if (updates.firstName !== undefined) personUpdates.firstName = updates.firstName;
-		if (updates.middleName !== undefined) personUpdates.middleName = updates.middleName ?? null;
-		if (updates.lastName !== undefined) personUpdates.lastName = updates.lastName;
-		if (updates.suffix !== undefined) personUpdates.suffix = updates.suffix ?? null;
-		if (updates.birthdate !== undefined) personUpdates.birthdate = updates.birthdate;
-		if (updates.phoneNumber !== undefined) personUpdates.phoneNumber = updates.phoneNumber;
+		if (updates.firstName !== undefined)
+			personUpdates.firstName = updates.firstName;
+		if (updates.middleName !== undefined)
+			personUpdates.middleName = updates.middleName ?? null;
+		if (updates.lastName !== undefined)
+			personUpdates.lastName = updates.lastName;
+		if (updates.suffix !== undefined)
+			personUpdates.suffix = updates.suffix ?? null;
+		if (updates.birthdate !== undefined)
+			personUpdates.birthdate = updates.birthdate;
+		if (updates.phoneNumber !== undefined)
+			personUpdates.phoneNumber = updates.phoneNumber;
 		if (updates.status !== undefined) personUpdates.status = updates.status;
-		if (updates.profilePhoto !== undefined) personUpdates.profilePhoto = updates.profilePhoto ?? null;
+		if (updates.profilePhoto !== undefined)
+			personUpdates.profilePhoto = updates.profilePhoto ?? null;
 
 		// Handle address fields
 		if (updates.address) {
-			if (updates.address.street !== undefined) personUpdates.street = updates.address.street;
-			if (updates.address.purok !== undefined) personUpdates.purok = updates.address.purok ?? null;
-			if (updates.address.barangay !== undefined) personUpdates.barangay = updates.address.barangay;
+			if (updates.address.street !== undefined)
+				personUpdates.street = updates.address.street;
+			if (updates.address.purok !== undefined)
+				personUpdates.purok = updates.address.purok ?? null;
+			if (updates.address.barangay !== undefined)
+				personUpdates.barangay = updates.address.barangay;
 		}
 
 		// Update person record
@@ -209,7 +219,10 @@ export const updatePerson = createServerFn({
 						updatedAt: new Date(),
 					})
 					.onConflictDoUpdate({
-						target: [personIdentifications.personId, personIdentifications.type],
+						target: [
+							personIdentifications.personId,
+							personIdentifications.type,
+						],
 						set: {
 							idNumber: record.idNumber ?? null,
 							issueDate: record.issueDate ?? null,
@@ -242,7 +255,10 @@ export const updatePerson = createServerFn({
 			throw new Error(`Person with ID ${personId} not found after update`);
 		}
 
-		return transformDbPersonToPerson(updatedPerson, updatedPerson.identifications);
+		return transformDbPersonToPerson(
+			updatedPerson,
+			updatedPerson.identifications,
+		);
 	});
 
 interface CreatePersonInput {
@@ -315,7 +331,10 @@ export const createPerson = createServerFn({
 			throw new Error("Failed to create person");
 		}
 
-		return transformDbPersonToPerson(createdPerson, createdPerson.identifications);
+		return transformDbPersonToPerson(
+			createdPerson,
+			createdPerson.identifications,
+		);
 	});
 
 // Search people by name
@@ -336,7 +355,10 @@ export const searchPeople = createServerFn({
 				LOWER(${people.middleName}) LIKE ${searchTerm} OR
 				${people.phoneNumber} LIKE ${searchTerm}
 			)`,
-			orderBy: (people, { asc }) => [asc(people.lastName), asc(people.firstName)],
+			orderBy: (people, { asc }) => [
+				asc(people.lastName),
+				asc(people.firstName),
+			],
 			limit: 50,
 		});
 

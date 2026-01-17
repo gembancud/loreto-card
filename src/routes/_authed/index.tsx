@@ -202,6 +202,7 @@ function PeopleList() {
 									<TableHead className="w-[20%]">Name</TableHead>
 									<TableHead className="w-[60px]">Age</TableHead>
 									<TableHead className="w-[15%]">Barangay</TableHead>
+									<TableHead className="w-[10%]">Purok</TableHead>
 									<TableHead>Services</TableHead>
 									<TableHead className="w-[100px]">Status</TableHead>
 									<TableHead className="w-[80px]">Actions</TableHead>
@@ -211,7 +212,7 @@ function PeopleList() {
 								{filteredPeople.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={6}
+											colSpan={7}
 											className="h-24 text-center text-muted-foreground"
 										>
 											No people found matching your filters
@@ -239,6 +240,7 @@ function PeopleList() {
 											</TableCell>
 											<TableCell>{calculateAge(person.birthdate)}</TableCell>
 											<TableCell>{person.address.barangay}</TableCell>
+											<TableCell>{person.address.purok || "-"}</TableCell>
 											<TableCell className="overflow-hidden">
 												<GovServiceBadges person={person} />
 											</TableCell>

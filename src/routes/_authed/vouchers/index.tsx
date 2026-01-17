@@ -1,11 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	CheckCircle,
-	Clock,
-	Gift,
-	Send,
-	XCircle,
-} from "lucide-react";
+import { CheckCircle, Clock, Gift, Send, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,9 +24,12 @@ import {
 export const Route = createFileRoute("/_authed/vouchers/")({
 	component: VoucherDashboardPage,
 	loader: async () => {
-		const [assignedBenefits, myVouchers, myReleasedVouchers] = await Promise.all(
-			[getMyAssignedBenefits(), getMyIssuedVouchers(), getMyReleasedVouchers()],
-		);
+		const [assignedBenefits, myVouchers, myReleasedVouchers] =
+			await Promise.all([
+				getMyAssignedBenefits(),
+				getMyIssuedVouchers(),
+				getMyReleasedVouchers(),
+			]);
 
 		// Separate provider and releaser benefits
 		const providerBenefits = assignedBenefits.filter(
@@ -42,7 +39,12 @@ export const Route = createFileRoute("/_authed/vouchers/")({
 			(b) => b.role === "releaser",
 		);
 
-		return { providerBenefits, releaserBenefits, myVouchers, myReleasedVouchers };
+		return {
+			providerBenefits,
+			releaserBenefits,
+			myVouchers,
+			myReleasedVouchers,
+		};
 	},
 });
 
@@ -294,8 +296,12 @@ function VoucherDashboardPage() {
 															{voucher.benefitName}
 														</TableCell>
 														<TableCell>{voucher.personName}</TableCell>
-														<TableCell>{getStatusBadge(voucher.status)}</TableCell>
-														<TableCell>{formatDate(voucher.providedAt)}</TableCell>
+														<TableCell>
+															{getStatusBadge(voucher.status)}
+														</TableCell>
+														<TableCell>
+															{formatDate(voucher.providedAt)}
+														</TableCell>
 														<TableCell>
 															{voucher.releasedByName ?? "—"}
 															{voucher.releasedAt && (
@@ -355,7 +361,9 @@ function VoucherDashboardPage() {
 														</TableCell>
 														<TableCell>{voucher.personName}</TableCell>
 														<TableCell>{voucher.providedByName}</TableCell>
-														<TableCell>{formatDate(voucher.releasedAt)}</TableCell>
+														<TableCell>
+															{formatDate(voucher.releasedAt)}
+														</TableCell>
 													</TableRow>
 												))}
 											</TableBody>

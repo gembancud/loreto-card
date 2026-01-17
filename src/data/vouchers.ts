@@ -217,7 +217,9 @@ export const getMyReleasedVouchers = createServerFn({ method: "GET" }).handler(
 				benefitId: v.benefitId,
 				benefitName: v.benefit?.name ?? "",
 				personId: v.personId,
-				personName: buildPersonName(v.person ?? { firstName: "", lastName: "" }),
+				personName: buildPersonName(
+					v.person ?? { firstName: "", lastName: "" },
+				),
 				status: v.status as VoucherStatus,
 				providedById: v.providedById,
 				providedByName: `${v.providedBy?.firstName ?? ""} ${v.providedBy?.lastName ?? ""}`,

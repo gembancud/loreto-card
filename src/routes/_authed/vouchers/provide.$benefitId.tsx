@@ -249,7 +249,7 @@ function ProvideVoucherPage() {
 																		setSearchQuery("");
 																	}}
 																>
-																		<div className="flex flex-col">
+																	<div className="flex flex-col">
 																		<span>{buildPersonName(person)}</span>
 																		<span className="text-sm text-muted-foreground">
 																			{person.phoneNumber}

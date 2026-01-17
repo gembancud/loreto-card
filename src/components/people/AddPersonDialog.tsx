@@ -27,6 +27,7 @@ interface AddPersonFormData {
 	lastName: string;
 	birthdate: string;
 	street: string;
+	purok: string;
 	barangay: LoretoBarangay | "";
 	phoneNumber: string;
 	status: PersonStatus;
@@ -38,6 +39,7 @@ const initialFormData: AddPersonFormData = {
 	lastName: "",
 	birthdate: "",
 	street: "",
+	purok: "",
 	barangay: "",
 	phoneNumber: "",
 	status: "pending",
@@ -54,6 +56,7 @@ export function AddPersonDialog() {
 	const birthdateId = `${id}-birthdate`;
 	const phoneNumberId = `${id}-phoneNumber`;
 	const streetId = `${id}-street`;
+	const purokId = `${id}-purok`;
 	const barangayId = `${id}-barangay`;
 	const statusId = `${id}-status`;
 
@@ -158,8 +161,8 @@ export function AddPersonDialog() {
 							</div>
 						</div>
 
-						{/* Row 3: Street and Barangay */}
-						<div className="grid grid-cols-3 gap-4">
+						{/* Row 3: Street, Purok, and Barangay */}
+						<div className="grid grid-cols-4 gap-4">
 							<div className="col-span-2 grid gap-2">
 								<Label htmlFor={streetId}>Street</Label>
 								<Input
@@ -168,6 +171,16 @@ export function AddPersonDialog() {
 									value={formData.street}
 									onChange={handleInputChange}
 									placeholder="Enter street address"
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label htmlFor={purokId}>Purok</Label>
+								<Input
+									id={purokId}
+									name="purok"
+									value={formData.purok}
+									onChange={handleInputChange}
+									placeholder="Purok"
 								/>
 							</div>
 							<div className="grid gap-2">

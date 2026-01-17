@@ -51,7 +51,9 @@ export function PersonQuickViewPopover({
 				<div className="flex items-center gap-2 text-muted-foreground">
 					<MapPin className="h-4 w-4 flex-shrink-0" />
 					<span className="truncate">
-						{person.address.street}, {person.address.barangay}
+						{person.address.street}
+						{person.address.purok && `, ${person.address.purok}`},{" "}
+						{person.address.barangay}
 					</span>
 				</div>
 				<div className="flex items-center gap-2 text-muted-foreground">

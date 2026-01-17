@@ -34,6 +34,7 @@ interface EditPersonFormData {
 	suffix: string;
 	birthdate: string;
 	street: string;
+	purok: string;
 	barangay: LoretoBarangay;
 	phoneNumber: string;
 	status: PersonStatus;
@@ -62,6 +63,7 @@ function EditPerson() {
 		suffix: "",
 		birthdate: "",
 		street: "",
+		purok: "",
 		barangay: "Poblacion",
 		phoneNumber: "",
 		status: "pending",
@@ -87,6 +89,7 @@ function EditPerson() {
 			suffix: person.suffix ?? "",
 			birthdate: person.birthdate,
 			street: person.address.street,
+			purok: person.address.purok ?? "",
 			barangay: person.address.barangay,
 			phoneNumber: person.phoneNumber,
 			status: person.status,
@@ -110,6 +113,7 @@ function EditPerson() {
 	const birthdateId = `${id}-birthdate`;
 	const phoneNumberId = `${id}-phoneNumber`;
 	const streetId = `${id}-street`;
+	const purokId = `${id}-purok`;
 	const barangayId = `${id}-barangay`;
 	const statusId = `${id}-status`;
 
@@ -175,6 +179,7 @@ function EditPerson() {
 						birthdate: formData.birthdate,
 						address: {
 							street: formData.street,
+							purok: formData.purok || undefined,
 							barangay: formData.barangay,
 						},
 						phoneNumber: formData.phoneNumber,
@@ -310,8 +315,8 @@ function EditPerson() {
 											</div>
 										</div>
 
-										{/* Street and Barangay */}
-										<div className="grid grid-cols-2 gap-4">
+										{/* Street, Purok, and Barangay */}
+										<div className="grid grid-cols-3 gap-4">
 											<div className="grid gap-2">
 												<Label htmlFor={streetId}>Street</Label>
 												<Input
@@ -320,6 +325,16 @@ function EditPerson() {
 													value={formData.street}
 													onChange={handleInputChange}
 													placeholder="Enter street address"
+												/>
+											</div>
+											<div className="grid gap-2">
+												<Label htmlFor={purokId}>Purok</Label>
+												<Input
+													id={purokId}
+													name="purok"
+													value={formData.purok}
+													onChange={handleInputChange}
+													placeholder="Enter purok (optional)"
 												/>
 											</div>
 											<div className="grid gap-2">
