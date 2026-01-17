@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-	ArrowLeft,
 	CheckCircle,
 	Clock,
 	Gift,
@@ -143,14 +142,7 @@ function VoucherDashboardPage() {
 	return (
 		<div className="container mx-auto py-8 px-4">
 			<div className="max-w-6xl mx-auto space-y-8">
-				<div className="flex items-center justify-between">
-					<Link to="/">
-						<Button variant="ghost" className="gap-2">
-							<ArrowLeft className="h-4 w-4" />
-							Back
-						</Button>
-					</Link>
-				</div>
+				<h1 className="text-2xl font-semibold">Vouchers</h1>
 
 				{/* Benefits I Can Provide */}
 				{providerBenefits.length > 0 && (

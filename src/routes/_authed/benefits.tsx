@@ -1,16 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	ArrowLeft,
-	Gift,
-	Pencil,
-	Plus,
-	ToggleLeft,
-	ToggleRight,
-} from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Pencil, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Dialog,
@@ -122,12 +115,9 @@ function BenefitsPage() {
 		<div className="container mx-auto py-8 px-4">
 			<div className="max-w-6xl mx-auto">
 				<div className="mb-6 flex items-center justify-between">
-					<Link to="/">
-						<Button variant="ghost" className="gap-2">
-							<ArrowLeft className="h-4 w-4" />
-							Back
-						</Button>
-					</Link>
+					<h1 className="text-2xl font-semibold">
+						{canManage ? "Benefits Management" : "Benefits"}
+					</h1>
 
 					{canManage && (
 						<Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -149,13 +139,7 @@ function BenefitsPage() {
 				</div>
 
 				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<Gift className="h-5 w-5" />
-							{canManage ? "Benefits Management" : "Benefits"}
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
+					<CardContent className="pt-6">
 						<Table>
 							<TableHeader>
 								<TableRow>
