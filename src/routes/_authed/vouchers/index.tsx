@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle, Clock, Gift, Send, XCircle } from "lucide-react";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { CarouselItem, MobileCarousel } from "@/components/MobileCarousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -156,37 +158,47 @@ function VoucherDashboardPage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+							{/* Mobile carousel */}
+							<div className="md:hidden">
+								<MobileCarousel>
+									{providerBenefits.map((benefit) => (
+										<CarouselItem key={benefit.id}>
+											<BenefitCard
+												benefit={benefit}
+												actionButton={
+													<Link
+														to="/vouchers/provide/$benefitId"
+														params={{ benefitId: benefit.id }}
+													>
+														<Button className="w-full mt-2 gap-2">
+															<Send className="h-4 w-4" />
+															Issue Voucher
+														</Button>
+													</Link>
+												}
+											/>
+										</CarouselItem>
+									))}
+								</MobileCarousel>
+							</div>
+							{/* Desktop grid */}
+							<div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 								{providerBenefits.map((benefit) => (
-									<Card key={benefit.id} className="relative">
-										<CardContent className="p-4">
-											<div className="space-y-2">
-												<h3 className="font-semibold">{benefit.name}</h3>
-												{benefit.description && (
-													<p className="text-sm text-muted-foreground">
-														{benefit.description}
-													</p>
-												)}
-												<div className="flex gap-2 text-sm text-muted-foreground">
-													{benefit.valuePesos && (
-														<span>₱{benefit.valuePesos.toLocaleString()}</span>
-													)}
-													{benefit.quantity && (
-														<span>{benefit.quantity} units</span>
-													)}
-												</div>
-												<Link
-													to="/vouchers/provide/$benefitId"
-													params={{ benefitId: benefit.id }}
-												>
-													<Button className="w-full mt-2 gap-2">
-														<Send className="h-4 w-4" />
-														Issue Voucher
-													</Button>
-												</Link>
-											</div>
-										</CardContent>
-									</Card>
+									<BenefitCard
+										key={benefit.id}
+										benefit={benefit}
+										actionButton={
+											<Link
+												to="/vouchers/provide/$benefitId"
+												params={{ benefitId: benefit.id }}
+											>
+												<Button className="w-full mt-2 gap-2">
+													<Send className="h-4 w-4" />
+													Issue Voucher
+												</Button>
+											</Link>
+										}
+									/>
 								))}
 							</div>
 						</CardContent>
@@ -203,37 +215,47 @@ function VoucherDashboardPage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+							{/* Mobile carousel */}
+							<div className="md:hidden">
+								<MobileCarousel>
+									{releaserBenefits.map((benefit) => (
+										<CarouselItem key={benefit.id}>
+											<BenefitCard
+												benefit={benefit}
+												actionButton={
+													<Link
+														to="/vouchers/release/$benefitId"
+														params={{ benefitId: benefit.id }}
+													>
+														<Button className="w-full mt-2 gap-2">
+															<CheckCircle className="h-4 w-4" />
+															Release Voucher
+														</Button>
+													</Link>
+												}
+											/>
+										</CarouselItem>
+									))}
+								</MobileCarousel>
+							</div>
+							{/* Desktop grid */}
+							<div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 								{releaserBenefits.map((benefit) => (
-									<Card key={benefit.id} className="relative">
-										<CardContent className="p-4">
-											<div className="space-y-2">
-												<h3 className="font-semibold">{benefit.name}</h3>
-												{benefit.description && (
-													<p className="text-sm text-muted-foreground">
-														{benefit.description}
-													</p>
-												)}
-												<div className="flex gap-2 text-sm text-muted-foreground">
-													{benefit.valuePesos && (
-														<span>₱{benefit.valuePesos.toLocaleString()}</span>
-													)}
-													{benefit.quantity && (
-														<span>{benefit.quantity} units</span>
-													)}
-												</div>
-												<Link
-													to="/vouchers/release/$benefitId"
-													params={{ benefitId: benefit.id }}
-												>
-													<Button className="w-full mt-2 gap-2">
-														<CheckCircle className="h-4 w-4" />
-														Release Voucher
-													</Button>
-												</Link>
-											</div>
-										</CardContent>
-									</Card>
+									<BenefitCard
+										key={benefit.id}
+										benefit={benefit}
+										actionButton={
+											<Link
+												to="/vouchers/release/$benefitId"
+												params={{ benefitId: benefit.id }}
+											>
+												<Button className="w-full mt-2 gap-2">
+													<CheckCircle className="h-4 w-4" />
+													Release Voucher
+												</Button>
+											</Link>
+										}
+									/>
 								))}
 							</div>
 						</CardContent>
@@ -400,5 +422,40 @@ function VoucherDashboardPage() {
 					)}
 			</div>
 		</div>
+	);
+}
+
+interface BenefitCardProps {
+	benefit: {
+		id: string;
+		name: string;
+		description: string | null;
+		valuePesos: number | null;
+		quantity: number | null;
+	};
+	actionButton: ReactNode;
+}
+
+function BenefitCard({ benefit, actionButton }: BenefitCardProps) {
+	return (
+		<Card className="relative h-full">
+			<CardContent className="p-4">
+				<div className="space-y-2">
+					<h3 className="font-semibold">{benefit.name}</h3>
+					{benefit.description && (
+						<p className="text-sm text-muted-foreground">
+							{benefit.description}
+						</p>
+					)}
+					<div className="flex gap-2 text-sm text-muted-foreground">
+						{benefit.valuePesos && (
+							<span>₱{benefit.valuePesos.toLocaleString()}</span>
+						)}
+						{benefit.quantity && <span>{benefit.quantity} units</span>}
+					</div>
+					{actionButton}
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
