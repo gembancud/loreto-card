@@ -130,91 +130,185 @@ function UsersPage() {
 						<CardTitle>User Management</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Name</TableHead>
-									<TableHead>Phone</TableHead>
-									<TableHead>Department</TableHead>
-									<TableHead>Role</TableHead>
-									<TableHead>Status</TableHead>
-									{isSuperuser && <TableHead>Actions</TableHead>}
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{users.length === 0 ? (
-									<TableRow>
-										<TableCell
-											colSpan={isSuperuser ? 6 : 5}
-											className="text-center text-muted-foreground py-8"
-										>
-											No users found
-										</TableCell>
-									</TableRow>
-								) : (
-									users.map((user) => (
-										<TableRow key={user.id}>
-											<TableCell className="font-medium">
+						{/* Mobile card view */}
+						<div className="md:hidden space-y-3">
+							{users.length === 0 ? (
+								<p className="text-center text-muted-foreground py-8">
+									No users found
+								</p>
+							) : (
+								users.map((user) => (
+									<div
+										key={user.id}
+										className="rounded-lg border bg-card p-4 space-y-2"
+									>
+										{/* Header: Name + Status */}
+										<div className="flex items-start justify-between gap-2">
+											<span className="font-medium">
 												{user.firstName} {user.lastName}
-											</TableCell>
-											<TableCell>{user.phoneNumber}</TableCell>
-											<TableCell className="text-muted-foreground">
-												{user.departmentName ?? "—"}
-											</TableCell>
-											<TableCell className="capitalize">{user.role}</TableCell>
-											<TableCell>
-												<span
-													className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-														user.isActive
-															? "bg-green-100 text-green-700"
-															: "bg-red-100 text-red-700"
-													}`}
+											</span>
+											<span
+												className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+													user.isActive
+														? "bg-green-100 text-green-700"
+														: "bg-red-100 text-red-700"
+												}`}
+											>
+												{user.isActive ? "Active" : "Inactive"}
+											</span>
+										</div>
+
+										{/* Phone */}
+										<div className="text-sm text-muted-foreground">
+											{user.phoneNumber}
+										</div>
+
+										{/* Department */}
+										{user.departmentName && (
+											<div className="text-sm text-muted-foreground">
+												{user.departmentName}
+											</div>
+										)}
+
+										{/* Role */}
+										<div className="text-sm">
+											Role: <span className="capitalize">{user.role}</span>
+										</div>
+
+										{/* Actions (superuser only) */}
+										{isSuperuser && (
+											<div className="pt-2 border-t flex items-center justify-between">
+												<Dialog
+													open={editingUser?.id === user.id}
+													onOpenChange={(open) =>
+														setEditingUser(open ? user : null)
+													}
 												>
-													{user.isActive ? "Active" : "Inactive"}
-												</span>
+													<DialogTrigger asChild>
+														<Button variant="ghost" size="sm">
+															<Pencil className="h-4 w-4 mr-2" />
+															Edit
+														</Button>
+													</DialogTrigger>
+													<DialogContent>
+														<EditUserForm
+															user={user}
+															departments={departments}
+															onSuccess={handleUserUpdated}
+															onCancel={() => setEditingUser(null)}
+														/>
+													</DialogContent>
+												</Dialog>
+												{user.id !== currentUser?.id && (
+													<Switch
+														checked={user.isActive}
+														onCheckedChange={() => handleToggleActive(user)}
+														aria-label={
+															user.isActive
+																? "Deactivate user"
+																: "Activate user"
+														}
+													/>
+												)}
+											</div>
+										)}
+									</div>
+								))
+							)}
+						</div>
+
+						{/* Desktop table view */}
+						<div className="hidden md:block">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Name</TableHead>
+										<TableHead>Phone</TableHead>
+										<TableHead>Department</TableHead>
+										<TableHead>Role</TableHead>
+										<TableHead>Status</TableHead>
+										{isSuperuser && <TableHead>Actions</TableHead>}
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{users.length === 0 ? (
+										<TableRow>
+											<TableCell
+												colSpan={isSuperuser ? 6 : 5}
+												className="text-center text-muted-foreground py-8"
+											>
+												No users found
 											</TableCell>
-											{isSuperuser && (
-												<TableCell>
-													<div className="flex items-center gap-2">
-														<Dialog
-															open={editingUser?.id === user.id}
-															onOpenChange={(open) =>
-																setEditingUser(open ? user : null)
-															}
-														>
-															<DialogTrigger asChild>
-																<Button variant="ghost" size="icon">
-																	<Pencil className="h-4 w-4" />
-																</Button>
-															</DialogTrigger>
-															<DialogContent>
-																<EditUserForm
-																	user={user}
-																	departments={departments}
-																	onSuccess={handleUserUpdated}
-																	onCancel={() => setEditingUser(null)}
-																/>
-															</DialogContent>
-														</Dialog>
-														{user.id !== currentUser?.id && (
-															<Switch
-																checked={user.isActive}
-																onCheckedChange={() => handleToggleActive(user)}
-																aria-label={
-																	user.isActive
-																		? "Deactivate user"
-																		: "Activate user"
-																}
-															/>
-														)}
-													</div>
-												</TableCell>
-											)}
 										</TableRow>
-									))
-								)}
-							</TableBody>
-						</Table>
+									) : (
+										users.map((user) => (
+											<TableRow key={user.id}>
+												<TableCell className="font-medium">
+													{user.firstName} {user.lastName}
+												</TableCell>
+												<TableCell>{user.phoneNumber}</TableCell>
+												<TableCell className="text-muted-foreground">
+													{user.departmentName ?? "—"}
+												</TableCell>
+												<TableCell className="capitalize">
+													{user.role}
+												</TableCell>
+												<TableCell>
+													<span
+														className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+															user.isActive
+																? "bg-green-100 text-green-700"
+																: "bg-red-100 text-red-700"
+														}`}
+													>
+														{user.isActive ? "Active" : "Inactive"}
+													</span>
+												</TableCell>
+												{isSuperuser && (
+													<TableCell>
+														<div className="flex items-center gap-2">
+															<Dialog
+																open={editingUser?.id === user.id}
+																onOpenChange={(open) =>
+																	setEditingUser(open ? user : null)
+																}
+															>
+																<DialogTrigger asChild>
+																	<Button variant="ghost" size="icon">
+																		<Pencil className="h-4 w-4" />
+																	</Button>
+																</DialogTrigger>
+																<DialogContent>
+																	<EditUserForm
+																		user={user}
+																		departments={departments}
+																		onSuccess={handleUserUpdated}
+																		onCancel={() => setEditingUser(null)}
+																	/>
+																</DialogContent>
+															</Dialog>
+															{user.id !== currentUser?.id && (
+																<Switch
+																	checked={user.isActive}
+																	onCheckedChange={() =>
+																		handleToggleActive(user)
+																	}
+																	aria-label={
+																		user.isActive
+																			? "Deactivate user"
+																			: "Activate user"
+																	}
+																/>
+															)}
+														</div>
+													</TableCell>
+												)}
+											</TableRow>
+										))
+									)}
+								</TableBody>
+							</Table>
+						</div>
 					</CardContent>
 				</Card>
 			</div>
