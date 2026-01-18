@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Plus, UserCheck, UserX } from "lucide-react";
+import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -174,7 +175,7 @@ function UsersPage() {
 											</TableCell>
 											{isSuperuser && (
 												<TableCell>
-													<div className="flex gap-2">
+													<div className="flex items-center gap-2">
 														<Dialog
 															open={editingUser?.id === user.id}
 															onOpenChange={(open) =>
@@ -196,22 +197,15 @@ function UsersPage() {
 															</DialogContent>
 														</Dialog>
 														{user.id !== currentUser?.id && (
-															<Button
-																variant="ghost"
-																size="icon"
-																onClick={() => handleToggleActive(user)}
-																title={
+															<Switch
+																checked={user.isActive}
+																onCheckedChange={() => handleToggleActive(user)}
+																aria-label={
 																	user.isActive
 																		? "Deactivate user"
 																		: "Activate user"
 																}
-															>
-																{user.isActive ? (
-																	<UserX className="h-4 w-4 text-red-500" />
-																) : (
-																	<UserCheck className="h-4 w-4 text-green-500" />
-																)}
-															</Button>
+															/>
 														)}
 													</div>
 												</TableCell>

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Pencil, Plus, ToggleLeft, ToggleRight } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -231,7 +232,7 @@ function BenefitsPage() {
 											</TableCell>
 											{canManage && (
 												<TableCell onClick={(e) => e.stopPropagation()}>
-													<div className="flex gap-2">
+													<div className="flex items-center gap-2">
 														<Dialog
 															open={editingBenefit?.id === benefit.id}
 															onOpenChange={(open) =>
@@ -252,22 +253,15 @@ function BenefitsPage() {
 																/>
 															</DialogContent>
 														</Dialog>
-														<Button
-															variant="ghost"
-															size="icon"
-															onClick={() => handleToggleActive(benefit)}
-															title={
+														<Switch
+															checked={benefit.isActive}
+															onCheckedChange={() => handleToggleActive(benefit)}
+															aria-label={
 																benefit.isActive
 																	? "Deactivate benefit"
 																	: "Activate benefit"
 															}
-														>
-															{benefit.isActive ? (
-																<ToggleRight className="h-4 w-4 text-green-500" />
-															) : (
-																<ToggleLeft className="h-4 w-4 text-red-500" />
-															)}
-														</Button>
+														/>
 													</div>
 												</TableCell>
 											)}
