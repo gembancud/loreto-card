@@ -1,6 +1,18 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle, Clock, Save, XCircle } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import {
+	createFileRoute,
+	Link,
+	useBlocker,
+	useRouter,
+} from "@tanstack/react-router";
+import {
+	ArrowLeft,
+	Check,
+	CheckCircle,
+	Clock,
+	Save,
+	XCircle,
+} from "lucide-react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { ProfilePhotoUpload } from "@/components/people/ProfilePhotoUpload";
 import { QrDownloadButton } from "@/components/qr/QrDownloadButton";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +44,7 @@ import {
 	type PersonStatus,
 	updatePerson,
 } from "@/data/people";
+import { deleteProfilePhoto, uploadProfilePhoto } from "@/data/storage";
 import { getVouchersForPerson, type VoucherListItem } from "@/data/vouchers";
 
 export const Route = createFileRoute("/_authed/people/$personId")({
@@ -100,6 +113,55 @@ function EditPerson() {
 		barangayClearance: { registered: false },
 	});
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+	// Track if form has unsaved changes
+	const isDirty = useMemo(() => {
+		const compareGovService = (
+			a: GovServiceRecord,
+			b: GovServiceRecord,
+		): boolean => {
+			return (
+				a.registered !== b.registered ||
+				(a.idNumber ?? "") !== (b.idNumber ?? "") ||
+				(a.issueDate ?? "") !== (b.issueDate ?? "") ||
+				(a.expiryDate ?? "") !== (b.expiryDate ?? "")
+			);
+		};
+
+		return (
+			formData.firstName !== person.firstName ||
+			formData.middleName !== (person.middleName ?? "") ||
+			formData.lastName !== person.lastName ||
+			formData.suffix !== (person.suffix ?? "") ||
+			formData.birthdate !== person.birthdate ||
+			formData.street !== person.address.street ||
+			formData.purok !== (person.address.purok ?? "") ||
+			formData.barangay !== person.address.barangay ||
+			formData.phoneNumber !== person.phoneNumber ||
+			formData.status !== person.status ||
+			formData.profilePhoto !== (person.profilePhoto ?? null) ||
+			compareGovService(formData.voter, person.voter) ||
+			compareGovService(formData.philhealth, person.philhealth) ||
+			compareGovService(formData.sss, person.sss) ||
+			compareGovService(formData.fourPs, person.fourPs) ||
+			compareGovService(formData.pwd, person.pwd) ||
+			compareGovService(formData.soloParent, person.soloParent) ||
+			compareGovService(formData.pagibig, person.pagibig) ||
+			compareGovService(formData.tin, person.tin) ||
+			compareGovService(formData.barangayClearance, person.barangayClearance)
+		);
+	}, [formData, person]);
+
+	// Block navigation when there are unsaved changes
+	useBlocker({
+		shouldBlockFn: () => {
+			if (!isDirty) return false;
+			return !confirm(
+				"You have unsaved changes. Are you sure you want to leave?",
+			);
+		},
+	});
 
 	// Pre-populate form with person data
 	useEffect(() => {
@@ -189,6 +251,35 @@ function EditPerson() {
 		setIsSubmitting(true);
 
 		try {
+			let finalPhotoUrl = formData.profilePhoto;
+			const oldPhotoUrl = person.profilePhoto;
+
+			// If photo is base64 (new/changed), upload to S3
+			if (finalPhotoUrl?.startsWith("data:")) {
+				const result = await uploadProfilePhoto({
+					data: {
+						personId: person.id,
+						base64Data: finalPhotoUrl,
+						contentType: "image/jpeg",
+					},
+				});
+				if (result.success && result.url) {
+					finalPhotoUrl = result.url;
+				} else {
+					console.error("Failed to upload photo:", result.error);
+					return;
+				}
+			}
+
+			// Delete old photo only after successful upload (if changed)
+			if (
+				oldPhotoUrl &&
+				oldPhotoUrl !== finalPhotoUrl &&
+				!oldPhotoUrl.startsWith("data:")
+			) {
+				await deleteProfilePhoto({ data: { photoUrl: oldPhotoUrl } });
+			}
+
 			await updatePerson({
 				data: {
 					personId: person.id,
@@ -205,7 +296,7 @@ function EditPerson() {
 						},
 						phoneNumber: formData.phoneNumber,
 						status: formData.status,
-						profilePhoto: formData.profilePhoto ?? undefined,
+						profilePhoto: finalPhotoUrl ?? undefined,
 						voter: formData.voter,
 						philhealth: formData.philhealth,
 						sss: formData.sss,
@@ -218,14 +309,25 @@ function EditPerson() {
 					},
 				},
 			});
-			router.navigate({ to: "/" });
+			// Invalidate router to refresh loader data (resets dirty state)
+			await router.invalidate();
+			// Show success indicator
+			setShowSaveSuccess(true);
+			setTimeout(() => setShowSaveSuccess(false), 3000);
 		} catch (error) {
 			console.error("Failed to update person:", error);
+		} finally {
 			setIsSubmitting(false);
 		}
 	};
 
 	const handleCancel = () => {
+		if (isDirty) {
+			const shouldLeave = confirm(
+				"You have unsaved changes. Are you sure you want to leave?",
+			);
+			if (!shouldLeave) return;
+		}
 		router.navigate({ to: "/" });
 	};
 
@@ -257,7 +359,6 @@ function EditPerson() {
 											<ProfilePhotoUpload
 												value={formData.profilePhoto}
 												onChange={handlePhotoChange}
-												personId={person.id}
 											/>
 											<div className="flex-1 grid grid-cols-2 gap-4">
 												{/* Row 1: First Name, Middle Name */}
@@ -995,7 +1096,13 @@ function EditPerson() {
 							</div>
 
 							{/* Actions - outside two-column layout */}
-							<div className="flex justify-end gap-3 pt-6 mt-6 border-t">
+							<div className="flex justify-end items-center gap-3 pt-6 mt-6 border-t">
+								{showSaveSuccess && (
+									<span className="flex items-center gap-1.5 text-sm text-green-600">
+										<Check className="h-4 w-4" />
+										Changes saved
+									</span>
+								)}
 								<Button
 									type="button"
 									variant="outline"
