@@ -188,8 +188,54 @@ function BenefitDetailPage() {
 					</CardContent>
 				</Card>
 
-				{/* Statistics Cards */}
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				{/* Statistics Cards - Mobile Scroll */}
+				<div className="md:hidden overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+					<div className="flex gap-3 pb-2">
+						<div className="shrink-0 w-[70%] snap-start">
+							<Card>
+								<CardContent className="pt-6">
+									<div className="text-2xl font-bold">{stats.total}</div>
+									<p className="text-sm text-muted-foreground">
+										Total Vouchers
+									</p>
+								</CardContent>
+							</Card>
+						</div>
+						<div className="shrink-0 w-[70%] snap-start">
+							<Card>
+								<CardContent className="pt-6">
+									<div className="text-2xl font-bold text-yellow-600">
+										{stats.pending}
+									</div>
+									<p className="text-sm text-muted-foreground">Pending</p>
+								</CardContent>
+							</Card>
+						</div>
+						<div className="shrink-0 w-[70%] snap-start">
+							<Card>
+								<CardContent className="pt-6">
+									<div className="text-2xl font-bold text-green-600">
+										{stats.released}
+									</div>
+									<p className="text-sm text-muted-foreground">Released</p>
+								</CardContent>
+							</Card>
+						</div>
+						<div className="shrink-0 w-[70%] snap-start">
+							<Card>
+								<CardContent className="pt-6">
+									<div className="text-2xl font-bold text-red-600">
+										{stats.cancelled}
+									</div>
+									<p className="text-sm text-muted-foreground">Cancelled</p>
+								</CardContent>
+							</Card>
+						</div>
+					</div>
+				</div>
+
+				{/* Statistics Cards - Desktop Grid */}
+				<div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					<Card>
 						<CardContent className="pt-6">
 							<div className="text-2xl font-bold">{stats.total}</div>
