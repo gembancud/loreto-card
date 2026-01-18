@@ -255,7 +255,9 @@ function BenefitsPage() {
 														</Dialog>
 														<Switch
 															checked={benefit.isActive}
-															onCheckedChange={() => handleToggleActive(benefit)}
+															onCheckedChange={() =>
+																handleToggleActive(benefit)
+															}
 															aria-label={
 																benefit.isActive
 																	? "Deactivate benefit"

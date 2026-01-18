@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle, Clock, Search, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +37,7 @@ const PAGE_SIZE = 10;
 
 function BenefitDetailPage() {
 	const { benefit, vouchers } = Route.useLoaderData();
+	const navigate = useNavigate();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeTab, setActiveTab] = useState("all");
 	const [currentPage, setCurrentPage] = useState(1);
@@ -269,6 +270,12 @@ function BenefitDetailPage() {
 									searchQuery={searchQuery}
 									formatDate={formatDate}
 									getStatusBadge={getStatusBadge}
+									onRowClick={(personId) =>
+										navigate({
+											to: "/people/$personId",
+											params: { personId },
+										})
+									}
 								/>
 								<Pagination
 									currentPage={currentPage}
@@ -293,6 +300,7 @@ interface VouchersTableProps {
 	searchQuery: string;
 	formatDate: (date: Date | null) => string;
 	getStatusBadge: (status: string) => React.ReactNode;
+	onRowClick: (personId: string) => void;
 }
 
 function VouchersTable({
@@ -302,6 +310,7 @@ function VouchersTable({
 	searchQuery,
 	formatDate,
 	getStatusBadge,
+	onRowClick,
 }: VouchersTableProps) {
 	if (totalCount === 0) {
 		return (
@@ -333,15 +342,13 @@ function VouchersTable({
 			</TableHeader>
 			<TableBody>
 				{vouchers.map((voucher) => (
-					<TableRow key={voucher.id}>
+					<TableRow
+						key={voucher.id}
+						className="cursor-pointer hover:bg-muted/50"
+						onClick={() => onRowClick(voucher.personId)}
+					>
 						<TableCell>
-							<Link
-								to="/people/$personId"
-								params={{ personId: voucher.personId }}
-								className="font-medium hover:underline"
-							>
-								{voucher.personName}
-							</Link>
+							<span className="font-medium">{voucher.personName}</span>
 						</TableCell>
 						<TableCell>{getStatusBadge(voucher.status)}</TableCell>
 						<TableCell>{formatDate(voucher.providedAt)}</TableCell>

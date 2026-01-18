@@ -10,8 +10,8 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { QrScannerDialog } from "@/components/qr/QrScannerDialog";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,

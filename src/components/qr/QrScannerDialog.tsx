@@ -5,8 +5,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { QrScanner } from "./QrScanner";
 import type { QrScanError } from "@/lib/qr-utils";
+import { QrScanner } from "./QrScanner";
 
 interface QrScannerDialogProps {
 	open: boolean;

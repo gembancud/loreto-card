@@ -1,6 +1,6 @@
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import { AlertCircle, Camera, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
 	extractPersonIdFromQr,
 	getQrErrorMessage,
@@ -13,6 +13,7 @@ interface QrScannerProps {
 }
 
 export function QrScanner({ onScan, onError }: QrScannerProps) {
+	const scannerId = useId();
 	const [isStarting, setIsStarting] = useState(true);
 	const [error, setError] = useState<QrScanError | null>(null);
 	const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -44,7 +45,6 @@ export function QrScanner({ onScan, onError }: QrScannerProps) {
 	);
 
 	useEffect(() => {
-		const scannerId = "qr-scanner-container";
 		let scanner: Html5Qrcode | null = null;
 
 		const startScanner = async () => {
@@ -90,14 +90,11 @@ export function QrScanner({ onScan, onError }: QrScannerProps) {
 		startScanner();
 
 		return () => {
-			if (
-				scanner &&
-				scanner.getState() === Html5QrcodeScannerState.SCANNING
-			) {
+			if (scanner && scanner.getState() === Html5QrcodeScannerState.SCANNING) {
 				scanner.stop().catch(console.error);
 			}
 		};
-	}, [handleScanSuccess, handleError]);
+	}, [scannerId, handleScanSuccess, handleError]);
 
 	// Reset scanned state when error is cleared
 	useEffect(() => {
@@ -133,7 +130,7 @@ export function QrScanner({ onScan, onError }: QrScannerProps) {
 				</div>
 			)}
 			<div
-				id="qr-scanner-container"
+				id={scannerId}
 				className="w-full aspect-square bg-black rounded-lg overflow-hidden"
 			/>
 			{error === "invalid_qr" && (
