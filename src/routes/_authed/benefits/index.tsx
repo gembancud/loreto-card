@@ -142,62 +142,52 @@ function BenefitsPage() {
 
 				<Card>
 					<CardContent className="pt-6">
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead>Name</TableHead>
-									<TableHead>Value</TableHead>
-									<TableHead>Providers</TableHead>
-									<TableHead>Releasers</TableHead>
-									<TableHead>Created By</TableHead>
-									<TableHead>Status</TableHead>
-									{canManage && <TableHead>Actions</TableHead>}
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{benefits.length === 0 ? (
-									<TableRow>
-										<TableCell
-											colSpan={canManage ? 7 : 6}
-											className="text-center text-muted-foreground py-8"
-										>
-											{canManage
-												? "No benefits found. Create your first benefit to get started."
-												: "No benefits available for your department."}
-										</TableCell>
-									</TableRow>
-								) : (
-									benefits.map((benefit) => (
-										<TableRow
-											key={benefit.id}
-											className={
-												canManage ? "cursor-pointer hover:bg-muted/50" : ""
-											}
-											onClick={
-												canManage
-													? () =>
-															navigate({
-																to: "/benefits/$benefitId",
-																params: { benefitId: benefit.id },
-															})
-													: undefined
-											}
-										>
-											<TableCell>
-												<div>
-													<span className="font-medium">{benefit.name}</span>
-													{benefit.description && (
-														<div className="text-sm text-muted-foreground">
-															{benefit.description}
-														</div>
-													)}
+						{/* Mobile card view */}
+						<div className="md:hidden space-y-3">
+							{benefits.length === 0 ? (
+								<div className="text-center text-muted-foreground py-8">
+									{canManage
+										? "No benefits found. Create your first benefit to get started."
+										: "No benefits available for your department."}
+								</div>
+							) : (
+								benefits.map((benefit) => {
+									const cardContent = (
+										<>
+											{/* Header: Name + Status */}
+											<div className="flex items-start justify-between gap-2">
+												<div className="font-medium">{benefit.name}</div>
+												<span
+													className={`shrink-0 inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+														benefit.isActive
+															? "bg-green-100 text-green-700"
+															: "bg-red-100 text-red-700"
+													}`}
+												>
+													{benefit.isActive ? "Active" : "Inactive"}
+												</span>
+											</div>
+
+											{/* Description + Value */}
+											{benefit.description && (
+												<div className="text-sm text-muted-foreground">
+													{benefit.description}
 												</div>
-											</TableCell>
-											<TableCell>{formatValue(benefit)}</TableCell>
-											<TableCell>
+											)}
+											<div className="text-sm font-medium">
+												{formatValue(benefit)}
+											</div>
+
+											{/* Providers */}
+											<div className="pt-2 border-t">
+												<div className="text-xs text-muted-foreground mb-1">
+													Providers
+												</div>
 												<div className="flex flex-wrap gap-1">
 													{benefit.providers.length === 0 ? (
-														<span className="text-muted-foreground">—</span>
+														<span className="text-muted-foreground text-sm">
+															—
+														</span>
 													) : (
 														benefit.providers.map((p) => (
 															<Badge key={p.id} variant="secondary">
@@ -206,11 +196,18 @@ function BenefitsPage() {
 														))
 													)}
 												</div>
-											</TableCell>
-											<TableCell>
+											</div>
+
+											{/* Releasers */}
+											<div>
+												<div className="text-xs text-muted-foreground mb-1">
+													Releasers
+												</div>
 												<div className="flex flex-wrap gap-1">
 													{benefit.releasers.length === 0 ? (
-														<span className="text-muted-foreground">—</span>
+														<span className="text-muted-foreground text-sm">
+															—
+														</span>
 													) : (
 														benefit.releasers.map((r) => (
 															<Badge key={r.id} variant="outline">
@@ -219,25 +216,14 @@ function BenefitsPage() {
 														))
 													)}
 												</div>
-											</TableCell>
-											<TableCell>
-												{benefit.createdByName ?? (
-													<span className="text-muted-foreground">Unknown</span>
-												)}
-											</TableCell>
-											<TableCell>
-												<span
-													className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-														benefit.isActive
-															? "bg-green-100 text-green-700"
-															: "bg-red-100 text-red-700"
-													}`}
-												>
-													{benefit.isActive ? "Active" : "Inactive"}
-												</span>
-											</TableCell>
+											</div>
+
+											{/* Footer: Created by + Actions (managers only) */}
 											{canManage && (
-												<TableCell onClick={(e) => e.stopPropagation()}>
+												<div className="pt-2 border-t flex items-center justify-between">
+													<div className="text-sm text-muted-foreground">
+														Created by: {benefit.createdByName ?? "Unknown"}
+													</div>
 													<div className="flex items-center gap-2">
 														<Dialog
 															open={editingBenefit?.id === benefit.id}
@@ -246,7 +232,11 @@ function BenefitsPage() {
 															}
 														>
 															<DialogTrigger asChild>
-																<Button variant="ghost" size="icon">
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	onClick={(e) => e.stopPropagation()}
+																>
 																	<Pencil className="h-4 w-4" />
 																</Button>
 															</DialogTrigger>
@@ -264,6 +254,7 @@ function BenefitsPage() {
 															onCheckedChange={() =>
 																handleToggleActive(benefit)
 															}
+															onClick={(e) => e.stopPropagation()}
 															aria-label={
 																benefit.isActive
 																	? "Deactivate benefit"
@@ -271,13 +262,178 @@ function BenefitsPage() {
 															}
 														/>
 													</div>
-												</TableCell>
+												</div>
 											)}
+										</>
+									);
+
+									return canManage ? (
+										<button
+											key={benefit.id}
+											type="button"
+											className="w-full text-left rounded-lg border bg-card p-4 space-y-2 hover:bg-muted/50 transition-colors"
+											onClick={() =>
+												navigate({
+													to: "/benefits/$benefitId",
+													params: { benefitId: benefit.id },
+												})
+											}
+										>
+											{cardContent}
+										</button>
+									) : (
+										<div
+											key={benefit.id}
+											className="rounded-lg border bg-card p-4 space-y-2"
+										>
+											{cardContent}
+										</div>
+									);
+								})
+							)}
+						</div>
+
+						{/* Desktop table view */}
+						<div className="hidden md:block">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Name</TableHead>
+										<TableHead>Value</TableHead>
+										<TableHead>Providers</TableHead>
+										<TableHead>Releasers</TableHead>
+										<TableHead>Created By</TableHead>
+										<TableHead>Status</TableHead>
+										{canManage && <TableHead>Actions</TableHead>}
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{benefits.length === 0 ? (
+										<TableRow>
+											<TableCell
+												colSpan={canManage ? 7 : 6}
+												className="text-center text-muted-foreground py-8"
+											>
+												{canManage
+													? "No benefits found. Create your first benefit to get started."
+													: "No benefits available for your department."}
+											</TableCell>
 										</TableRow>
-									))
-								)}
-							</TableBody>
-						</Table>
+									) : (
+										benefits.map((benefit) => (
+											<TableRow
+												key={benefit.id}
+												className={
+													canManage ? "cursor-pointer hover:bg-muted/50" : ""
+												}
+												onClick={
+													canManage
+														? () =>
+																navigate({
+																	to: "/benefits/$benefitId",
+																	params: { benefitId: benefit.id },
+																})
+														: undefined
+												}
+											>
+												<TableCell>
+													<div>
+														<span className="font-medium">{benefit.name}</span>
+														{benefit.description && (
+															<div className="text-sm text-muted-foreground">
+																{benefit.description}
+															</div>
+														)}
+													</div>
+												</TableCell>
+												<TableCell>{formatValue(benefit)}</TableCell>
+												<TableCell>
+													<div className="flex flex-wrap gap-1">
+														{benefit.providers.length === 0 ? (
+															<span className="text-muted-foreground">—</span>
+														) : (
+															benefit.providers.map((p) => (
+																<Badge key={p.id} variant="secondary">
+																	{p.userName}
+																</Badge>
+															))
+														)}
+													</div>
+												</TableCell>
+												<TableCell>
+													<div className="flex flex-wrap gap-1">
+														{benefit.releasers.length === 0 ? (
+															<span className="text-muted-foreground">—</span>
+														) : (
+															benefit.releasers.map((r) => (
+																<Badge key={r.id} variant="outline">
+																	{r.userName}
+																</Badge>
+															))
+														)}
+													</div>
+												</TableCell>
+												<TableCell>
+													{benefit.createdByName ?? (
+														<span className="text-muted-foreground">
+															Unknown
+														</span>
+													)}
+												</TableCell>
+												<TableCell>
+													<span
+														className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+															benefit.isActive
+																? "bg-green-100 text-green-700"
+																: "bg-red-100 text-red-700"
+														}`}
+													>
+														{benefit.isActive ? "Active" : "Inactive"}
+													</span>
+												</TableCell>
+												{canManage && (
+													<TableCell onClick={(e) => e.stopPropagation()}>
+														<div className="flex items-center gap-2">
+															<Dialog
+																open={editingBenefit?.id === benefit.id}
+																onOpenChange={(open) =>
+																	setEditingBenefit(open ? benefit : null)
+																}
+															>
+																<DialogTrigger asChild>
+																	<Button variant="ghost" size="icon">
+																		<Pencil className="h-4 w-4" />
+																	</Button>
+																</DialogTrigger>
+																<DialogContent className="max-w-2xl">
+																	<BenefitForm
+																		benefit={benefit}
+																		departmentUsers={departmentUsers}
+																		onSuccess={handleBenefitUpdated}
+																		onCancel={() => setEditingBenefit(null)}
+																	/>
+																</DialogContent>
+															</Dialog>
+															<Switch
+																checked={benefit.isActive}
+																onCheckedChange={() =>
+																	handleToggleActive(benefit)
+																}
+																aria-label={
+																	benefit.isActive
+																		? "Deactivate benefit"
+																		: "Activate benefit"
+																}
+															/>
+														</div>
+													</TableCell>
+												)}
+											</TableRow>
+										))
+									)}
+								</TableBody>
+							</Table>
+						</div>
 					</CardContent>
 				</Card>
 			</div>
