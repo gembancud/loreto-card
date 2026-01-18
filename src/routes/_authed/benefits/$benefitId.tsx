@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle, Clock, Search, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
@@ -287,32 +288,34 @@ function BenefitDetailPage() {
 
 						{/* Status Tabs */}
 						<Tabs value={activeTab} onValueChange={setActiveTab}>
-							<TabsList className="mb-4">
-								<TabsTrigger value="all">
-									All
-									<Badge variant="secondary" className="ml-2">
-										{vouchers.length}
-									</Badge>
-								</TabsTrigger>
-								<TabsTrigger value="pending">
-									Pending
-									<Badge variant="secondary" className="ml-2">
-										{stats.pending}
-									</Badge>
-								</TabsTrigger>
-								<TabsTrigger value="released">
-									Released
-									<Badge variant="secondary" className="ml-2">
-										{stats.released}
-									</Badge>
-								</TabsTrigger>
-								<TabsTrigger value="cancelled">
-									Cancelled
-									<Badge variant="secondary" className="ml-2">
-										{stats.cancelled}
-									</Badge>
-								</TabsTrigger>
-							</TabsList>
+							<div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] mb-4">
+								<TabsList className="w-max">
+									<TabsTrigger value="all">
+										All
+										<Badge variant="secondary" className="ml-2">
+											{vouchers.length}
+										</Badge>
+									</TabsTrigger>
+									<TabsTrigger value="pending">
+										Pending
+										<Badge variant="secondary" className="ml-2">
+											{stats.pending}
+										</Badge>
+									</TabsTrigger>
+									<TabsTrigger value="released">
+										Released
+										<Badge variant="secondary" className="ml-2">
+											{stats.released}
+										</Badge>
+									</TabsTrigger>
+									<TabsTrigger value="cancelled">
+										Cancelled
+										<Badge variant="secondary" className="ml-2">
+											{stats.cancelled}
+										</Badge>
+									</TabsTrigger>
+								</TabsList>
+							</div>
 
 							<TabsContent value={activeTab} className="mt-0">
 								<VouchersTable
@@ -381,35 +384,72 @@ function VouchersTable({
 	}
 
 	return (
-		<Table>
-			<TableHeader>
-				<TableRow>
-					<TableHead>Person</TableHead>
-					<TableHead>Status</TableHead>
-					<TableHead>Issued</TableHead>
-					<TableHead>Provided By</TableHead>
-					<TableHead>Released</TableHead>
-					<TableHead>Released By</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
+		<>
+			{/* Mobile card view */}
+			<div className="md:hidden space-y-3">
 				{vouchers.map((voucher) => (
-					<TableRow
+					<Button
 						key={voucher.id}
-						className="cursor-pointer hover:bg-muted/50"
+						variant="outline"
+						className="w-full h-auto p-4 flex flex-col items-stretch text-left"
 						onClick={() => onRowClick(voucher.personId)}
 					>
-						<TableCell>
+						{/* Header: Person name + Status */}
+						<div className="flex items-start justify-between gap-2">
 							<span className="font-medium">{voucher.personName}</span>
-						</TableCell>
-						<TableCell>{getStatusBadge(voucher.status)}</TableCell>
-						<TableCell>{formatDate(voucher.providedAt)}</TableCell>
-						<TableCell>{voucher.providedByName}</TableCell>
-						<TableCell>{formatDate(voucher.releasedAt)}</TableCell>
-						<TableCell>{voucher.releasedByName ?? "—"}</TableCell>
-					</TableRow>
+							{getStatusBadge(voucher.status)}
+						</div>
+
+						{/* Issued info */}
+						<div className="text-sm text-muted-foreground mt-2">
+							Issued {formatDate(voucher.providedAt)} by{" "}
+							{voucher.providedByName}
+						</div>
+
+						{/* Released info (if released) */}
+						{voucher.releasedAt && (
+							<div className="text-sm text-muted-foreground">
+								Released {formatDate(voucher.releasedAt)} by{" "}
+								{voucher.releasedByName ?? "—"}
+							</div>
+						)}
+					</Button>
 				))}
-			</TableBody>
-		</Table>
+			</div>
+
+			{/* Desktop table view */}
+			<div className="hidden md:block">
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>Person</TableHead>
+							<TableHead>Status</TableHead>
+							<TableHead>Issued</TableHead>
+							<TableHead>Provided By</TableHead>
+							<TableHead>Released</TableHead>
+							<TableHead>Released By</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{vouchers.map((voucher) => (
+							<TableRow
+								key={voucher.id}
+								className="cursor-pointer hover:bg-muted/50"
+								onClick={() => onRowClick(voucher.personId)}
+							>
+								<TableCell>
+									<span className="font-medium">{voucher.personName}</span>
+								</TableCell>
+								<TableCell>{getStatusBadge(voucher.status)}</TableCell>
+								<TableCell>{formatDate(voucher.providedAt)}</TableCell>
+								<TableCell>{voucher.providedByName}</TableCell>
+								<TableCell>{formatDate(voucher.releasedAt)}</TableCell>
+								<TableCell>{voucher.releasedByName ?? "—"}</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</div>
+		</>
 	);
 }
