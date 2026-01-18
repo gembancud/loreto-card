@@ -195,7 +195,43 @@ function PeopleList() {
 							onFilterModeChange={setBadgeFilterMode}
 						/>
 					</div>
-					<div className="flex-1 overflow-auto min-h-0 rounded-md border">
+					{/* Mobile Card View */}
+					<div className="md:hidden flex-1 overflow-auto min-h-0 space-y-3">
+						{filteredPeople.length === 0 ? (
+							<div className="text-center text-muted-foreground py-8">
+								No people found matching your filters
+							</div>
+						) : (
+							filteredPeople.map((person) => (
+								<button
+									type="button"
+									key={person.id}
+									className="relative overflow-hidden w-full text-left rounded-lg border bg-card p-4 cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+									onClick={() =>
+										router.navigate({
+											to: "/people/$personId",
+											params: { personId: person.id },
+										})
+									}
+								>
+									<div className="flex items-start justify-between gap-2 mb-2">
+										<span className="font-medium">
+											{formatNameWithInitial(person)}
+										</span>
+										<PersonStatusBadge status={person.status} />
+									</div>
+									<div className="text-sm text-muted-foreground mb-2">
+										{calculateAge(person.birthdate)} yrs old •{" "}
+										{person.address.barangay}
+									</div>
+									<GovServiceBadges person={person} />
+								</button>
+							))
+						)}
+					</div>
+
+					{/* Desktop Table View */}
+					<div className="hidden md:block flex-1 overflow-auto min-h-0 rounded-md border">
 						<Table className="table-fixed">
 							<TableHeader className="sticky top-0 bg-background z-10">
 								<TableRow>

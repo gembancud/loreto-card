@@ -121,3 +121,6 @@ git commit -m "Subject line
 Body text here"
 ```
 
+## GovServiceBadges in Mobile Cards
+When using `GovServiceBadges` in card-style containers (buttons, clickable divs), always add `relative overflow-hidden` to the parent. The component uses an absolutely positioned measurement div that causes layout/overflow issues without proper containment.
+
