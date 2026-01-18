@@ -29,6 +29,13 @@
       "when": 1768637975861,
       "tag": "0003_wandering_blizzard",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1768702533140,
+      "tag": "0004_eager_stature",
+      "breakpoints": true
     }
   ]
 }

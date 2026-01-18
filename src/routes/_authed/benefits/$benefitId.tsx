@@ -147,7 +147,7 @@ function BenefitDetailPage() {
 						<CardTitle>Benefit Details</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-4">
-						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
 							<div>
 								<p className="text-sm text-muted-foreground">Name</p>
 								<p className="font-medium">{benefit.name}</p>
@@ -159,6 +159,12 @@ function BenefitDetailPage() {
 							<div>
 								<p className="text-sm text-muted-foreground">Department</p>
 								<p className="font-medium">{benefit.departmentName ?? "—"}</p>
+							</div>
+							<div>
+								<p className="text-sm text-muted-foreground">Created By</p>
+								<p className="font-medium">
+									{benefit.createdByName ?? "Unknown"}
+								</p>
 							</div>
 							<div>
 								<p className="text-sm text-muted-foreground">Status</p>

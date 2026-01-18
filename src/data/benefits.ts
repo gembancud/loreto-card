@@ -44,6 +44,8 @@ export interface BenefitListItem {
 	quantity: number | null;
 	isActive: boolean;
 	createdAt: Date | null;
+	createdById: string | null;
+	createdByName: string | null;
 	providers: BenefitAssignmentItem[];
 	releasers: BenefitAssignmentItem[];
 }
@@ -57,6 +59,7 @@ export const getBenefits = createServerFn({ method: "GET" }).handler(
 		const allBenefits = await db.query.benefits.findMany({
 			with: {
 				department: true,
+				createdBy: true,
 				assignments: {
 					with: {
 						user: true,
@@ -81,6 +84,10 @@ export const getBenefits = createServerFn({ method: "GET" }).handler(
 			quantity: benefit.quantity,
 			isActive: benefit.isActive,
 			createdAt: benefit.createdAt,
+			createdById: benefit.createdById,
+			createdByName: benefit.createdBy
+				? `${benefit.createdBy.firstName} ${benefit.createdBy.lastName}`
+				: null,
 			providers: benefit.assignments
 				.filter((a) => a.role === "provider")
 				.map((a) => ({
@@ -110,6 +117,7 @@ export const getBenefitById = createServerFn({ method: "GET" })
 		const benefit = await db.query.benefits.findFirst({
 			with: {
 				department: true,
+				createdBy: true,
 				assignments: {
 					with: {
 						user: true,
@@ -138,6 +146,10 @@ export const getBenefitById = createServerFn({ method: "GET" })
 			quantity: benefit.quantity,
 			isActive: benefit.isActive,
 			createdAt: benefit.createdAt,
+			createdById: benefit.createdById,
+			createdByName: benefit.createdBy
+				? `${benefit.createdBy.firstName} ${benefit.createdBy.lastName}`
+				: null,
 			providers: benefit.assignments
 				.filter((a) => a.role === "provider")
 				.map((a) => ({
@@ -230,6 +242,7 @@ export const createBenefit = createServerFn({ method: "POST" })
 					valuePesos: data.valuePesos ?? null,
 					quantity: data.quantity ?? null,
 					departmentId,
+					createdById: currentUser.userId,
 				})
 				.returning();
 

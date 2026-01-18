@@ -149,6 +149,7 @@ function BenefitsPage() {
 									<TableHead>Value</TableHead>
 									<TableHead>Providers</TableHead>
 									<TableHead>Releasers</TableHead>
+									<TableHead>Created By</TableHead>
 									<TableHead>Status</TableHead>
 									{canManage && <TableHead>Actions</TableHead>}
 								</TableRow>
@@ -157,7 +158,7 @@ function BenefitsPage() {
 								{benefits.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={canManage ? 6 : 5}
+											colSpan={canManage ? 7 : 6}
 											className="text-center text-muted-foreground py-8"
 										>
 											{canManage
@@ -218,6 +219,11 @@ function BenefitsPage() {
 														))
 													)}
 												</div>
+											</TableCell>
+											<TableCell>
+												{benefit.createdByName ?? (
+													<span className="text-muted-foreground">Unknown</span>
+												)}
 											</TableCell>
 											<TableCell>
 												<span

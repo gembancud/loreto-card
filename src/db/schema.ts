@@ -107,6 +107,7 @@ export const benefits = pgTable("benefits", {
 	valuePesos: integer("value_pesos"), // Optional monetary value
 	quantity: integer("quantity"), // Optional quantity/units
 	isActive: boolean("is_active").notNull().default(true),
+	createdById: uuid("created_by_id").references(() => users.id), // Nullable for existing data
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -175,6 +176,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 		references: [departments.id],
 	}),
 	benefitAssignments: many(benefitAssignments),
+	createdBenefits: many(benefits, { relationName: "createdBenefits" }),
 	providedVouchers: many(vouchers, { relationName: "provider" }),
 	releasedVouchers: many(vouchers, { relationName: "releaser" }),
 }));
@@ -190,6 +192,11 @@ export const benefitsRelations = relations(benefits, ({ one, many }) => ({
 	department: one(departments, {
 		fields: [benefits.departmentId],
 		references: [departments.id],
+	}),
+	createdBy: one(users, {
+		fields: [benefits.createdById],
+		references: [users.id],
+		relationName: "createdBenefits",
 	}),
 	assignments: many(benefitAssignments),
 	vouchers: many(vouchers),
