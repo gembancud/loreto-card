@@ -8,6 +8,7 @@ import {
 	people,
 	personIdentifications,
 } from "@/db/schema";
+import { getPresignedUrl } from "@/lib/storage";
 import type { LoretoBarangay } from "./barangays";
 
 export type PersonStatus = "active" | "inactive" | "pending";
@@ -64,10 +65,10 @@ const GOV_SERVICE_TYPES: IdentificationType[] = [
 ];
 
 // Transform DB person + identifications to frontend Person interface
-function transformDbPersonToPerson(
+async function transformDbPersonToPerson(
 	dbPerson: DbPerson,
 	identifications: PersonIdentification[],
-): Person {
+): Promise<Person> {
 	// Build a map of identifications by type
 	const idMap = new Map<string, PersonIdentification>();
 	for (const id of identifications) {
@@ -88,6 +89,12 @@ function transformDbPersonToPerson(
 		};
 	};
 
+	// Generate presigned URL for profile photo if it exists
+	let profilePhoto: string | undefined;
+	if (dbPerson.profilePhoto) {
+		profilePhoto = await getPresignedUrl(dbPerson.profilePhoto);
+	}
+
 	return {
 		id: dbPerson.id,
 		firstName: dbPerson.firstName,
@@ -102,7 +109,7 @@ function transformDbPersonToPerson(
 		},
 		phoneNumber: dbPerson.phoneNumber,
 		status: dbPerson.status as PersonStatus,
-		profilePhoto: dbPerson.profilePhoto ?? undefined,
+		profilePhoto,
 		voter: buildRecord("voter"),
 		philhealth: buildRecord("philhealth"),
 		sss: buildRecord("sss"),
@@ -127,7 +134,9 @@ export const getPeople = createServerFn({
 		orderBy: (people, { asc }) => [asc(people.lastName), asc(people.firstName)],
 	});
 
-	return dbPeople.map((p) => transformDbPersonToPerson(p, p.identifications));
+	return Promise.all(
+		dbPeople.map((p) => transformDbPersonToPerson(p, p.identifications)),
+	);
 });
 
 export const getPersonById = createServerFn({
@@ -146,7 +155,7 @@ export const getPersonById = createServerFn({
 			throw new Error(`Person with ID ${personId} not found`);
 		}
 
-		return transformDbPersonToPerson(dbPerson, dbPerson.identifications);
+		return await transformDbPersonToPerson(dbPerson, dbPerson.identifications);
 	});
 
 interface UpdatePersonInput {
@@ -255,7 +264,7 @@ export const updatePerson = createServerFn({
 			throw new Error(`Person with ID ${personId} not found after update`);
 		}
 
-		return transformDbPersonToPerson(
+		return await transformDbPersonToPerson(
 			updatedPerson,
 			updatedPerson.identifications,
 		);
@@ -331,7 +340,7 @@ export const createPerson = createServerFn({
 			throw new Error("Failed to create person");
 		}
 
-		return transformDbPersonToPerson(
+		return await transformDbPersonToPerson(
 			createdPerson,
 			createdPerson.identifications,
 		);
@@ -362,5 +371,7 @@ export const searchPeople = createServerFn({
 			limit: 50,
 		});
 
-		return dbPeople.map((p) => transformDbPersonToPerson(p, p.identifications));
+		return Promise.all(
+			dbPeople.map((p) => transformDbPersonToPerson(p, p.identifications)),
+		);
 	});

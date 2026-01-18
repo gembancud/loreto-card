@@ -257,6 +257,7 @@ function EditPerson() {
 											<ProfilePhotoUpload
 												value={formData.profilePhoto}
 												onChange={handlePhotoChange}
+												personId={person.id}
 											/>
 											<div className="flex-1 grid grid-cols-2 gap-4">
 												{/* Row 1: First Name, Middle Name */}
