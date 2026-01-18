@@ -6,6 +6,7 @@ import {
 	Clock,
 	Gift,
 	ScanLine,
+	User,
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -68,6 +69,7 @@ function ReleaseVoucherPage() {
 	const router = useRouter();
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
 	// Person search state
 	const [open, setOpen] = useState(false);
@@ -171,8 +173,15 @@ function ReleaseVoucherPage() {
 			const result = await releaseVoucher({ data: pendingVoucher.id });
 
 			if (result.success) {
+				const personName = pendingVoucher.personName;
+				// Reset form for next person
+				setSelectedPerson(null);
+				setSearchQuery("");
+				setPendingVoucher(null);
+				setLookupError(null);
+				setSuccessMessage(`Voucher released for ${personName}`);
+				setTimeout(() => setSuccessMessage(null), 4000);
 				await router.invalidate();
-				router.navigate({ to: "/vouchers" });
 			} else {
 				setError(result.error ?? "Failed to release voucher");
 			}
@@ -252,6 +261,13 @@ function ReleaseVoucherPage() {
 							</dl>
 						</div>
 
+						{successMessage && (
+							<div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 flex items-center gap-2">
+								<CheckCircle className="h-5 w-5 flex-shrink-0" />
+								<span>{successMessage}</span>
+							</div>
+						)}
+
 						<div className="space-y-4">
 							<div className="space-y-2">
 								<p className="text-sm font-medium">Search for Person *</p>
@@ -261,13 +277,26 @@ function ReleaseVoucherPage() {
 									</div>
 								) : selectedPerson ? (
 									<div className="flex items-center justify-between rounded-md border p-3">
-										<div>
-											<p className="font-medium">
-												{buildPersonName(selectedPerson)}
-											</p>
-											<p className="text-sm text-muted-foreground">
-												{selectedPerson.phoneNumber}
-											</p>
+										<div className="flex items-center gap-3">
+											{selectedPerson.profilePhoto ? (
+												<img
+													src={selectedPerson.profilePhoto}
+													alt=""
+													className="h-14 w-14 rounded-full object-cover"
+												/>
+											) : (
+												<div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center">
+													<User className="h-7 w-7 text-muted-foreground" />
+												</div>
+											)}
+											<div>
+												<p className="font-medium">
+													{buildPersonName(selectedPerson)}
+												</p>
+												<p className="text-sm text-muted-foreground">
+													{selectedPerson.phoneNumber}
+												</p>
+											</div>
 										</div>
 										<Button
 											type="button"
@@ -328,11 +357,24 @@ function ReleaseVoucherPage() {
 																			setSearchQuery("");
 																		}}
 																	>
-																		<div className="flex flex-col">
-																			<span>{buildPersonName(person)}</span>
-																			<span className="text-sm text-muted-foreground">
-																				{person.phoneNumber}
-																			</span>
+																		<div className="flex items-center gap-3">
+																			{person.profilePhoto ? (
+																				<img
+																					src={person.profilePhoto}
+																					alt=""
+																					className="h-8 w-8 rounded-full object-cover"
+																				/>
+																			) : (
+																				<div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+																					<User className="h-4 w-4 text-muted-foreground" />
+																				</div>
+																			)}
+																			<div className="flex flex-col">
+																				<span>{buildPersonName(person)}</span>
+																				<span className="text-sm text-muted-foreground">
+																					{person.phoneNumber}
+																				</span>
+																			</div>
 																		</div>
 																	</CommandItem>
 																))}

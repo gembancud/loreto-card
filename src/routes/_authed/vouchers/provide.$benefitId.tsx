@@ -1,5 +1,14 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ChevronsUpDown, Gift, ScanLine, Send, X } from "lucide-react";
+import {
+	ArrowLeft,
+	CheckCircle,
+	ChevronsUpDown,
+	Gift,
+	ScanLine,
+	Send,
+	User,
+	X,
+} from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { QrScannerDialog } from "@/components/qr/QrScannerDialog";
@@ -59,6 +68,7 @@ function ProvideVoucherPage() {
 	const [notes, setNotes] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
 	// Person search state
 	const [open, setOpen] = useState(false);
@@ -129,8 +139,14 @@ function ProvideVoucherPage() {
 			});
 
 			if (result.success) {
+				const personName = buildPersonName(selectedPerson);
+				// Reset form for next person
+				setSelectedPerson(null);
+				setSearchQuery("");
+				setNotes("");
+				setSuccessMessage(`Voucher issued for ${personName}`);
+				setTimeout(() => setSuccessMessage(null), 4000);
 				await router.invalidate();
-				router.navigate({ to: "/vouchers" });
 			} else {
 				setError(result.error ?? "Failed to create voucher");
 			}
@@ -199,6 +215,13 @@ function ProvideVoucherPage() {
 							</dl>
 						</div>
 
+						{successMessage && (
+							<div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 flex items-center gap-2">
+								<CheckCircle className="h-5 w-5 flex-shrink-0" />
+								<span>{successMessage}</span>
+							</div>
+						)}
+
 						<form onSubmit={handleSubmit} className="space-y-4">
 							<div className="space-y-2">
 								<Label>Person *</Label>
@@ -208,13 +231,26 @@ function ProvideVoucherPage() {
 									</div>
 								) : selectedPerson ? (
 									<div className="flex items-center justify-between rounded-md border p-3">
-										<div>
-											<p className="font-medium">
-												{buildPersonName(selectedPerson)}
-											</p>
-											<p className="text-sm text-muted-foreground">
-												{selectedPerson.phoneNumber}
-											</p>
+										<div className="flex items-center gap-3">
+											{selectedPerson.profilePhoto ? (
+												<img
+													src={selectedPerson.profilePhoto}
+													alt=""
+													className="h-14 w-14 rounded-full object-cover"
+												/>
+											) : (
+												<div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center">
+													<User className="h-7 w-7 text-muted-foreground" />
+												</div>
+											)}
+											<div>
+												<p className="font-medium">
+													{buildPersonName(selectedPerson)}
+												</p>
+												<p className="text-sm text-muted-foreground">
+													{selectedPerson.phoneNumber}
+												</p>
+											</div>
 										</div>
 										<Button
 											type="button"
@@ -273,11 +309,24 @@ function ProvideVoucherPage() {
 																			setSearchQuery("");
 																		}}
 																	>
-																		<div className="flex flex-col">
-																			<span>{buildPersonName(person)}</span>
-																			<span className="text-sm text-muted-foreground">
-																				{person.phoneNumber}
-																			</span>
+																		<div className="flex items-center gap-3">
+																			{person.profilePhoto ? (
+																				<img
+																					src={person.profilePhoto}
+																					alt=""
+																					className="h-8 w-8 rounded-full object-cover"
+																				/>
+																			) : (
+																				<div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+																					<User className="h-4 w-4 text-muted-foreground" />
+																				</div>
+																			)}
+																			<div className="flex flex-col">
+																				<span>{buildPersonName(person)}</span>
+																				<span className="text-sm text-muted-foreground">
+																					{person.phoneNumber}
+																				</span>
+																			</div>
 																		</div>
 																	</CommandItem>
 																))}
