@@ -300,54 +300,102 @@ function VoucherDashboardPage() {
 									</p>
 								) : (
 									<>
-										<Table>
-											<TableHeader>
-												<TableRow>
-													<TableHead>Benefit</TableHead>
-													<TableHead>Person</TableHead>
-													<TableHead>Status</TableHead>
-													<TableHead>Issued</TableHead>
-													<TableHead>Released By</TableHead>
-													<TableHead>Actions</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{paginatedIssuedVouchers.map((voucher) => (
-													<TableRow key={voucher.id}>
-														<TableCell className="font-medium">
+										{/* Mobile Card View */}
+										<div className="md:hidden space-y-3">
+											{paginatedIssuedVouchers.map((voucher) => (
+												<div
+													key={voucher.id}
+													className="rounded-lg border bg-card p-4"
+												>
+													<div className="flex items-start justify-between gap-2 mb-2">
+														<span className="font-medium">
 															{voucher.benefitName}
-														</TableCell>
-														<TableCell>{voucher.personName}</TableCell>
-														<TableCell>
-															{getStatusBadge(voucher.status)}
-														</TableCell>
-														<TableCell>
-															{formatDate(voucher.providedAt)}
-														</TableCell>
-														<TableCell>
-															{voucher.releasedByName ?? "—"}
-															{voucher.releasedAt && (
-																<div className="text-xs text-muted-foreground">
-																	{formatDate(voucher.releasedAt)}
+														</span>
+														{getStatusBadge(voucher.status)}
+													</div>
+													<div className="text-sm text-muted-foreground space-y-1">
+														<div>{voucher.personName}</div>
+														<div>Issued: {formatDate(voucher.providedAt)}</div>
+													</div>
+													{(voucher.releasedByName ||
+														voucher.status === "pending") && (
+														<div className="mt-3 pt-3 border-t flex items-center justify-between">
+															{voucher.releasedByName && (
+																<div className="text-sm text-muted-foreground">
+																	Released by {voucher.releasedByName}
+																	{voucher.releasedAt && (
+																		<span className="block text-xs">
+																			{formatDate(voucher.releasedAt)}
+																		</span>
+																	)}
 																</div>
 															)}
-														</TableCell>
-														<TableCell>
 															{voucher.status === "pending" && (
 																<Button
 																	variant="ghost"
 																	size="sm"
 																	onClick={() => handleCancel(voucher.id)}
-																	className="text-destructive"
+																	className="text-destructive ml-auto"
 																>
 																	Cancel
 																</Button>
 															)}
-														</TableCell>
+														</div>
+													)}
+												</div>
+											))}
+										</div>
+										{/* Desktop Table View */}
+										<div className="hidden md:block">
+											<Table>
+												<TableHeader>
+													<TableRow>
+														<TableHead>Benefit</TableHead>
+														<TableHead>Person</TableHead>
+														<TableHead>Status</TableHead>
+														<TableHead>Issued</TableHead>
+														<TableHead>Released By</TableHead>
+														<TableHead>Actions</TableHead>
 													</TableRow>
-												))}
-											</TableBody>
-										</Table>
+												</TableHeader>
+												<TableBody>
+													{paginatedIssuedVouchers.map((voucher) => (
+														<TableRow key={voucher.id}>
+															<TableCell className="font-medium">
+																{voucher.benefitName}
+															</TableCell>
+															<TableCell>{voucher.personName}</TableCell>
+															<TableCell>
+																{getStatusBadge(voucher.status)}
+															</TableCell>
+															<TableCell>
+																{formatDate(voucher.providedAt)}
+															</TableCell>
+															<TableCell>
+																{voucher.releasedByName ?? "—"}
+																{voucher.releasedAt && (
+																	<div className="text-xs text-muted-foreground">
+																		{formatDate(voucher.releasedAt)}
+																	</div>
+																)}
+															</TableCell>
+															<TableCell>
+																{voucher.status === "pending" && (
+																	<Button
+																		variant="ghost"
+																		size="sm"
+																		onClick={() => handleCancel(voucher.id)}
+																		className="text-destructive"
+																	>
+																		Cancel
+																	</Button>
+																)}
+															</TableCell>
+														</TableRow>
+													))}
+												</TableBody>
+											</Table>
+										</div>
 										<Pagination
 											currentPage={issuedPage}
 											totalPages={issuedTotalPages}
@@ -366,30 +414,53 @@ function VoucherDashboardPage() {
 									</p>
 								) : (
 									<>
-										<Table>
-											<TableHeader>
-												<TableRow>
-													<TableHead>Benefit</TableHead>
-													<TableHead>Person</TableHead>
-													<TableHead>Provided By</TableHead>
-													<TableHead>Released</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{paginatedReleasedVouchers.map((voucher) => (
-													<TableRow key={voucher.id}>
-														<TableCell className="font-medium">
-															{voucher.benefitName}
-														</TableCell>
-														<TableCell>{voucher.personName}</TableCell>
-														<TableCell>{voucher.providedByName}</TableCell>
-														<TableCell>
-															{formatDate(voucher.releasedAt)}
-														</TableCell>
+										{/* Mobile Card View */}
+										<div className="md:hidden space-y-3">
+											{paginatedReleasedVouchers.map((voucher) => (
+												<div
+													key={voucher.id}
+													className="rounded-lg border bg-card p-4"
+												>
+													<div className="font-medium mb-2">
+														{voucher.benefitName}
+													</div>
+													<div className="text-sm text-muted-foreground space-y-1">
+														<div>{voucher.personName}</div>
+														<div>Provided by {voucher.providedByName}</div>
+														<div>
+															Released: {formatDate(voucher.releasedAt)}
+														</div>
+													</div>
+												</div>
+											))}
+										</div>
+										{/* Desktop Table View */}
+										<div className="hidden md:block">
+											<Table>
+												<TableHeader>
+													<TableRow>
+														<TableHead>Benefit</TableHead>
+														<TableHead>Person</TableHead>
+														<TableHead>Provided By</TableHead>
+														<TableHead>Released</TableHead>
 													</TableRow>
-												))}
-											</TableBody>
-										</Table>
+												</TableHeader>
+												<TableBody>
+													{paginatedReleasedVouchers.map((voucher) => (
+														<TableRow key={voucher.id}>
+															<TableCell className="font-medium">
+																{voucher.benefitName}
+															</TableCell>
+															<TableCell>{voucher.personName}</TableCell>
+															<TableCell>{voucher.providedByName}</TableCell>
+															<TableCell>
+																{formatDate(voucher.releasedAt)}
+															</TableCell>
+														</TableRow>
+													))}
+												</TableBody>
+											</Table>
+										</div>
 										<Pagination
 											currentPage={releasedPage}
 											totalPages={releasedTotalPages}
