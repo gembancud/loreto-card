@@ -6,6 +6,7 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import BottomNav from "../components/BottomNav";
 import Header from "../components/Header";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
@@ -22,7 +23,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 			{
 				name: "viewport",
-				content: "width=device-width, initial-scale=1",
+				content: "width=device-width, initial-scale=1, viewport-fit=cover",
 			},
 			{
 				title: "Loreto Card",
@@ -47,7 +48,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="h-screen flex flex-col overflow-hidden">
 				<Header />
-				<main className="flex-1 overflow-auto">{children}</main>
+				<main className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
+				<BottomNav />
 				<TanStackDevtools
 					config={{
 						position: "bottom-right",

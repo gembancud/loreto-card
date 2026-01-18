@@ -54,7 +54,7 @@ export default function Header() {
 					</Link>
 
 					{session && (
-						<nav className="flex items-center gap-1">
+						<nav className="hidden md:flex items-center gap-1">
 							<Link to="/">
 								<Button
 									variant="ghost"
