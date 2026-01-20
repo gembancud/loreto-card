@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Pencil, Search, Users, X } from "lucide-react";
+import { Pencil, QrCode, Search, Users, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AddPersonDialog } from "@/components/people/AddPersonDialog";
 import { BadgeFilterToggle } from "@/components/people/BadgeFilterToggle";
 import { GovServiceBadges } from "@/components/people/GovServiceBadges";
 import { PersonQuickViewPopover } from "@/components/people/PersonQuickViewPopover";
 import { PersonStatusBadge } from "@/components/people/PersonStatusBadge";
+import { QrScannerDialog } from "@/components/qr/QrScannerDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,7 @@ function PeopleList() {
 	const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
 	const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
 	const [popoverOpen, setPopoverOpen] = useState(false);
+	const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
 	const filteredPeople = useMemo(() => {
 		const query = searchQuery.trim().toLowerCase();
@@ -163,6 +166,14 @@ function PeopleList() {
 									className="pl-9"
 								/>
 							</div>
+							<Button
+								variant="outline"
+								size="icon"
+								onClick={() => setQrScannerOpen(true)}
+								title="Scan QR Code"
+							>
+								<QrCode className="h-4 w-4" />
+							</Button>
 							<Select value={barangayFilter} onValueChange={setBarangayFilter}>
 								<SelectTrigger className="w-[200px]">
 									<SelectValue placeholder="Filter by barangay" />
@@ -335,6 +346,18 @@ function PeopleList() {
 					)}
 				</PopoverContent>
 			</Popover>
+
+			<QrScannerDialog
+				open={qrScannerOpen}
+				onOpenChange={setQrScannerOpen}
+				onScan={(personId) => {
+					setQrScannerOpen(false);
+					router.navigate({ to: "/people/$personId", params: { personId } });
+				}}
+				onError={(error) => {
+					toast.error(error);
+				}}
+			/>
 		</div>
 	);
 }
