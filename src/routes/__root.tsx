@@ -8,6 +8,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import BottomNav from "../components/BottomNav";
 import Header from "../components/Header";
+import { Toaster } from "../components/ui/sonner";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
@@ -50,6 +51,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<Header />
 				<main className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
 				<BottomNav />
+				<Toaster />
 				<TanStackDevtools
 					config={{
 						position: "bottom-right",
