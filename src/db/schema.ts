@@ -29,6 +29,7 @@ export const people = pgTable("people", {
 	purok: text("purok"),
 	barangay: text("barangay").notNull(),
 	phoneNumber: text("phone_number").notNull(),
+	monthlyIncome: integer("monthly_income"),
 	status: text("status").notNull().default("active"), // active | inactive | pending
 	profilePhoto: text("profile_photo"),
 	createdAt: timestamp("created_at").defaultNow(),

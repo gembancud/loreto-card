@@ -68,6 +68,7 @@ interface EditPersonFormData {
 	purok: string;
 	barangay: LoretoBarangay;
 	phoneNumber: string;
+	monthlyIncome: number | null;
 	status: PersonStatus;
 	profilePhoto: string | null;
 	// Government services
@@ -100,6 +101,7 @@ function EditPerson() {
 		purok: "",
 		barangay: "Poblacion",
 		phoneNumber: "",
+		monthlyIncome: null,
 		status: "pending",
 		profilePhoto: null,
 		voter: { registered: false },
@@ -139,6 +141,7 @@ function EditPerson() {
 			formData.purok !== (person.address.purok ?? "") ||
 			formData.barangay !== person.address.barangay ||
 			formData.phoneNumber !== person.phoneNumber ||
+			formData.monthlyIncome !== person.monthlyIncome ||
 			formData.status !== person.status ||
 			formData.profilePhoto !== (person.profilePhoto ?? null) ||
 			compareGovService(formData.voter, person.voter) ||
@@ -175,6 +178,7 @@ function EditPerson() {
 			purok: person.address.purok ?? "",
 			barangay: person.address.barangay,
 			phoneNumber: person.phoneNumber,
+			monthlyIncome: person.monthlyIncome,
 			status: person.status,
 			profilePhoto: person.profilePhoto ?? null,
 			voter: person.voter,
@@ -195,6 +199,7 @@ function EditPerson() {
 	const suffixId = `${id}-suffix`;
 	const birthdateId = `${id}-birthdate`;
 	const phoneNumberId = `${id}-phoneNumber`;
+	const monthlyIncomeId = `${id}-monthlyIncome`;
 	const streetId = `${id}-street`;
 	const purokId = `${id}-purok`;
 	const barangayId = `${id}-barangay`;
@@ -295,6 +300,7 @@ function EditPerson() {
 							barangay: formData.barangay,
 						},
 						phoneNumber: formData.phoneNumber,
+						monthlyIncome: formData.monthlyIncome,
 						status: formData.status,
 						profilePhoto: finalPhotoUrl ?? undefined,
 						voter: formData.voter,
@@ -440,6 +446,26 @@ function EditPerson() {
 													placeholder="Enter phone number"
 												/>
 											</div>
+										</div>
+
+										{/* Monthly Income */}
+										<div className="grid gap-2">
+											<Label htmlFor={monthlyIncomeId}>Monthly Income</Label>
+											<Input
+												id={monthlyIncomeId}
+												name="monthlyIncome"
+												type="number"
+												value={formData.monthlyIncome ?? ""}
+												onChange={(e) => {
+													const value = e.target.value;
+													setFormData((prev) => ({
+														...prev,
+														monthlyIncome:
+															value === "" ? null : Number.parseInt(value, 10),
+													}));
+												}}
+												placeholder="₱ 0"
+											/>
 										</div>
 
 										{/* Street, Purok, and Barangay */}

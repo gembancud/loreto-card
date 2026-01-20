@@ -35,6 +35,7 @@ export interface Person {
 	birthdate: string;
 	address: PersonAddress;
 	phoneNumber: string;
+	monthlyIncome: number | null;
 	status: PersonStatus;
 	profilePhoto?: string;
 	// Government service fields
@@ -108,6 +109,7 @@ async function transformDbPersonToPerson(
 			barangay: dbPerson.barangay as LoretoBarangay,
 		},
 		phoneNumber: dbPerson.phoneNumber,
+		monthlyIncome: dbPerson.monthlyIncome,
 		status: dbPerson.status as PersonStatus,
 		profilePhoto,
 		voter: buildRecord("voter"),
@@ -192,6 +194,8 @@ export const updatePerson = createServerFn({
 			personUpdates.birthdate = updates.birthdate;
 		if (updates.phoneNumber !== undefined)
 			personUpdates.phoneNumber = updates.phoneNumber;
+		if (updates.monthlyIncome !== undefined)
+			personUpdates.monthlyIncome = updates.monthlyIncome;
 		if (updates.status !== undefined) personUpdates.status = updates.status;
 		if (updates.profilePhoto !== undefined)
 			personUpdates.profilePhoto = updates.profilePhoto ?? null;
@@ -278,6 +282,7 @@ interface CreatePersonInput {
 	birthdate: string;
 	address: PersonAddress;
 	phoneNumber: string;
+	monthlyIncome?: number | null;
 	status?: PersonStatus;
 	profilePhoto?: string;
 	voter?: GovServiceRecord;
@@ -309,6 +314,7 @@ export const createPerson = createServerFn({
 				purok: data.address.purok ?? null,
 				barangay: data.address.barangay,
 				phoneNumber: data.phoneNumber,
+				monthlyIncome: data.monthlyIncome ?? null,
 				status: data.status ?? "active",
 				profilePhoto: data.profilePhoto ?? null,
 			})

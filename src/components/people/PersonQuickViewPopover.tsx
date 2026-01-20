@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Calendar, MapPin, Pencil, Phone, User } from "lucide-react";
+import { Banknote, Calendar, MapPin, Pencil, Phone, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Person } from "@/data/people";
@@ -66,6 +66,12 @@ export function PersonQuickViewPopover({
 						{formatDate(person.birthdate)} ({age} years old)
 					</span>
 				</div>
+				{person.monthlyIncome !== null && (
+					<div className="flex items-center gap-2 text-muted-foreground">
+						<Banknote className="h-4 w-4 flex-shrink-0" />
+						<span>₱{person.monthlyIncome.toLocaleString()} / month</span>
+					</div>
+				)}
 			</div>
 
 			{/* Government Services Badges */}
