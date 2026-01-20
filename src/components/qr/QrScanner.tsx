@@ -19,6 +19,7 @@ export function QrScanner({ onScan, onError }: QrScannerProps) {
 	const scannerRef = useRef<Html5Qrcode | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const hasScannedRef = useRef(false);
+	const streamRef = useRef<MediaStream | null>(null);
 
 	const handleError = useCallback(
 		(err: QrScanError) => {
@@ -28,6 +29,16 @@ export function QrScanner({ onScan, onError }: QrScannerProps) {
 		[onError],
 	);
 
+	// Synchronously stop camera tracks - called at start of cleanup for immediate release
+	const stopCamera = useCallback(() => {
+		if (streamRef.current) {
+			for (const track of streamRef.current.getTracks()) {
+				track.stop();
+			}
+			streamRef.current = null;
+		}
+	}, []);
+
 	const handleScanSuccess = useCallback(
 		(decodedText: string) => {
 			// Prevent multiple scans
@@ -36,12 +47,31 @@ export function QrScanner({ onScan, onError }: QrScannerProps) {
 			const personId = extractPersonIdFromQr(decodedText);
 			if (personId) {
 				hasScannedRef.current = true;
-				onScan(personId);
+
+				// FIRST: Synchronously stop camera tracks to immediately release hardware
+				stopCamera();
+
+				// THEN: Clean up the library (async, but camera is already released)
+				const scanner = scannerRef.current;
+				if (scanner) {
+					scanner
+						.stop()
+						.then(() => {
+							scanner.clear();
+							onScan(personId);
+						})
+						.catch(() => {
+							// Even if stop fails, still navigate
+							onScan(personId);
+						});
+				} else {
+					onScan(personId);
+				}
 			} else {
 				handleError("invalid_qr");
 			}
 		},
-		[onScan, handleError],
+		[onScan, handleError, stopCamera],
 	);
 
 	useEffect(() => {
@@ -65,6 +95,14 @@ export function QrScanner({ onScan, onError }: QrScannerProps) {
 						// QR decode failure - ignore, keep scanning
 					},
 				);
+
+				// Capture stream reference for reliable cleanup (DOM is stable here)
+				const container = document.getElementById(scannerId);
+				const video = container?.querySelector("video");
+				if (video?.srcObject) {
+					streamRef.current = video.srcObject as MediaStream;
+				}
+
 				setIsStarting(false);
 			} catch (err) {
 				console.error("QR Scanner error:", err);
@@ -90,11 +128,43 @@ export function QrScanner({ onScan, onError }: QrScannerProps) {
 		startScanner();
 
 		return () => {
-			if (scanner && scanner.getState() === Html5QrcodeScannerState.SCANNING) {
-				scanner.stop().catch(console.error);
+			// FIRST: Synchronously stop camera tracks to immediately release hardware
+			stopCamera();
+
+			if (!scanner) return;
+
+			// THEN: Clean up the library (async, but camera is already released)
+			const scannerInstance = scanner;
+			const state = scannerInstance.getState();
+
+			if (
+				state === Html5QrcodeScannerState.SCANNING ||
+				state === Html5QrcodeScannerState.PAUSED
+			) {
+				scannerInstance
+					.stop()
+					.then(() => {
+						scannerInstance.clear();
+					})
+					.catch((err) => {
+						console.debug("Scanner cleanup error:", err);
+						// Still try to clear even if stop failed
+						try {
+							scannerInstance.clear();
+						} catch {
+							// Ignore clear errors
+						}
+					});
+			} else {
+				// Not scanning, just clear the DOM element
+				try {
+					scannerInstance.clear();
+				} catch {
+					// Ignore clear errors
+				}
 			}
 		};
-	}, [scannerId, handleScanSuccess, handleError]);
+	}, [scannerId, handleScanSuccess, handleError, stopCamera]);
 
 	// Reset scanned state when error is cleared
 	useEffect(() => {

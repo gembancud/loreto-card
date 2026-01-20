@@ -124,3 +124,11 @@ Body text here"
 ## GovServiceBadges in Mobile Cards
 When using `GovServiceBadges` in card-style containers (buttons, clickable divs), always add `relative overflow-hidden` to the parent. The component uses an absolutely positioned measurement div that causes layout/overflow issues without proper containment.
 
+## QR Scanner Camera Cleanup
+The html5-qrcode library's `stop()` method is unreliable for releasing camera hardware. To ensure the camera indicator turns off immediately:
+1. Store the MediaStream reference in a ref **at start time** (after `scanner.start()` succeeds)
+2. Call `track.stop()` on all tracks synchronously **before** calling the library's cleanup
+3. Don't query the DOM for the video element during cleanup - the element may be unmounting
+
+See `QrScanner.tsx` for the pattern using `streamRef` and `stopCamera()`.
+
