@@ -49,7 +49,11 @@ export default function Header() {
 			<div className="flex items-center justify-between">
 				{/* Left group: logo + main nav */}
 				<div className="flex items-center gap-6">
-					<Link to="/" className="text-xl font-semibold text-gray-900">
+					<Link
+						to="/"
+						className="flex items-center gap-2 text-xl font-semibold text-gray-900"
+					>
+						<img src="/favicon.png" alt="" className="h-7 w-7" />
 						LoreCard
 					</Link>
 

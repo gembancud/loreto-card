@@ -87,6 +87,7 @@ function LoginPage() {
 		<div className="min-h-full flex items-center justify-center p-4">
 			<Card className="w-full max-w-md">
 				<CardHeader className="text-center">
+					<img src="/favicon.png" alt="" className="h-12 w-12 mx-auto mb-2" />
 					<CardTitle className="text-2xl">LoreCard</CardTitle>
 					<CardDescription>
 						{step === "phone"
