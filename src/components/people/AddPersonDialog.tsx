@@ -1,5 +1,7 @@
-import { UserPlus } from "lucide-react";
+import { useRouter } from "@tanstack/react-router";
+import { Loader2, UserPlus } from "lucide-react";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -20,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
 import type { PersonStatus } from "@/data/people";
+import { createPerson } from "@/data/people";
 import { ProfilePhotoUpload } from "./ProfilePhotoUpload";
 
 interface AddPersonFormData {
@@ -48,8 +51,10 @@ const initialFormData: AddPersonFormData = {
 
 export function AddPersonDialog() {
 	const id = useId();
+	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const [formData, setFormData] = useState<AddPersonFormData>(initialFormData);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const firstNameId = `${id}-firstName`;
 	const lastNameId = `${id}-lastName`;
@@ -81,11 +86,49 @@ export function AddPersonDialog() {
 		setFormData(initialFormData);
 	};
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log("Form submitted:", formData);
-		resetForm();
-		setOpen(false);
+
+		const missingFields: string[] = [];
+		if (!formData.firstName) missingFields.push("First Name");
+		if (!formData.lastName) missingFields.push("Last Name");
+		if (!formData.birthdate) missingFields.push("Birthdate");
+		if (!formData.barangay) missingFields.push("Barangay");
+
+		if (missingFields.length > 0) {
+			toast.error(`Missing required fields: ${missingFields.join(", ")}`);
+			return;
+		}
+
+		setIsSubmitting(true);
+		try {
+			await createPerson({
+				data: {
+					firstName: formData.firstName,
+					lastName: formData.lastName,
+					birthdate: formData.birthdate,
+					address: {
+						street: formData.street,
+						purok: formData.purok || undefined,
+						barangay: formData.barangay as LoretoBarangay,
+					},
+					phoneNumber: formData.phoneNumber,
+					status: formData.status,
+					profilePhoto: formData.profilePhoto || undefined,
+				},
+			});
+
+			toast.success(
+				`${formData.firstName} ${formData.lastName} added successfully`,
+			);
+			await router.invalidate();
+			resetForm();
+			setOpen(false);
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Failed to add person");
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	const handleCancel = () => {
@@ -115,7 +158,9 @@ export function AddPersonDialog() {
 							/>
 							<div className="flex-1 grid grid-cols-2 gap-4">
 								<div className="grid gap-2">
-									<Label htmlFor={firstNameId}>First Name</Label>
+									<Label htmlFor={firstNameId}>
+										First Name <span className="text-destructive">*</span>
+									</Label>
 									<Input
 										id={firstNameId}
 										name="firstName"
@@ -125,7 +170,9 @@ export function AddPersonDialog() {
 									/>
 								</div>
 								<div className="grid gap-2">
-									<Label htmlFor={lastNameId}>Last Name</Label>
+									<Label htmlFor={lastNameId}>
+										Last Name <span className="text-destructive">*</span>
+									</Label>
 									<Input
 										id={lastNameId}
 										name="lastName"
@@ -137,10 +184,12 @@ export function AddPersonDialog() {
 							</div>
 						</div>
 
-						{/* Row 2: Birthdate and Phone Number */}
+						{/* Row 2: Birthdate and Barangay (required fields) */}
 						<div className="grid grid-cols-2 gap-4">
 							<div className="grid gap-2">
-								<Label htmlFor={birthdateId}>Birthdate</Label>
+								<Label htmlFor={birthdateId}>
+									Birthdate <span className="text-destructive">*</span>
+								</Label>
 								<Input
 									id={birthdateId}
 									name="birthdate"
@@ -150,19 +199,29 @@ export function AddPersonDialog() {
 								/>
 							</div>
 							<div className="grid gap-2">
-								<Label htmlFor={phoneNumberId}>Phone Number</Label>
-								<Input
-									id={phoneNumberId}
-									name="phoneNumber"
-									value={formData.phoneNumber}
-									onChange={handleInputChange}
-									placeholder="Enter phone number"
-								/>
+								<Label htmlFor={barangayId}>
+									Barangay <span className="text-destructive">*</span>
+								</Label>
+								<Select
+									value={formData.barangay}
+									onValueChange={handleBarangayChange}
+								>
+									<SelectTrigger id={barangayId} className="w-full">
+										<SelectValue placeholder="Select barangay" />
+									</SelectTrigger>
+									<SelectContent>
+										{LORETO_BARANGAYS.map((barangay) => (
+											<SelectItem key={barangay} value={barangay}>
+												{barangay}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 						</div>
 
-						{/* Row 3: Street, Purok, and Barangay */}
-						<div className="grid grid-cols-4 gap-4">
+						{/* Row 3: Street, Purok, and Phone Number (optional fields) */}
+						<div className="grid grid-cols-5 gap-4">
 							<div className="col-span-2 grid gap-2">
 								<Label htmlFor={streetId}>Street</Label>
 								<Input
@@ -180,26 +239,18 @@ export function AddPersonDialog() {
 									name="purok"
 									value={formData.purok}
 									onChange={handleInputChange}
-									placeholder="Purok"
+									placeholder="#"
 								/>
 							</div>
-							<div className="grid gap-2">
-								<Label htmlFor={barangayId}>Barangay</Label>
-								<Select
-									value={formData.barangay}
-									onValueChange={handleBarangayChange}
-								>
-									<SelectTrigger id={barangayId} className="w-full">
-										<SelectValue placeholder="Select" />
-									</SelectTrigger>
-									<SelectContent>
-										{LORETO_BARANGAYS.map((barangay) => (
-											<SelectItem key={barangay} value={barangay}>
-												{barangay}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+							<div className="col-span-2 grid gap-2">
+								<Label htmlFor={phoneNumberId}>Phone</Label>
+								<Input
+									id={phoneNumberId}
+									name="phoneNumber"
+									value={formData.phoneNumber}
+									onChange={handleInputChange}
+									placeholder="Phone number"
+								/>
 							</div>
 						</div>
 
@@ -223,10 +274,24 @@ export function AddPersonDialog() {
 					</div>
 
 					<DialogFooter>
-						<Button type="button" variant="outline" onClick={handleCancel}>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={handleCancel}
+							disabled={isSubmitting}
+						>
 							Cancel
 						</Button>
-						<Button type="submit">Add Person</Button>
+						<Button type="submit" disabled={isSubmitting}>
+							{isSubmitting ? (
+								<>
+									<Loader2 className="h-4 w-4 animate-spin" />
+									Adding...
+								</>
+							) : (
+								"Add Person"
+							)}
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>
