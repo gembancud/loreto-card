@@ -1,13 +1,7 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { sendOtp, verifyOtp } from "@/data/auth/otp";
@@ -84,18 +78,31 @@ function LoginPage() {
 	};
 
 	return (
-		<div className="min-h-full flex items-center justify-center p-4">
-			<Card className="w-full max-w-md">
-				<CardHeader className="text-center">
-					<img src="/favicon.png" alt="" className="h-12 w-12 mx-auto mb-2" />
-					<CardTitle className="text-2xl">LoreCard</CardTitle>
-					<CardDescription>
-						{step === "phone"
-							? "Enter your phone number to sign in"
-							: "Enter the code sent to your phone"}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
+		<div className="h-full flex items-center justify-center p-4 bg-muted/30">
+			<Card className="flex flex-col lg:flex-row max-w-4xl w-full overflow-hidden p-0">
+				{/* Image half - flush with card edges (hidden on mobile) */}
+				<div className="hidden lg:block lg:w-1/2">
+					<img
+						src="/cover-photo.webp"
+						alt="LoreCard - Empowering Loretohanons"
+						className="w-full h-full object-contain"
+					/>
+				</div>
+
+				{/* Login form half - vertically centered */}
+				<div className="w-full lg:w-1/2 flex flex-col justify-center p-6">
+					{/* Header */}
+					<div className="text-center mb-6">
+						<img src="/favicon.png" alt="" className="h-12 w-12 mx-auto mb-2" />
+						<h1 className="text-2xl font-semibold">LoreCard</h1>
+						<p className="text-muted-foreground">
+							{step === "phone"
+								? "Enter your phone number to sign in"
+								: "Enter the code sent to your phone"}
+						</p>
+					</div>
+
+					{/* Form */}
 					{step === "phone" ? (
 						<form onSubmit={handleSendOtp} className="space-y-4">
 							<div className="space-y-2">
@@ -157,7 +164,7 @@ function LoginPage() {
 							</div>
 						</form>
 					)}
-				</CardContent>
+				</div>
 			</Card>
 		</div>
 	);

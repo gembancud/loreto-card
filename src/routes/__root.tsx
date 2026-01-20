@@ -4,6 +4,7 @@ import {
 	createRootRouteWithContext,
 	HeadContent,
 	Scripts,
+	useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import BottomNav from "../components/BottomNav";
@@ -47,15 +48,24 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const isLoginPage = pathname === "/login";
+
 	return (
 		<html lang="en">
 			<head>
 				<HeadContent />
 			</head>
 			<body className="h-screen flex flex-col overflow-hidden">
-				<Header />
-				<main className="flex-1 overflow-auto pb-16 md:pb-0">{children}</main>
-				<BottomNav />
+				{!isLoginPage && <Header />}
+				<main
+					className={
+						isLoginPage ? "h-full" : "flex-1 overflow-auto pb-16 md:pb-0"
+					}
+				>
+					{children}
+				</main>
+				{!isLoginPage && <BottomNav />}
 				<Toaster />
 				<TanStackDevtools
 					config={{
