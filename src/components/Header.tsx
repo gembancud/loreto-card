@@ -50,7 +50,7 @@ export default function Header() {
 				{/* Left group: logo + main nav */}
 				<div className="flex items-center gap-6">
 					<Link to="/" className="text-xl font-semibold text-gray-900">
-						Loreto Card
+						LoreCard
 					</Link>
 
 					{session && (

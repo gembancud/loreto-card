@@ -87,7 +87,7 @@ function LoginPage() {
 		<div className="min-h-full flex items-center justify-center p-4">
 			<Card className="w-full max-w-md">
 				<CardHeader className="text-center">
-					<CardTitle className="text-2xl">Loreto Card</CardTitle>
+					<CardTitle className="text-2xl">LoreCard</CardTitle>
 					<CardDescription>
 						{step === "phone"
 							? "Enter your phone number to sign in"

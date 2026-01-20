@@ -40,17 +40,17 @@ const doc = new Document({
     properties: { page: { margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
     children: [
       // Title
-      new Paragraph({ heading: HeadingLevel.TITLE, children: [new TextRun("LoretoCard System")] }),
+      new Paragraph({ heading: HeadingLevel.TITLE, children: [new TextRun("LoreCard System")] }),
       new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 480 },
         children: [new TextRun({ text: "Client Onboarding Guide", size: 28, italics: true })] }),
 
       // Introduction
       new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Introduction")] }),
       new Paragraph({ spacing: { after: 200 }, children: [
-        new TextRun("LoretoCard is a digital benefit and voucher management system designed for the Municipality of Loreto, Philippines. The system enables government departments to distribute benefits to residents in a transparent, accountable, and efficient manner.")
+        new TextRun("LoreCard is a digital benefit and voucher management system designed for the Municipality of Loreto, Philippines. The system enables government departments to distribute benefits to residents in a transparent, accountable, and efficient manner.")
       ]}),
       new Paragraph({ spacing: { after: 200 }, children: [
-        new TextRun("The primary goals of LoretoCard are:")
+        new TextRun("The primary goals of LoreCard are:")
       ]}),
       new Paragraph({ numbering: { reference: "bullet-1", level: 0 }, children: [new TextRun("Ensure transparent distribution of government benefits to residents")] }),
       new Paragraph({ numbering: { reference: "bullet-1", level: 0 }, children: [new TextRun("Maintain accountability through built-in separation of duties")] }),
@@ -60,7 +60,7 @@ const doc = new Document({
       // People Records
       new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("People Records")] }),
       new Paragraph({ spacing: { after: 200 }, children: [
-        new TextRun("At the heart of LoretoCard are the people - the residents and beneficiaries of Loreto who receive government benefits. The system maintains records for each resident to ensure benefits reach the right people.")
+        new TextRun("At the heart of LoreCard are the people - the residents and beneficiaries of Loreto who receive government benefits. The system maintains records for each resident to ensure benefits reach the right people.")
       ]}),
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("What Information is Stored")] }),
       new Paragraph({ spacing: { after: 120 }, children: [new TextRun("Each person's record includes:")] }),
@@ -136,7 +136,7 @@ const doc = new Document({
       // User Roles
       new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("User Roles")] }),
       new Paragraph({ spacing: { after: 200 }, children: [
-        new TextRun("LoretoCard has three levels of user access, each with different capabilities:")
+        new TextRun("LoreCard has three levels of user access, each with different capabilities:")
       ]}),
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("Superuser")] }),
       new Paragraph({ spacing: { after: 200 }, children: [
@@ -154,7 +154,7 @@ const doc = new Document({
       // Department Scope
       new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Department Scope")] }),
       new Paragraph({ spacing: { after: 200 }, children: [
-        new TextRun("LoretoCard is designed to support the organizational structure of municipal government. Each department operates independently within the system:")
+        new TextRun("LoreCard is designed to support the organizational structure of municipal government. Each department operates independently within the system:")
       ]}),
       new Paragraph({ numbering: { reference: "bullet-6", level: 0 }, children: [new TextRun("Each department manages its own benefits and staff assignments")] }),
       new Paragraph({ numbering: { reference: "bullet-6", level: 0 }, children: [new TextRun("Department data is kept separate - one department cannot see another's vouchers or beneficiary records")] }),
@@ -167,7 +167,7 @@ const doc = new Document({
       // Audit Trail
       new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Audit Trail")] }),
       new Paragraph({ spacing: { after: 200 }, children: [
-        new TextRun("Every action in LoretoCard is recorded for complete accountability. The audit trail ensures that all benefit distributions can be reviewed and verified.")
+        new TextRun("Every action in LoreCard is recorded for complete accountability. The audit trail ensures that all benefit distributions can be reviewed and verified.")
       ]}),
       new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun("What is Recorded")] }),
       new Paragraph({ spacing: { after: 120 }, children: [new TextRun("For every voucher, the system automatically records:")] }),
@@ -183,13 +183,13 @@ const doc = new Document({
       // Closing
       new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Summary")] }),
       new Paragraph({ spacing: { after: 200 }, children: [
-        new TextRun("LoretoCard provides a structured, accountable system for distributing government benefits to residents of Loreto. By maintaining detailed people records, managing benefits at the department level, enforcing separation of duties through the Provider-Releaser workflow, and keeping complete audit trails, the system ensures that benefit distribution is transparent, verifiable, and fair.")
+        new TextRun("LoreCard provides a structured, accountable system for distributing government benefits to residents of Loreto. By maintaining detailed people records, managing benefits at the department level, enforcing separation of duties through the Provider-Releaser workflow, and keeping complete audit trails, the system ensures that benefit distribution is transparent, verifiable, and fair.")
       ]}),
     ]
   }]
 });
 
 Packer.toBuffer(doc).then(buffer => {
-  fs.writeFileSync("/Users/gem/git/jsts/loretocard/docs/LoretoCard-Onboarding.docx", buffer);
-  console.log("Document created: docs/LoretoCard-Onboarding.docx");
+  fs.writeFileSync("/Users/gem/git/jsts/loretocard/docs/LoreCard-Onboarding.docx", buffer);
+  console.log("Document created: docs/LoreCard-Onboarding.docx");
 });

@@ -89,7 +89,7 @@ export const sendOtp = createServerFn({ method: "POST" })
 				body: new URLSearchParams({
 					apikey: apiKey,
 					number: normalizedPhone,
-					message: "Your Loreto Card code is {otp}. Valid for 5 minutes.",
+					message: "Your LoreCard code is {otp}. Valid for 5 minutes.",
 				}),
 			});
 
