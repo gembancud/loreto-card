@@ -1112,6 +1112,12 @@ async function seed() {
 			lastName: "User",
 			role: "superuser" as const,
 		},
+		{
+			phoneNumber: "639485045626",
+			firstName: "Admin",
+			lastName: "User",
+			role: "superuser" as const,
+		},
 	];
 
 	console.log("Seeding superusers...");
