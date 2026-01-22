@@ -28,6 +28,7 @@ async function requireAdmin(): Promise<SessionData> {
 export interface UserListItem {
 	id: string;
 	phoneNumber: string;
+	email: string | null;
 	firstName: string;
 	lastName: string;
 	role: UserRole;
@@ -57,6 +58,7 @@ export const getUsers = createServerFn({ method: "GET" }).handler(
 		return allUsers.map((user) => ({
 			id: user.id,
 			phoneNumber: user.phoneNumber,
+			email: user.email,
 			firstName: user.firstName,
 			lastName: user.lastName,
 			role: user.role as UserRole,
@@ -93,6 +95,7 @@ export const getUserById = createServerFn({ method: "GET" })
 		return {
 			id: user.id,
 			phoneNumber: user.phoneNumber,
+			email: user.email,
 			firstName: user.firstName,
 			lastName: user.lastName,
 			role: user.role as UserRole,
@@ -105,6 +108,7 @@ export const getUserById = createServerFn({ method: "GET" })
 
 interface CreateUserInput {
 	phoneNumber: string;
+	email?: string;
 	firstName: string;
 	lastName: string;
 	role: UserRole;
@@ -130,10 +134,22 @@ export const createUser = createServerFn({ method: "POST" })
 				return { success: false, error: "Phone number already registered" };
 			}
 
+			// Normalize and validate email if provided
+			const normalizedEmail = data.email?.trim().toLowerCase() || null;
+			if (normalizedEmail) {
+				const existingEmail = await db.query.users.findFirst({
+					where: eq(users.email, normalizedEmail),
+				});
+				if (existingEmail) {
+					return { success: false, error: "Email already registered" };
+				}
+			}
+
 			const [newUser] = await db
 				.insert(users)
 				.values({
 					phoneNumber: normalizedPhone,
+					email: normalizedEmail,
 					firstName: data.firstName,
 					lastName: data.lastName,
 					role: data.role,
@@ -152,6 +168,7 @@ export const createUser = createServerFn({ method: "POST" })
 				user: {
 					id: newUser.id,
 					phoneNumber: newUser.phoneNumber,
+					email: newUser.email,
 					firstName: newUser.firstName,
 					lastName: newUser.lastName,
 					role: newUser.role as UserRole,
@@ -168,6 +185,7 @@ interface UpdateUserInput {
 	userId: string;
 	updates: {
 		phoneNumber?: string;
+		email?: string | null;
 		firstName?: string;
 		lastName?: string;
 		role?: UserRole;
@@ -207,6 +225,24 @@ export const updateUser = createServerFn({ method: "POST" })
 			}
 
 			updates.phoneNumber = normalizedPhone;
+		}
+
+		// If updating email, normalize and check for duplicates
+		if (updates.email !== undefined) {
+			const normalizedEmail = updates.email?.trim().toLowerCase() || null;
+			if (normalizedEmail) {
+				const existingEmail = await db.query.users.findFirst({
+					where: eq(users.email, normalizedEmail),
+				});
+
+				if (existingEmail && existingEmail.id !== userId) {
+					return {
+						success: false,
+						error: "Email already registered to another user",
+					};
+				}
+			}
+			updates.email = normalizedEmail;
 		}
 
 		await db

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { ArrowLeft, Mail, Pencil, Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -163,6 +163,14 @@ function UsersPage() {
 											{user.phoneNumber}
 										</div>
 
+										{/* Email */}
+										{user.email && (
+											<div className="text-sm text-muted-foreground flex items-center gap-1">
+												<Mail className="h-3 w-3" />
+												{user.email}
+											</div>
+										)}
+
 										{/* Department */}
 										{user.departmentName && (
 											<div className="text-sm text-muted-foreground">
@@ -224,6 +232,7 @@ function UsersPage() {
 									<TableRow>
 										<TableHead>Name</TableHead>
 										<TableHead>Phone</TableHead>
+										<TableHead>Email</TableHead>
 										<TableHead>Department</TableHead>
 										<TableHead>Role</TableHead>
 										<TableHead>Status</TableHead>
@@ -234,7 +243,7 @@ function UsersPage() {
 									{users.length === 0 ? (
 										<TableRow>
 											<TableCell
-												colSpan={isSuperuser ? 6 : 5}
+												colSpan={isSuperuser ? 7 : 6}
 												className="text-center text-muted-foreground py-8"
 											>
 												No users found
@@ -247,6 +256,9 @@ function UsersPage() {
 													{user.firstName} {user.lastName}
 												</TableCell>
 												<TableCell>{user.phoneNumber}</TableCell>
+												<TableCell className="text-muted-foreground">
+													{user.email ?? "—"}
+												</TableCell>
 												<TableCell className="text-muted-foreground">
 													{user.departmentName ?? "—"}
 												</TableCell>
@@ -325,6 +337,7 @@ interface AddUserFormProps {
 function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 	const id = useId();
 	const [phoneNumber, setPhoneNumber] = useState("");
+	const [email, setEmail] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [role, setRole] = useState<UserRole>("user");
@@ -341,6 +354,7 @@ function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 			const result = await createUser({
 				data: {
 					phoneNumber,
+					email: email || undefined,
 					firstName,
 					lastName,
 					role,
@@ -379,6 +393,16 @@ function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 						value={phoneNumber}
 						onChange={(e) => setPhoneNumber(e.target.value)}
 						required
+					/>
+				</div>
+				<div className="grid gap-2">
+					<Label htmlFor={`${id}-email`}>Email (Optional)</Label>
+					<Input
+						id={`${id}-email`}
+						type="email"
+						placeholder="user@example.com"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
 					/>
 				</div>
 				<div className="grid grid-cols-2 gap-4">
@@ -458,6 +482,7 @@ function EditUserForm({
 }: EditUserFormProps) {
 	const id = useId();
 	const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber);
+	const [email, setEmail] = useState(user.email ?? "");
 	const [firstName, setFirstName] = useState(user.firstName);
 	const [lastName, setLastName] = useState(user.lastName);
 	const [role, setRole] = useState<UserRole>(user.role);
@@ -478,6 +503,7 @@ function EditUserForm({
 					userId: user.id,
 					updates: {
 						phoneNumber,
+						email: email || null,
 						firstName,
 						lastName,
 						role,
@@ -490,6 +516,7 @@ function EditUserForm({
 				onSuccess({
 					...user,
 					phoneNumber,
+					email: email || null,
 					firstName,
 					lastName,
 					role,
@@ -522,6 +549,16 @@ function EditUserForm({
 						value={phoneNumber}
 						onChange={(e) => setPhoneNumber(e.target.value)}
 						required
+					/>
+				</div>
+				<div className="grid gap-2">
+					<Label htmlFor={`${id}-email`}>Email (Optional)</Label>
+					<Input
+						id={`${id}-email`}
+						type="email"
+						placeholder="user@example.com"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
 					/>
 				</div>
 				<div className="grid grid-cols-2 gap-4">
