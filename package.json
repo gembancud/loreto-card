@@ -2,6 +2,7 @@
   "name": "loretocard",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
     "dev": "vite dev --port 3000",
     "build": "vite build",
