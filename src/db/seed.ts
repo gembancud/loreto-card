@@ -3,15 +3,22 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config(); // fallback to .env
 
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import {
+	benefitAssignments,
+	benefits,
 	departments,
 	type IdentificationType,
 	people,
 	personIdentifications,
 	users,
+	vouchers,
 } from "./schema";
+
+// Check for --clean flag
+const CLEAN_MODE = process.argv.includes("--clean");
 
 // Create a separate pool for seeding (uses DATABASE_URL from .env)
 const pool = new Pool({
@@ -19,6 +26,17 @@ const pool = new Pool({
 });
 
 const db = drizzle(pool);
+
+// Clean departments and benefits (respect FK dependencies)
+async function cleanDepartmentsAndBenefits() {
+	console.log("Cleaning vouchers, assignments, benefits, and departments...");
+	await db.delete(vouchers); // FK: references benefits
+	await db.delete(benefitAssignments); // FK: references benefits
+	await db.delete(benefits); // FK: references departments
+	await db.update(users).set({ departmentId: null }); // Clear user department refs
+	await db.delete(departments);
+	console.log("Cleaned!");
+}
 
 // Mock people data - preserving original UUIDs for voucher FK compatibility
 interface GovServiceRecord {
@@ -55,7 +73,7 @@ interface MockPerson {
 const mockPeopleData: MockPerson[] = [
 	{
 		id: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
-		firstName: "Maria",
+		firstName: "MOCK Maria",
 		middleName: "Concepcion",
 		lastName: "Santos",
 		birthdate: "1985-03-15",
@@ -98,7 +116,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
-		firstName: "Juan",
+		firstName: "MOCK Juan",
 		middleName: "Bautista",
 		lastName: "Dela Cruz",
 		suffix: "Jr.",
@@ -138,7 +156,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
-		firstName: "Rosa",
+		firstName: "MOCK Rosa",
 		middleName: "Magtanggol",
 		lastName: "Reyes",
 		birthdate: "1978-11-08",
@@ -187,7 +205,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
-		firstName: "Jose",
+		firstName: "MOCK Jose",
 		middleName: "Mercado",
 		lastName: "Garcia",
 		suffix: "Sr.",
@@ -231,7 +249,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
-		firstName: "Ana",
+		firstName: "MOCK Ana",
 		middleName: "Liza",
 		lastName: "Mendoza",
 		birthdate: "1995-09-12",
@@ -261,7 +279,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "6f7a8b9c-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
-		firstName: "Pedro",
+		firstName: "MOCK Pedro",
 		middleName: "Rizal",
 		lastName: "Ramos",
 		suffix: "III",
@@ -304,7 +322,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-		firstName: "Carmen",
+		firstName: "MOCK Carmen",
 		middleName: "Aguirre",
 		lastName: "Aquino",
 		birthdate: "1955-06-18",
@@ -346,7 +364,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "8b9c0d1e-2f3a-4b5c-6d7e-8f9a0b1c2d3e",
-		firstName: "Miguel",
+		firstName: "MOCK Miguel",
 		middleName: "Angelo",
 		lastName: "Torres",
 		birthdate: "1992-04-05",
@@ -372,7 +390,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "9c0d1e2f-3a4b-5c6d-7e8f-9a0b1c2d3e4f",
-		firstName: "Elena",
+		firstName: "MOCK Elena",
 		middleName: "Marie",
 		lastName: "Cruz",
 		birthdate: "1987-08-14",
@@ -414,7 +432,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "0d1e2f3a-4b5c-6d7e-8f9a-0b1c2d3e4f5a",
-		firstName: "Roberto",
+		firstName: "MOCK Roberto",
 		middleName: "Pascual",
 		lastName: "Villanueva",
 		suffix: "II",
@@ -445,7 +463,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "1e2f3a4b-5c6d-7e8f-9a0b-1c2d3e4f5a6b",
-		firstName: "Luisa",
+		firstName: "MOCK Luisa",
 		middleName: "Fernanda",
 		lastName: "Fernandez",
 		birthdate: "1993-10-20",
@@ -483,7 +501,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "2f3a4b5c-6d7e-8f9a-0b1c-2d3e4f5a6b7c",
-		firstName: "Antonio",
+		firstName: "MOCK Antonio",
 		middleName: "Buenaventura",
 		lastName: "Navarro",
 		birthdate: "1956-01-10",
@@ -525,7 +543,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
-		firstName: "Isabel",
+		firstName: "MOCK Isabel",
 		middleName: "Cristina",
 		lastName: "Lopez",
 		birthdate: "1989-09-03",
@@ -559,7 +577,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "4b5c6d7e-8f9a-0b1c-2d3e-4f5a6b7c8d9e",
-		firstName: "Rafael",
+		firstName: "MOCK Rafael",
 		middleName: "Miguel",
 		lastName: "Morales",
 		birthdate: "1991-07-17",
@@ -601,7 +619,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "5c6d7e8f-9a0b-1c2d-3e4f-5a6b7c8d9e0f",
-		firstName: "Teresa",
+		firstName: "MOCK Teresa",
 		middleName: "Lucia",
 		lastName: "Castillo",
 		birthdate: "1984-12-01",
@@ -635,7 +653,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "6d7e8f9a-0b1c-2d3e-4f5a-6b7c8d9e0f1a",
-		firstName: "Francisco",
+		firstName: "MOCK Francisco",
 		middleName: "Jose",
 		lastName: "Gutierrez",
 		suffix: "IV",
@@ -683,7 +701,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "7e8f9a0b-1c2d-3e4f-5a6b-7c8d9e0f1a2b",
-		firstName: "Patricia",
+		firstName: "MOCK Patricia",
 		middleName: "Ann",
 		lastName: "Ramirez",
 		birthdate: "1996-11-29",
@@ -717,7 +735,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "8f9a0b1c-2d3e-4f5a-6b7c-8d9e0f1a2b3c",
-		firstName: "Diego",
+		firstName: "MOCK Diego",
 		middleName: "Alfonso",
 		lastName: "Bautista",
 		birthdate: "1986-05-07",
@@ -755,7 +773,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "9a0b1c2d-3e4f-5a6b-7c8d-9e0f1a2b3c4d",
-		firstName: "Angelica",
+		firstName: "MOCK Angelica",
 		middleName: "Rose",
 		lastName: "Rivera",
 		birthdate: "1994-08-23",
@@ -797,7 +815,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "0b1c2d3e-4f5a-6b7c-8d9e-0f1a2b3c4d5e",
-		firstName: "Carlos",
+		firstName: "MOCK Carlos",
 		middleName: "Eduardo",
 		lastName: "Jimenez",
 		suffix: "V",
@@ -828,7 +846,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "1c2d3e4f-5a6b-7c8d-9e0f-1a2b3c4d5e6f",
-		firstName: "Gloria",
+		firstName: "MOCK Gloria",
 		middleName: "Esperanza",
 		lastName: "Soriano",
 		birthdate: "1957-06-11",
@@ -870,7 +888,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7a",
-		firstName: "Fernando",
+		firstName: "MOCK Fernando",
 		middleName: "Luis",
 		lastName: "Santiago",
 		birthdate: "1998-02-14",
@@ -900,7 +918,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "3e4f5a6b-7c8d-9e0f-1a2b-3c4d5e6f7a8b",
-		firstName: "Beatriz",
+		firstName: "MOCK Beatriz",
 		middleName: "Carmen",
 		lastName: "Flores",
 		birthdate: "1983-10-09",
@@ -934,7 +952,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "4f5a6b7c-8d9e-0f1a-2b3c-4d5e6f7a8b9c",
-		firstName: "Rodrigo",
+		firstName: "MOCK Rodrigo",
 		middleName: "Antonio",
 		lastName: "Hernandez",
 		birthdate: "1990-01-21",
@@ -976,7 +994,7 @@ const mockPeopleData: MockPerson[] = [
 	},
 	{
 		id: "5a6b7c8d-9e0f-1a2b-3c4d-5e6f7a8b9c0d",
-		firstName: "Victoria",
+		firstName: "MOCK Victoria",
 		middleName: "Isabel",
 		lastName: "Pascual",
 		birthdate: "1997-09-27",
@@ -1067,27 +1085,241 @@ async function seedPeople() {
 	}
 }
 
+// Benefits/services by department code (from official Excel data)
+const benefitsByDepartment: Record<string, string[]> = {
+	MAYOR: [
+		"Issuance of Job Recommendations/Indorsements",
+		"Processing of Scholarship Application for Medicine and Law",
+		"Issuance of Indorsement for the Renewal of Commercial Sand and Gravel (CSAG) Permit",
+		"Medical, Hospitalization, and Burial Assistance",
+	],
+	LORIFE: ["LORIFE Scholarship Grant"],
+	POPDEV: [
+		"Responsible Parenthood and Reproductive Health (RPRH) Counselling Services",
+	],
+	BPLO: [
+		"Issuance of Business Permit and Licensing - New",
+		"Issuance of Business Permit and Licensing - Renewal",
+		"Issuance of Business Permit and Licensing - Amendment",
+		"Issuance of Business Permit and Licensing - Retirement",
+		"Issuance of Local Transport Franchise",
+	],
+	MMS: ["Issuance of Certification for Market Vendor"],
+	PDAO: [
+		"Issuance of Certification for Person with Disability (PWD)",
+		"Issuance of Disability ID",
+	],
+	ALERT: ["First Aid and Emergency Response", "Emergency Ambulance Service"],
+	VICE: [
+		"Sangguniang Bayan Session",
+		"Resolution/Ordinance Engrossment",
+		"Issuance of Certified True Copies of Resolutions and Ordinances",
+	],
+	MPDO: [
+		"Issuance of Zoning Certification",
+		"Issuance of Locational Clearance",
+	],
+	MCRO: [
+		"Registration of Live Birth (on time)",
+		"Registration of Live Birth (late)",
+		"Registration of Death (on time)",
+		"Registration of Death (late)",
+		"Registration of Marriage",
+		"Request for Copy Issuance from Civil Registry",
+	],
+	MTO: [
+		"Issuance of Tax Declaration",
+		"Payment of Real Property Tax",
+		"Issuance of Real Property Tax Clearance",
+		"Issuance of Certification of No Property",
+		"Issuance of Certification of Landholdings",
+		"Issuance of Community Tax Certificate - Individual",
+		"Issuance of Community Tax Certificate - Juridical",
+		"Collection of Business Tax",
+		"Collection of Permit Fees",
+		"Collection of Regulatory Fees",
+		"Collection of Service Charges",
+		"Collection of Rental Fees",
+		"Collection of Other Miscellaneous Income",
+		"Issuance of Official Receipt",
+	],
+	MASSO: [
+		"Approval of New Tax Declaration",
+		"Approval of Transfer of Tax Declaration",
+		"Approval of Consolidation of Tax Declaration",
+		"Approval of Subdivision of Tax Declaration",
+		"Cancellation of Tax Declaration",
+		"Annotation of Tax Declaration",
+		"Correction of Entries in Tax Declaration",
+		"Issuance of Certified True Copy of Tax Declaration",
+		"Issuance of Certificate of No Improvement",
+		"Issuance of Certificate of Property Holdings",
+	],
+	MSWDO: [
+		"Social Case Study Report",
+		"Issuance of Solo Parent ID",
+		"Issuance of Senior Citizen ID",
+		"Cash Assistance - Burial",
+		"Cash Assistance - Medical",
+		"Cash Assistance - Transportation",
+		"Cash Assistance - Educational",
+		"Cash Assistance - Food",
+		"Material/In-Kind Assistance - Food Packs",
+		"Material/In-Kind Assistance - Hygiene Kits",
+		"Material/In-Kind Assistance - Family Kits",
+		"Material/In-Kind Assistance - Sleeping Kits",
+		"Material/In-Kind Assistance - Dignity Kits",
+		"Material/In-Kind Assistance - Educational Supplies",
+		"Assistance to Individuals in Crisis Situation (AICS)",
+		"Social Pension for Indigent Senior Citizens",
+		"Sustainable Livelihood Program",
+		"Supplementary Feeding Program",
+		"Pantawid Pamilyang Pilipino Program (4Ps)",
+		"Child Development Program (Day Care)",
+		"Women Welfare Program",
+		"Youth Development Program",
+	],
+	MHO: [
+		"Consultation - General",
+		"Consultation - Maternal",
+		"Consultation - Child Health",
+		"Consultation - Adolescent",
+		"Consultation - Adult",
+		"Consultation - Senior Citizen",
+		"Prenatal Care",
+		"Postnatal Care",
+		"Family Planning Services",
+		"Immunization Program",
+		"TB-DOTS Program",
+		"Rabies Prevention Program",
+		"Dental Services",
+		"Laboratory Services",
+		"Pharmacy Services",
+		"Issuance of Medical Certificate",
+		"Issuance of Health Certificate",
+		"Issuance of Sanitary Permit",
+		"Barangay Health Station Services",
+		"Environmental Health Services",
+	],
+	MNAO: [
+		"Nutrition Education and Counseling",
+		"Supplementary Feeding for Malnourished Children",
+	],
+	MAGO: [
+		"Distribution of Rice Seeds",
+		"Distribution of Corn Seeds",
+		"Distribution of Vegetable Seeds",
+		"Distribution of Fruit Seedlings",
+		"Distribution of Farm Inputs/Fertilizers",
+		"Farm Mechanization Program",
+		"Livestock Dispersal Program",
+		"Fishery Development Program",
+		"Agricultural Training and Extension Services",
+		"Farmers' Registration",
+		"Issuance of Farm/Agricultural Certification",
+		"Pest and Disease Control Program",
+	],
+	MEO: [
+		"Processing of Building Permit Application",
+		"Processing of Occupancy Permit Application",
+	],
+	PESO: [
+		"Job Placement Services",
+		"Career Guidance and Counseling",
+		"Livelihood and Self-Employment Assistance",
+		"Special Program for Employment of Students (SPES)",
+		"Government Internship Program (GIP)",
+		"JobStart Philippines Program",
+	],
+	MENRO: ["Issuance of Environmental Compliance Certificate"],
+};
+
+async function seedBenefits() {
+	console.log("Seeding benefits...");
+
+	// Look up main superuser to attribute benefits to
+	const [mainSuperuser] = await db
+		.select()
+		.from(users)
+		.where(eq(users.phoneNumber, "639227567025"))
+		.limit(1);
+
+	if (!mainSuperuser) {
+		console.warn("Main superuser not found, benefits will have no createdBy");
+	}
+
+	for (const [deptCode, benefitNames] of Object.entries(benefitsByDepartment)) {
+		// Look up department by code
+		const [dept] = await db
+			.select()
+			.from(departments)
+			.where(eq(departments.code, deptCode))
+			.limit(1);
+
+		if (!dept) {
+			console.warn(`Department not found: ${deptCode}, skipping benefits`);
+			continue;
+		}
+
+		for (const name of benefitNames) {
+			try {
+				await db
+					.insert(benefits)
+					.values({
+						departmentId: dept.id,
+						name,
+						isActive: true,
+						createdById: mainSuperuser?.id,
+					})
+					.onConflictDoNothing();
+				console.log(`Created/skipped benefit: ${deptCode} - ${name}`);
+			} catch (error) {
+				console.error(`Error creating benefit ${name}:`, error);
+			}
+		}
+	}
+
+	console.log("Benefits seeding complete!");
+}
+
 async function seed() {
 	console.log("Seeding database...");
 
-	// Seed departments for Municipality of Loreto
+	// Clean departments and benefits if --clean flag is passed
+	if (CLEAN_MODE) {
+		await cleanDepartmentsAndBenefits();
+	}
+
+	// Seed departments for Municipality of Loreto (from official Excel data)
 	const departmentList = [
-		{ code: "MAYOR", name: "Mayor's Office" },
-		{ code: "VICE", name: "Vice Mayor's Office" },
-		{ code: "SB", name: "Sangguniang Bayan (Municipal Council)" },
-		{ code: "ADMIN", name: "Municipal Administrator's Office" },
-		{ code: "BUDGET", name: "Budget Office" },
-		{ code: "ACCOUNTING", name: "Accounting Office" },
-		{ code: "TREASURER", name: "Treasurer's Office" },
-		{ code: "ASSESSOR", name: "Assessor's Office" },
-		{ code: "PLANNING", name: "Planning & Development Office (MPDO)" },
-		{ code: "ENGINEER", name: "Municipal Engineer's Office" },
-		{ code: "HEALTH", name: "Municipal Health Office" },
-		{ code: "SOCIAL", name: "Social Welfare & Development (MSWDO)" },
-		{ code: "AGRICULTURE", name: "Municipal Agriculture Office" },
-		{ code: "CIVIL", name: "Civil Registry Office" },
-		{ code: "DILG", name: "DILG Field Office" },
-		{ code: "HR", name: "Human Resources Management Office" },
+		{ code: "MAYOR", name: "Office of the Municipal Mayor" },
+		{ code: "LORIFE", name: "LORETO's Real Initiative for Education (LORIFE)" },
+		{
+			code: "POPDEV",
+			name: "Municipal Population Development Office (PopDev)",
+		},
+		{ code: "BPLO", name: "Business Permits and Licensing Office (BPLO)" },
+		{ code: "MMS", name: "Municipal Market Section (MMS)" },
+		{ code: "PDAO", name: "Persons with Disability Affairs Office (PDAO)" },
+		{ code: "ALERT", name: "ALERT 24/7 Response Unit" },
+		{ code: "VICE", name: "Office of the Municipal Vice-Mayor" },
+		{ code: "MPDO", name: "Municipal Planning and Development Office (MPDO)" },
+		{ code: "MCRO", name: "Municipal Civil Registry Office (MCRO)" },
+		{ code: "MTO", name: "Municipal Treasury Office (MTO)" },
+		{ code: "MASSO", name: "Municipal Assessment Office (MASSO)" },
+		{
+			code: "MSWDO",
+			name: "Municipal Social Welfare and Development Office (MSWDO)",
+		},
+		{ code: "MHO", name: "Municipal Health Office (MHO)" },
+		{ code: "MNAO", name: "Municipal Nutrition Action Office (MNAO)" },
+		{ code: "MAGO", name: "Municipal Agriculture Office (MAgO)" },
+		{ code: "MEO", name: "Municipal Engineering Office (MEO)" },
+		{ code: "PESO", name: "Public Employment Service Office (PESO)" },
+		{
+			code: "MENRO",
+			name: "Municipal Environment and Natural Resources Office (MENRO)",
+		},
 	];
 
 	console.log("Seeding departments...");
@@ -1138,6 +1370,9 @@ async function seed() {
 
 	// Seed people
 	await seedPeople();
+
+	// Seed benefits (must be after departments)
+	await seedBenefits();
 
 	console.log("Seeding complete!");
 	await pool.end();
