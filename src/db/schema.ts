@@ -34,6 +34,7 @@ export const people = pgTable("people", {
 	profilePhoto: text("profile_photo"),
 	emergencyContactName: text("emergency_contact_name"),
 	emergencyContactPhone: text("emergency_contact_phone"),
+	bloodType: text("blood_type"), // A+, A-, B+, B-, AB+, AB-, O+, O-
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),
 });

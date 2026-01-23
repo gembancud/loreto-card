@@ -64,6 +64,13 @@
       "when": 1769142102690,
       "tag": "0008_true_garia",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1769144879089,
+      "tag": "0009_orange_kitty_pryde",
+      "breakpoints": true
     }
   ]
 }

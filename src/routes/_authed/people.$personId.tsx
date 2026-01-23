@@ -70,6 +70,7 @@ interface EditPersonFormData {
 	phoneNumber: string;
 	monthlyIncome: number | null;
 	status: PersonStatus;
+	bloodType: string;
 	profilePhoto: string | null;
 	// Government services
 	voter: GovServiceRecord;
@@ -106,6 +107,7 @@ function EditPerson() {
 		phoneNumber: "",
 		monthlyIncome: null,
 		status: "pending",
+		bloodType: "",
 		profilePhoto: null,
 		voter: { registered: false },
 		philhealth: { registered: false },
@@ -148,6 +150,7 @@ function EditPerson() {
 			formData.phoneNumber !== person.phoneNumber ||
 			formData.monthlyIncome !== person.monthlyIncome ||
 			formData.status !== person.status ||
+			formData.bloodType !== (person.bloodType ?? "") ||
 			formData.profilePhoto !== (person.profilePhoto ?? null) ||
 			compareGovService(formData.voter, person.voter) ||
 			compareGovService(formData.philhealth, person.philhealth) ||
@@ -187,6 +190,7 @@ function EditPerson() {
 			phoneNumber: person.phoneNumber,
 			monthlyIncome: person.monthlyIncome,
 			status: person.status,
+			bloodType: person.bloodType ?? "",
 			profilePhoto: person.profilePhoto ?? null,
 			voter: person.voter,
 			philhealth: person.philhealth,
@@ -213,6 +217,7 @@ function EditPerson() {
 	const purokId = `${id}-purok`;
 	const barangayId = `${id}-barangay`;
 	const statusId = `${id}-status`;
+	const bloodTypeId = `${id}-bloodType`;
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
@@ -254,6 +259,13 @@ function EditPerson() {
 
 	const handleSuffixChange = (value: string) => {
 		setFormData((prev) => ({ ...prev, suffix: value }));
+	};
+
+	const handleBloodTypeChange = (value: string) => {
+		setFormData((prev) => ({
+			...prev,
+			bloodType: value === "unknown" ? "" : value,
+		}));
 	};
 
 	const handlePhotoChange = (dataUrl: string | null) => {
@@ -311,6 +323,7 @@ function EditPerson() {
 						phoneNumber: formData.phoneNumber,
 						monthlyIncome: formData.monthlyIncome,
 						status: formData.status,
+						bloodType: formData.bloodType || undefined,
 						profilePhoto: finalPhotoUrl ?? undefined,
 						voter: formData.voter,
 						philhealth: formData.philhealth,
@@ -521,22 +534,46 @@ function EditPerson() {
 											</div>
 										</div>
 
-										{/* Status */}
-										<div className="grid gap-2">
-											<Label htmlFor={statusId}>Status</Label>
-											<Select
-												value={formData.status}
-												onValueChange={handleStatusChange}
-											>
-												<SelectTrigger id={statusId} className="w-full">
-													<SelectValue placeholder="Select status" />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="pending">Pending</SelectItem>
-													<SelectItem value="active">Active</SelectItem>
-													<SelectItem value="inactive">Inactive</SelectItem>
-												</SelectContent>
-											</Select>
+										{/* Status and Blood Type */}
+										<div className="grid grid-cols-2 gap-4">
+											<div className="grid gap-2">
+												<Label htmlFor={statusId}>Status</Label>
+												<Select
+													value={formData.status}
+													onValueChange={handleStatusChange}
+												>
+													<SelectTrigger id={statusId} className="w-full">
+														<SelectValue placeholder="Select status" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="pending">Pending</SelectItem>
+														<SelectItem value="active">Active</SelectItem>
+														<SelectItem value="inactive">Inactive</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+											<div className="grid gap-2">
+												<Label htmlFor={bloodTypeId}>Blood Type</Label>
+												<Select
+													value={formData.bloodType || "unknown"}
+													onValueChange={handleBloodTypeChange}
+												>
+													<SelectTrigger id={bloodTypeId} className="w-full">
+														<SelectValue placeholder="Select blood type" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="unknown">Unknown</SelectItem>
+														<SelectItem value="A+">A+</SelectItem>
+														<SelectItem value="A-">A-</SelectItem>
+														<SelectItem value="B+">B+</SelectItem>
+														<SelectItem value="B-">B-</SelectItem>
+														<SelectItem value="AB+">AB+</SelectItem>
+														<SelectItem value="AB-">AB-</SelectItem>
+														<SelectItem value="O+">O+</SelectItem>
+														<SelectItem value="O-">O-</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
 										</div>
 
 										{/* Emergency Contact */}

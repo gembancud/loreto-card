@@ -51,6 +51,8 @@ export interface Person {
 	// Emergency contact
 	emergencyContactName?: string;
 	emergencyContactPhone?: string;
+	// Medical info
+	bloodType?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -126,6 +128,7 @@ async function transformDbPersonToPerson(
 		barangayClearance: buildRecord("barangayClearance"),
 		emergencyContactName: dbPerson.emergencyContactName ?? undefined,
 		emergencyContactPhone: dbPerson.emergencyContactPhone ?? undefined,
+		bloodType: dbPerson.bloodType ?? undefined,
 		createdAt: dbPerson.createdAt?.toISOString() ?? new Date().toISOString(),
 		updatedAt: dbPerson.updatedAt?.toISOString() ?? new Date().toISOString(),
 	};
@@ -222,6 +225,10 @@ export const updatePerson = createServerFn({
 			personUpdates.emergencyContactPhone =
 				updates.emergencyContactPhone ?? null;
 
+		// Handle blood type
+		if (updates.bloodType !== undefined)
+			personUpdates.bloodType = updates.bloodType ?? null;
+
 		// Update person record
 		personUpdates.updatedAt = new Date();
 		await db.update(people).set(personUpdates).where(eq(people.id, personId));
@@ -308,6 +315,7 @@ interface CreatePersonInput {
 	barangayClearance?: GovServiceRecord;
 	emergencyContactName?: string;
 	emergencyContactPhone?: string;
+	bloodType?: string;
 }
 
 export const createPerson = createServerFn({
@@ -333,6 +341,7 @@ export const createPerson = createServerFn({
 				profilePhoto: data.profilePhoto ?? null,
 				emergencyContactName: data.emergencyContactName ?? null,
 				emergencyContactPhone: data.emergencyContactPhone ?? null,
+				bloodType: data.bloodType ?? null,
 			})
 			.returning();
 
