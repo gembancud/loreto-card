@@ -13,8 +13,8 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
+import { IdCardDownloadButton } from "@/components/id-card/IdCardDownloadButton";
 import { ProfilePhotoUpload } from "@/components/people/ProfilePhotoUpload";
-import { QrDownloadButton } from "@/components/qr/QrDownloadButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +71,9 @@ interface EditPersonFormData {
 	monthlyIncome: number | null;
 	status: PersonStatus;
 	bloodType: string;
+	gender: string;
+	civilStatus: string;
+	placeOfBirth: string;
 	profilePhoto: string | null;
 	// Government services
 	voter: GovServiceRecord;
@@ -108,6 +111,9 @@ function EditPerson() {
 		monthlyIncome: null,
 		status: "pending",
 		bloodType: "",
+		gender: "",
+		civilStatus: "",
+		placeOfBirth: "",
 		profilePhoto: null,
 		voter: { registered: false },
 		philhealth: { registered: false },
@@ -151,6 +157,9 @@ function EditPerson() {
 			formData.monthlyIncome !== person.monthlyIncome ||
 			formData.status !== person.status ||
 			formData.bloodType !== (person.bloodType ?? "") ||
+			formData.gender !== (person.gender ?? "") ||
+			formData.civilStatus !== (person.civilStatus ?? "") ||
+			formData.placeOfBirth !== (person.placeOfBirth ?? "") ||
 			formData.profilePhoto !== (person.profilePhoto ?? null) ||
 			compareGovService(formData.voter, person.voter) ||
 			compareGovService(formData.philhealth, person.philhealth) ||
@@ -191,6 +200,9 @@ function EditPerson() {
 			monthlyIncome: person.monthlyIncome,
 			status: person.status,
 			bloodType: person.bloodType ?? "",
+			gender: person.gender ?? "",
+			civilStatus: person.civilStatus ?? "",
+			placeOfBirth: person.placeOfBirth ?? "",
 			profilePhoto: person.profilePhoto ?? null,
 			voter: person.voter,
 			philhealth: person.philhealth,
@@ -268,6 +280,20 @@ function EditPerson() {
 		}));
 	};
 
+	const handleGenderChange = (value: string) => {
+		setFormData((prev) => ({
+			...prev,
+			gender: value === "unspecified" ? "" : value,
+		}));
+	};
+
+	const handleCivilStatusChange = (value: string) => {
+		setFormData((prev) => ({
+			...prev,
+			civilStatus: value === "unspecified" ? "" : value,
+		}));
+	};
+
 	const handlePhotoChange = (dataUrl: string | null) => {
 		setFormData((prev) => ({ ...prev, profilePhoto: dataUrl }));
 	};
@@ -324,6 +350,9 @@ function EditPerson() {
 						monthlyIncome: formData.monthlyIncome,
 						status: formData.status,
 						bloodType: formData.bloodType || undefined,
+						gender: formData.gender || undefined,
+						civilStatus: formData.civilStatus || undefined,
+						placeOfBirth: formData.placeOfBirth || undefined,
 						profilePhoto: finalPhotoUrl ?? undefined,
 						voter: formData.voter,
 						philhealth: formData.philhealth,
@@ -371,10 +400,7 @@ function EditPerson() {
 							Back to People
 						</Button>
 					</Link>
-					<QrDownloadButton
-						personId={person.id}
-						personName={`${person.firstName} ${person.lastName}`}
-					/>
+					<IdCardDownloadButton person={person} />
 				</div>
 
 				<Card>
@@ -574,6 +600,63 @@ function EditPerson() {
 													</SelectContent>
 												</Select>
 											</div>
+										</div>
+
+										{/* Gender and Civil Status */}
+										<div className="grid grid-cols-2 gap-4">
+											<div className="grid gap-2">
+												<Label>Gender</Label>
+												<Select
+													value={formData.gender || "unspecified"}
+													onValueChange={handleGenderChange}
+												>
+													<SelectTrigger className="w-full">
+														<SelectValue placeholder="Select gender" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="unspecified">
+															Unspecified
+														</SelectItem>
+														<SelectItem value="Male">Male</SelectItem>
+														<SelectItem value="Female">Female</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+											<div className="grid gap-2">
+												<Label>Civil Status</Label>
+												<Select
+													value={formData.civilStatus || "unspecified"}
+													onValueChange={handleCivilStatusChange}
+												>
+													<SelectTrigger className="w-full">
+														<SelectValue placeholder="Select civil status" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="unspecified">
+															Unspecified
+														</SelectItem>
+														<SelectItem value="Single">Single</SelectItem>
+														<SelectItem value="Married">Married</SelectItem>
+														<SelectItem value="Widowed">Widowed</SelectItem>
+														<SelectItem value="Separated">Separated</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+										</div>
+
+										{/* Place of Birth */}
+										<div className="grid gap-2">
+											<Label>Place of Birth</Label>
+											<Input
+												value={formData.placeOfBirth}
+												onChange={(e) =>
+													setFormData((prev) => ({
+														...prev,
+														placeOfBirth: e.target.value,
+													}))
+												}
+												placeholder="City, Province"
+											/>
 										</div>
 
 										{/* Emergency Contact */}

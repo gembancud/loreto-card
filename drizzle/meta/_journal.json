@@ -71,6 +71,13 @@
       "when": 1769144879089,
       "tag": "0009_orange_kitty_pryde",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1769148732300,
+      "tag": "0010_old_golden_guardian",
+      "breakpoints": true
     }
   ]
 }

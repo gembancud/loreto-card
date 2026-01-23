@@ -22,6 +22,14 @@ const config = defineConfig({
 			},
 		}),
 	],
+	ssr: {
+		// Externalize native Node.js modules that can't be bundled
+		external: ["@resvg/resvg-js"],
+	},
+	optimizeDeps: {
+		// Exclude from client-side optimization
+		exclude: ["@resvg/resvg-js"],
+	},
 })
 
 export default config

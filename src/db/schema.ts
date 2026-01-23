@@ -35,6 +35,9 @@ export const people = pgTable("people", {
 	emergencyContactName: text("emergency_contact_name"),
 	emergencyContactPhone: text("emergency_contact_phone"),
 	bloodType: text("blood_type"), // A+, A-, B+, B-, AB+, AB-, O+, O-
+	gender: text("gender"), // Male, Female
+	civilStatus: text("civil_status"), // Single, Married, Widowed, Separated
+	placeOfBirth: text("place_of_birth"),
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),
 });

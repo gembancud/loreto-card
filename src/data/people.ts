@@ -53,6 +53,10 @@ export interface Person {
 	emergencyContactPhone?: string;
 	// Medical info
 	bloodType?: string;
+	// Demographics
+	gender?: string;
+	civilStatus?: string;
+	placeOfBirth?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -129,6 +133,9 @@ async function transformDbPersonToPerson(
 		emergencyContactName: dbPerson.emergencyContactName ?? undefined,
 		emergencyContactPhone: dbPerson.emergencyContactPhone ?? undefined,
 		bloodType: dbPerson.bloodType ?? undefined,
+		gender: dbPerson.gender ?? undefined,
+		civilStatus: dbPerson.civilStatus ?? undefined,
+		placeOfBirth: dbPerson.placeOfBirth ?? undefined,
 		createdAt: dbPerson.createdAt?.toISOString() ?? new Date().toISOString(),
 		updatedAt: dbPerson.updatedAt?.toISOString() ?? new Date().toISOString(),
 	};
@@ -229,6 +236,14 @@ export const updatePerson = createServerFn({
 		if (updates.bloodType !== undefined)
 			personUpdates.bloodType = updates.bloodType ?? null;
 
+		// Handle demographics
+		if (updates.gender !== undefined)
+			personUpdates.gender = updates.gender ?? null;
+		if (updates.civilStatus !== undefined)
+			personUpdates.civilStatus = updates.civilStatus ?? null;
+		if (updates.placeOfBirth !== undefined)
+			personUpdates.placeOfBirth = updates.placeOfBirth ?? null;
+
 		// Update person record
 		personUpdates.updatedAt = new Date();
 		await db.update(people).set(personUpdates).where(eq(people.id, personId));
@@ -316,6 +331,9 @@ interface CreatePersonInput {
 	emergencyContactName?: string;
 	emergencyContactPhone?: string;
 	bloodType?: string;
+	gender?: string;
+	civilStatus?: string;
+	placeOfBirth?: string;
 }
 
 export const createPerson = createServerFn({
@@ -342,6 +360,9 @@ export const createPerson = createServerFn({
 				emergencyContactName: data.emergencyContactName ?? null,
 				emergencyContactPhone: data.emergencyContactPhone ?? null,
 				bloodType: data.bloodType ?? null,
+				gender: data.gender ?? null,
+				civilStatus: data.civilStatus ?? null,
+				placeOfBirth: data.placeOfBirth ?? null,
 			})
 			.returning();
 
