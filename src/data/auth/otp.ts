@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
 import { otpVerifications, sessions, users } from "@/db/schema";
+import { resend } from "@/lib/resend";
 import { getAppSession } from "@/lib/session";
 
 const OTP_EXPIRY_MINUTES = 5;
@@ -63,7 +64,8 @@ export const sendOtp = createServerFn({ method: "POST" })
 		if (import.meta.env.DEV) {
 			const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 			await db.insert(otpVerifications).values({
-				phoneNumber: normalizedPhone,
+				identifier: normalizedPhone,
+				type: "phone",
 				code: "123456",
 				expiresAt,
 				attempts: 0,
@@ -106,7 +108,8 @@ export const sendOtp = createServerFn({ method: "POST" })
 			// Store OTP in database
 			const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 			await db.insert(otpVerifications).values({
-				phoneNumber: normalizedPhone,
+				identifier: normalizedPhone,
+				type: "phone",
 				code: String(otpData.code),
 				expiresAt,
 				attempts: 0,
@@ -139,7 +142,8 @@ export const verifyOtp = createServerFn({ method: "POST" })
 		// Find the most recent unexpired, unverified OTP for this phone
 		const otpRecord = await db.query.otpVerifications.findFirst({
 			where: and(
-				eq(otpVerifications.phoneNumber, normalizedPhone),
+				eq(otpVerifications.identifier, normalizedPhone),
+				eq(otpVerifications.type, "phone"),
 				eq(otpVerifications.verified, false),
 				gt(otpVerifications.expiresAt, now),
 			),
@@ -181,6 +185,170 @@ export const verifyOtp = createServerFn({ method: "POST" })
 		// Get user
 		const user = await db.query.users.findFirst({
 			where: eq(users.phoneNumber, normalizedPhone),
+		});
+
+		if (!user) {
+			return { success: false, error: "User not found" };
+		}
+
+		// Create session in database
+		const sessionExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+		await db.insert(sessions).values({
+			userId: user.id,
+			expiresAt: sessionExpiry,
+		});
+
+		// Set session cookie
+		const session = await getAppSession();
+		await session.update({
+			userId: user.id,
+			phoneNumber: user.phoneNumber,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			role: user.role as "superuser" | "admin" | "user",
+			departmentId: user.departmentId,
+		});
+
+		return { success: true };
+	});
+
+// Email validation
+function isValidEmail(email: string): boolean {
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	return emailRegex.test(email);
+}
+
+// Normalize email to lowercase
+function normalizeEmail(email: string): string {
+	return email.trim().toLowerCase();
+}
+
+interface SendEmailOtpInput {
+	email: string;
+}
+
+export const sendEmailOtp = createServerFn({ method: "POST" })
+	.inputValidator((data: SendEmailOtpInput) => data)
+	.handler(async ({ data }): Promise<SendOtpResult> => {
+		const normalizedEmail = normalizeEmail(data.email);
+
+		if (!isValidEmail(normalizedEmail)) {
+			return { success: false, error: "Invalid email address" };
+		}
+
+		// Check if user exists and is active
+		const user = await db.query.users.findFirst({
+			where: and(eq(users.email, normalizedEmail), eq(users.isActive, true)),
+		});
+
+		if (!user) {
+			return {
+				success: false,
+				error: "Email not registered or account is inactive",
+			};
+		}
+
+		// Generate 6-digit OTP
+		const code = import.meta.env.DEV
+			? "123456"
+			: String(Math.floor(100000 + Math.random() * 900000));
+
+		const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+		// Store OTP in database
+		await db.insert(otpVerifications).values({
+			identifier: normalizedEmail,
+			type: "email",
+			code,
+			expiresAt,
+			attempts: 0,
+			verified: false,
+		});
+
+		// In dev mode, skip actual email send
+		if (import.meta.env.DEV) {
+			console.log(`[DEV] Email OTP for ${normalizedEmail}: ${code}`);
+			return { success: true };
+		}
+
+		// Send email via Resend
+		try {
+			const { error } = await resend.emails.send({
+				from: "LoreCard <noreply@lorecard.ph>",
+				to: normalizedEmail,
+				subject: "Your LoreCard verification code",
+				text: `Your LoreCard verification code is: ${code}\n\nThis code is valid for ${OTP_EXPIRY_MINUTES} minutes.\n\nIf you didn't request this code, please ignore this email.`,
+			});
+
+			if (error) {
+				console.error("Resend API error:", error);
+				return { success: false, error: "Failed to send email" };
+			}
+
+			return { success: true };
+		} catch (error) {
+			console.error("Error sending email OTP:", error);
+			return { success: false, error: "Failed to send email" };
+		}
+	});
+
+interface VerifyEmailOtpInput {
+	email: string;
+	code: string;
+}
+
+export const verifyEmailOtp = createServerFn({ method: "POST" })
+	.inputValidator((data: VerifyEmailOtpInput) => data)
+	.handler(async ({ data }): Promise<VerifyOtpResult> => {
+		const normalizedEmail = normalizeEmail(data.email);
+		const now = new Date();
+
+		// Find the most recent unexpired, unverified OTP for this email
+		const otpRecord = await db.query.otpVerifications.findFirst({
+			where: and(
+				eq(otpVerifications.identifier, normalizedEmail),
+				eq(otpVerifications.type, "email"),
+				eq(otpVerifications.verified, false),
+				gt(otpVerifications.expiresAt, now),
+			),
+			orderBy: [desc(otpVerifications.createdAt)],
+		});
+
+		if (!otpRecord) {
+			return {
+				success: false,
+				error: "No valid OTP found. Please request a new code.",
+			};
+		}
+
+		// Check attempt limit
+		if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
+			return {
+				success: false,
+				error: "Too many attempts. Please request a new code.",
+			};
+		}
+
+		// Increment attempts
+		await db
+			.update(otpVerifications)
+			.set({ attempts: otpRecord.attempts + 1 })
+			.where(eq(otpVerifications.id, otpRecord.id));
+
+		// Verify code (bypass in dev mode - any code works)
+		if (!import.meta.env.DEV && otpRecord.code !== data.code) {
+			return { success: false, error: "Invalid code" };
+		}
+
+		// Mark OTP as verified
+		await db
+			.update(otpVerifications)
+			.set({ verified: true })
+			.where(eq(otpVerifications.id, otpRecord.id));
+
+		// Get user by email
+		const user = await db.query.users.findFirst({
+			where: eq(users.email, normalizedEmail),
 		});
 
 		if (!user) {

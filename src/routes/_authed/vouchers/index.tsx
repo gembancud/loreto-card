@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle, Clock, Gift, Send, XCircle } from "lucide-react";
+import { CheckCircle, Clock, Gift, Search, Send, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CarouselItem, MobileCarousel } from "@/components/MobileCarousel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import {
 	Table,
@@ -51,6 +52,7 @@ export const Route = createFileRoute("/_authed/vouchers/")({
 });
 
 const PAGE_SIZE = 10;
+const BENEFITS_PAGE_SIZE = 6; // 2 rows of 3 on desktop
 
 function VoucherDashboardPage() {
 	const { providerBenefits, releaserBenefits, myVouchers, myReleasedVouchers } =
@@ -60,6 +62,11 @@ function VoucherDashboardPage() {
 	const [issuedPage, setIssuedPage] = useState(1);
 	const [releasedPage, setReleasedPage] = useState(1);
 
+	// Benefits search and pagination state
+	const [benefitSearch, setBenefitSearch] = useState("");
+	const [providerPage, setProviderPage] = useState(1);
+	const [releaserPage, setReleaserPage] = useState(1);
+
 	// Sync local state when loader data changes (e.g., after navigation with invalidation)
 	useEffect(() => {
 		setVouchers(myVouchers);
@@ -67,6 +74,51 @@ function VoucherDashboardPage() {
 		setIssuedPage(1);
 		setReleasedPage(1);
 	}, [myVouchers, myReleasedVouchers]);
+
+	// Reset benefit pages when search changes
+	useEffect(() => {
+		void benefitSearch; // trigger dependency
+		setProviderPage(1);
+		setReleaserPage(1);
+	}, [benefitSearch]);
+
+	// Filter benefits by search term
+	const filteredProviderBenefits = useMemo(() => {
+		if (!benefitSearch.trim()) return providerBenefits;
+		const searchLower = benefitSearch.toLowerCase();
+		return providerBenefits.filter(
+			(b) =>
+				b.name.toLowerCase().includes(searchLower) ||
+				b.description?.toLowerCase().includes(searchLower),
+		);
+	}, [providerBenefits, benefitSearch]);
+
+	const filteredReleaserBenefits = useMemo(() => {
+		if (!benefitSearch.trim()) return releaserBenefits;
+		const searchLower = benefitSearch.toLowerCase();
+		return releaserBenefits.filter(
+			(b) =>
+				b.name.toLowerCase().includes(searchLower) ||
+				b.description?.toLowerCase().includes(searchLower),
+		);
+	}, [releaserBenefits, benefitSearch]);
+
+	// Paginate benefits for desktop
+	const providerTotalPages = Math.ceil(
+		filteredProviderBenefits.length / BENEFITS_PAGE_SIZE,
+	);
+	const releaserTotalPages = Math.ceil(
+		filteredReleaserBenefits.length / BENEFITS_PAGE_SIZE,
+	);
+
+	const paginatedProviderBenefits = filteredProviderBenefits.slice(
+		(providerPage - 1) * BENEFITS_PAGE_SIZE,
+		providerPage * BENEFITS_PAGE_SIZE,
+	);
+	const paginatedReleaserBenefits = filteredReleaserBenefits.slice(
+		(releaserPage - 1) * BENEFITS_PAGE_SIZE,
+		releaserPage * BENEFITS_PAGE_SIZE,
+	);
 
 	// Derive paginated data
 	const issuedTotalPages = Math.ceil(vouchers.length / PAGE_SIZE);
@@ -148,6 +200,20 @@ function VoucherDashboardPage() {
 			<div className="max-w-6xl mx-auto space-y-8">
 				<h1 className="text-2xl font-semibold">Vouchers</h1>
 
+				{/* Search filter for benefits */}
+				{(providerBenefits.length > 0 || releaserBenefits.length > 0) && (
+					<div className="relative max-w-sm">
+						<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+						<Input
+							type="text"
+							placeholder="Search benefits..."
+							value={benefitSearch}
+							onChange={(e) => setBenefitSearch(e.target.value)}
+							className="pl-9"
+						/>
+					</div>
+				)}
+
 				{/* Benefits I Can Provide */}
 				{providerBenefits.length > 0 && (
 					<Card>
@@ -155,15 +221,49 @@ function VoucherDashboardPage() {
 							<CardTitle className="flex items-center gap-2">
 								<Gift className="h-5 w-5" />
 								Benefits I Can Provide
+								{benefitSearch && filteredProviderBenefits.length > 0 && (
+									<Badge variant="secondary">
+										{filteredProviderBenefits.length} of{" "}
+										{providerBenefits.length}
+									</Badge>
+								)}
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							{/* Mobile carousel */}
-							<div className="md:hidden">
-								<MobileCarousel>
-									{providerBenefits.map((benefit) => (
-										<CarouselItem key={benefit.id}>
+							{filteredProviderBenefits.length === 0 ? (
+								<p className="text-center text-muted-foreground py-8">
+									No benefits match your search.
+								</p>
+							) : (
+								<>
+									{/* Mobile carousel */}
+									<div className="md:hidden">
+										<MobileCarousel showIndicators>
+											{filteredProviderBenefits.map((benefit) => (
+												<CarouselItem key={benefit.id}>
+													<BenefitCard
+														benefit={benefit}
+														actionButton={
+															<Link
+																to="/vouchers/provide/$benefitId"
+																params={{ benefitId: benefit.id }}
+															>
+																<Button className="w-full mt-2 gap-2">
+																	<Send className="h-4 w-4" />
+																	Issue Voucher
+																</Button>
+															</Link>
+														}
+													/>
+												</CarouselItem>
+											))}
+										</MobileCarousel>
+									</div>
+									{/* Desktop grid */}
+									<div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+										{paginatedProviderBenefits.map((benefit) => (
 											<BenefitCard
+												key={benefit.id}
 												benefit={benefit}
 												actionButton={
 													<Link
@@ -177,30 +277,21 @@ function VoucherDashboardPage() {
 													</Link>
 												}
 											/>
-										</CarouselItem>
-									))}
-								</MobileCarousel>
-							</div>
-							{/* Desktop grid */}
-							<div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-								{providerBenefits.map((benefit) => (
-									<BenefitCard
-										key={benefit.id}
-										benefit={benefit}
-										actionButton={
-											<Link
-												to="/vouchers/provide/$benefitId"
-												params={{ benefitId: benefit.id }}
-											>
-												<Button className="w-full mt-2 gap-2">
-													<Send className="h-4 w-4" />
-													Issue Voucher
-												</Button>
-											</Link>
-										}
-									/>
-								))}
-							</div>
+										))}
+									</div>
+									{providerTotalPages > 1 && (
+										<div className="hidden md:block">
+											<Pagination
+												currentPage={providerPage}
+												totalPages={providerTotalPages}
+												totalItems={filteredProviderBenefits.length}
+												pageSize={BENEFITS_PAGE_SIZE}
+												onPageChange={setProviderPage}
+											/>
+										</div>
+									)}
+								</>
+							)}
 						</CardContent>
 					</Card>
 				)}
@@ -212,15 +303,49 @@ function VoucherDashboardPage() {
 							<CardTitle className="flex items-center gap-2">
 								<CheckCircle className="h-5 w-5" />
 								Benefits I Can Release
+								{benefitSearch && filteredReleaserBenefits.length > 0 && (
+									<Badge variant="secondary">
+										{filteredReleaserBenefits.length} of{" "}
+										{releaserBenefits.length}
+									</Badge>
+								)}
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							{/* Mobile carousel */}
-							<div className="md:hidden">
-								<MobileCarousel>
-									{releaserBenefits.map((benefit) => (
-										<CarouselItem key={benefit.id}>
+							{filteredReleaserBenefits.length === 0 ? (
+								<p className="text-center text-muted-foreground py-8">
+									No benefits match your search.
+								</p>
+							) : (
+								<>
+									{/* Mobile carousel */}
+									<div className="md:hidden">
+										<MobileCarousel showIndicators>
+											{filteredReleaserBenefits.map((benefit) => (
+												<CarouselItem key={benefit.id}>
+													<BenefitCard
+														benefit={benefit}
+														actionButton={
+															<Link
+																to="/vouchers/release/$benefitId"
+																params={{ benefitId: benefit.id }}
+															>
+																<Button className="w-full mt-2 gap-2">
+																	<CheckCircle className="h-4 w-4" />
+																	Release Voucher
+																</Button>
+															</Link>
+														}
+													/>
+												</CarouselItem>
+											))}
+										</MobileCarousel>
+									</div>
+									{/* Desktop grid */}
+									<div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+										{paginatedReleaserBenefits.map((benefit) => (
 											<BenefitCard
+												key={benefit.id}
 												benefit={benefit}
 												actionButton={
 													<Link
@@ -234,30 +359,21 @@ function VoucherDashboardPage() {
 													</Link>
 												}
 											/>
-										</CarouselItem>
-									))}
-								</MobileCarousel>
-							</div>
-							{/* Desktop grid */}
-							<div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-								{releaserBenefits.map((benefit) => (
-									<BenefitCard
-										key={benefit.id}
-										benefit={benefit}
-										actionButton={
-											<Link
-												to="/vouchers/release/$benefitId"
-												params={{ benefitId: benefit.id }}
-											>
-												<Button className="w-full mt-2 gap-2">
-													<CheckCircle className="h-4 w-4" />
-													Release Voucher
-												</Button>
-											</Link>
-										}
-									/>
-								))}
-							</div>
+										))}
+									</div>
+									{releaserTotalPages > 1 && (
+										<div className="hidden md:block">
+											<Pagination
+												currentPage={releaserPage}
+												totalPages={releaserTotalPages}
+												totalItems={filteredReleaserBenefits.length}
+												pageSize={BENEFITS_PAGE_SIZE}
+												onPageChange={setReleaserPage}
+											/>
+										</div>
+									)}
+								</>
+							)}
 						</CardContent>
 					</Card>
 				)}

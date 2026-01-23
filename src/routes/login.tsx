@@ -4,7 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { sendOtp, verifyOtp } from "@/data/auth/otp";
+import {
+	sendEmailOtp,
+	sendOtp,
+	verifyEmailOtp,
+	verifyOtp,
+} from "@/data/auth/otp";
 import { getSessionData } from "@/data/auth/session";
 
 export const Route = createFileRoute("/login")({
@@ -18,16 +23,21 @@ export const Route = createFileRoute("/login")({
 	},
 });
 
-type LoginStep = "phone" | "otp";
+type LoginMethod = "phone" | "email";
+type LoginStep = "identifier" | "otp";
 
 function LoginPage() {
 	const router = useRouter();
 	const id = useId();
-	const [step, setStep] = useState<LoginStep>("phone");
+	const [method, setMethod] = useState<LoginMethod>("phone");
+	const [step, setStep] = useState<LoginStep>("identifier");
 	const [phoneNumber, setPhoneNumber] = useState("");
+	const [email, setEmail] = useState("");
 	const [otpCode, setOtpCode] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
+
+	const identifier = method === "phone" ? phoneNumber : email;
 
 	const handleSendOtp = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -35,7 +45,10 @@ function LoginPage() {
 		setIsLoading(true);
 
 		try {
-			const result = await sendOtp({ data: { phoneNumber } });
+			const result =
+				method === "phone"
+					? await sendOtp({ data: { phoneNumber } })
+					: await sendEmailOtp({ data: { email } });
 			if (result.success) {
 				setStep("otp");
 			} else {
@@ -55,7 +68,10 @@ function LoginPage() {
 		setIsLoading(true);
 
 		try {
-			const result = await verifyOtp({ data: { phoneNumber, code: otpCode } });
+			const result =
+				method === "phone"
+					? await verifyOtp({ data: { phoneNumber, code: otpCode } })
+					: await verifyEmailOtp({ data: { email, code: otpCode } });
 			if (result.success) {
 				// Invalidate router to refresh all loaders/data, then redirect
 				await router.invalidate();
@@ -71,8 +87,15 @@ function LoginPage() {
 		}
 	};
 
-	const handleBackToPhone = () => {
-		setStep("phone");
+	const handleBackToIdentifier = () => {
+		setStep("identifier");
+		setOtpCode("");
+		setError(null);
+	};
+
+	const handleMethodChange = (newMethod: LoginMethod) => {
+		setMethod(newMethod);
+		setStep("identifier");
 		setOtpCode("");
 		setError(null);
 	};
@@ -96,30 +119,72 @@ function LoginPage() {
 						<img src="/favicon.png" alt="" className="h-12 w-12 mx-auto mb-2" />
 						<h1 className="text-2xl font-semibold">LoreCard</h1>
 						<p className="text-muted-foreground">
-							{step === "phone"
-								? "Enter your phone number to sign in"
-								: "Enter the code sent to your phone"}
+							{step === "identifier"
+								? method === "phone"
+									? "Enter your phone number to sign in"
+									: "Enter your email to sign in"
+								: `Enter the code sent to your ${method}`}
 						</p>
 					</div>
 
+					{/* Method toggle - only show on identifier step */}
+					{step === "identifier" && (
+						<div className="flex gap-2 mb-4">
+							<Button
+								type="button"
+								variant={method === "phone" ? "default" : "outline"}
+								className="flex-1"
+								onClick={() => handleMethodChange("phone")}
+							>
+								Phone
+							</Button>
+							<Button
+								type="button"
+								variant={method === "email" ? "default" : "outline"}
+								className="flex-1"
+								onClick={() => handleMethodChange("email")}
+							>
+								Email
+							</Button>
+						</div>
+					)}
+
 					{/* Form */}
-					{step === "phone" ? (
+					{step === "identifier" ? (
 						<form onSubmit={handleSendOtp} className="space-y-4">
-							<div className="space-y-2">
-								<Label htmlFor={`${id}-phone`}>Phone Number</Label>
-								<Input
-									id={`${id}-phone`}
-									type="tel"
-									placeholder="09171234567"
-									value={phoneNumber}
-									onChange={(e) => setPhoneNumber(e.target.value)}
-									required
-									autoFocus
-								/>
-								<p className="text-xs text-muted-foreground">
-									Enter your registered Philippine mobile number
-								</p>
-							</div>
+							{method === "phone" ? (
+								<div className="space-y-2">
+									<Label htmlFor={`${id}-phone`}>Phone Number</Label>
+									<Input
+										id={`${id}-phone`}
+										type="tel"
+										placeholder="09171234567"
+										value={phoneNumber}
+										onChange={(e) => setPhoneNumber(e.target.value)}
+										required
+										autoFocus
+									/>
+									<p className="text-xs text-muted-foreground">
+										Enter your registered Philippine mobile number
+									</p>
+								</div>
+							) : (
+								<div className="space-y-2">
+									<Label htmlFor={`${id}-email`}>Email</Label>
+									<Input
+										id={`${id}-email`}
+										type="email"
+										placeholder="you@example.com"
+										value={email}
+										onChange={(e) => setEmail(e.target.value)}
+										required
+										autoFocus
+									/>
+									<p className="text-xs text-muted-foreground">
+										Enter your registered email address
+									</p>
+								</div>
+							)}
 							{error && <p className="text-sm text-destructive">{error}</p>}
 							<Button type="submit" className="w-full" disabled={isLoading}>
 								{isLoading ? "Sending..." : "Send Code"}
@@ -144,7 +209,7 @@ function LoginPage() {
 									autoFocus
 								/>
 								<p className="text-xs text-muted-foreground">
-									Code sent to {phoneNumber}
+									Code sent to {identifier}
 								</p>
 							</div>
 							{error && <p className="text-sm text-destructive">{error}</p>}
@@ -156,10 +221,12 @@ function LoginPage() {
 									type="button"
 									variant="ghost"
 									className="w-full"
-									onClick={handleBackToPhone}
+									onClick={handleBackToIdentifier}
 									disabled={isLoading}
 								>
-									Use a different number
+									{method === "phone"
+										? "Use a different number"
+										: "Use a different email"}
 								</Button>
 							</div>
 						</form>

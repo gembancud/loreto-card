@@ -67,6 +67,7 @@ export const departments = pgTable("departments", {
 export const users = pgTable("users", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	phoneNumber: text("phone_number").notNull().unique(), // Format: 639XXXXXXXXX
+	email: text("email").unique(), // Optional - users may have phone, email, or both
 	firstName: text("first_name").notNull(),
 	lastName: text("last_name").notNull(),
 	role: text("role").notNull().default("user"), // 'superuser' | 'admin' | 'user'
@@ -79,7 +80,8 @@ export const users = pgTable("users", {
 // OTP verification tracking
 export const otpVerifications = pgTable("otp_verifications", {
 	id: serial("id").primaryKey(),
-	phoneNumber: text("phone_number").notNull(),
+	identifier: text("identifier").notNull(), // phone number or email
+	type: text("type").notNull(), // "phone" | "email"
 	code: text("code").notNull(),
 	expiresAt: timestamp("expires_at").notNull(),
 	attempts: integer("attempts").notNull().default(0),
@@ -265,6 +267,7 @@ export type UserRole = "superuser" | "admin" | "user";
 
 export type OtpVerification = typeof otpVerifications.$inferSelect;
 export type NewOtpVerification = typeof otpVerifications.$inferInsert;
+export type OtpType = "phone" | "email";
 
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;

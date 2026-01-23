@@ -43,6 +43,13 @@
       "when": 1768885843734,
       "tag": "0005_bizarre_norrin_radd",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769062370763,
+      "tag": "0006_fearless_elektra",
+      "breakpoints": true
     }
   ]
 }
