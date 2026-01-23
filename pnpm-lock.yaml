@@ -86,6 +86,9 @@ importers:
       drizzle-orm:
         specifier: ^0.39.0
         version: 0.39.3(@neondatabase/serverless@1.0.2)(@types/pg@8.16.0)(pg@8.16.3)
+      html-to-image:
+        specifier: ^1.11.13
+        version: 1.11.13
       html5-qrcode:
         specifier: ^2.3.8
         version: 2.3.8
@@ -3275,6 +3278,9 @@ packages:
   html-encoding-sniffer@4.0.0:
     resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
     engines: {node: '>=18'}
+
+  html-to-image@1.11.13:
+    resolution: {integrity: sha512-cuOPoI7WApyhBElTTb9oqsawRvZ0rHhaHwghRLlTuffoD1B2aDemlCruLeZrUIIdvG7gs9xeELEPm6PhuASqrg==}
 
   html5-qrcode@2.3.8:
     resolution: {integrity: sha512-jsr4vafJhwoLVEDW3n1KvPnCCXWaQfRng0/EEYk1vNcQGcG/htAdhJX0be8YyqMoSz7+hZvOZSTAepsabiuhiQ==}
@@ -7605,6 +7611,8 @@ snapshots:
   html-encoding-sniffer@4.0.0:
     dependencies:
       whatwg-encoding: 3.1.1
+
+  html-to-image@1.11.13: {}
 
   html5-qrcode@2.3.8: {}
 

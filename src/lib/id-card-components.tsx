@@ -601,7 +601,6 @@ export function IdCardBack({
 					position: "absolute",
 					top: back.leftColumn.y,
 					left: back.leftColumn.x,
-					width: back.leftColumn.width,
 				}}
 			>
 				{/* Blood Type */}
@@ -683,6 +682,8 @@ export function IdCardBack({
 						color: colors.textDark,
 						marginTop: back.leftColumn.pob.marginTop,
 						maxWidth: back.leftColumn.pob.maxWidth,
+						display: "flex",
+						flexWrap: "wrap",
 					}}
 				>
 					{pob}
@@ -755,15 +756,18 @@ export function IdCardBack({
 				style={{
 					display: "flex",
 					flexDirection: "column",
+					alignItems: "center",
 					position: "absolute",
 					top: back.authority.y,
 					left: back.authority.x,
+					width: back.authority.width,
 				}}
 			>
 				<span
 					style={{
 						fontSize: back.authority.labelSize,
 						color: colors.textLight,
+						whiteSpace: "nowrap",
 					}}
 				>
 					Issuing Authority
@@ -774,6 +778,7 @@ export function IdCardBack({
 						fontWeight: 700,
 						color: colors.textDark,
 						marginTop: back.authority.gaps.afterLabel,
+						whiteSpace: "nowrap",
 					}}
 				>
 					(SGD) ALVIN ANGCHANGCO OTAZA, RCE
@@ -783,6 +788,7 @@ export function IdCardBack({
 						fontSize: back.authority.titleSize,
 						color: colors.textLight,
 						marginTop: back.authority.gaps.afterName,
+						whiteSpace: "nowrap",
 					}}
 				>
 					Municipal Mayor
@@ -793,6 +799,7 @@ export function IdCardBack({
 						fontWeight: 700,
 						color: colors.textDark,
 						marginTop: back.authority.gaps.afterTitle,
+						whiteSpace: "nowrap",
 					}}
 				>
 					LOCAL GOVERNMENT UNIT OF LORETO
@@ -804,6 +811,7 @@ export function IdCardBack({
 				style={{
 					display: "flex",
 					flexDirection: "column",
+					alignItems: "center",
 					position: "absolute",
 					bottom: back.terms.bottomOffset,
 					left: back.terms.x,
@@ -815,6 +823,7 @@ export function IdCardBack({
 						fontSize: back.terms.headingSize,
 						fontWeight: 700,
 						color: colors.textDark,
+						textAlign: "center",
 					}}
 				>
 					GENERAL TERMS AND CONDITION
@@ -825,6 +834,7 @@ export function IdCardBack({
 						color: colors.textDark,
 						marginTop: back.terms.gap,
 						lineHeight: back.terms.lineHeight,
+						textAlign: "center",
 					}}
 				>
 					{TERMS_TEXT}

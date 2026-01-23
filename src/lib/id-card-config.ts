@@ -132,6 +132,7 @@ export interface IdCardConfig {
 		authority: {
 			x: number;
 			y: number;
+			width: number;
 			labelSize: number;
 			nameSize: number;
 			titleSize: number;
@@ -237,53 +238,54 @@ export const defaultConfig: IdCardConfig = {
 	},
 
 	back: {
-		overlay: { opacity: 0.5 },
+		overlay: { opacity: 0 },
 
 		leftColumn: {
-			x: 40,
-			y: 30,
-			width: 350,
-			labelSize: 14,
-			fieldGap: 18,
-			bloodType: { valueSize: 32, marginTop: 2 },
-			gender: { valueSize: 26, marginTop: 2 },
-			contact: { valueSize: 26, marginTop: 2 },
-			pob: { valueSize: 20, marginTop: 2, maxWidth: 340 },
-			philhealth: { valueSize: 24, marginTop: 2 },
+			x: 63,
+			y: 59,
+			width: 450,
+			labelSize: 15,
+			fieldGap: 6,
+			bloodType: { valueSize: 24, marginTop: -9 },
+			gender: { valueSize: 22, marginTop: -7 },
+			contact: { valueSize: 20, marginTop: -7 },
+			pob: { valueSize: 21, marginTop: -3, maxWidth: 690 },
+			philhealth: { valueSize: 21, marginTop: -6 },
 		},
 
 		emergency: {
-			x: 40,
-			bottomOffset: 40,
+			x: 62,
+			bottomOffset: 110,
 			labelSize: 14,
-			nameSize: 24,
+			nameSize: 22,
 			phoneSize: 22,
-			nameGap: 4,
-			phoneGap: 4,
+			nameGap: -6,
+			phoneGap: -10,
 		},
 
 		authority: {
-			x: 480,
-			y: 30,
-			labelSize: 14,
-			nameSize: 22,
+			x: 386,
+			y: 57,
+			width: 600,
+			labelSize: 18,
+			nameSize: 24,
 			titleSize: 16,
 			deptSize: 16,
 			gaps: {
-				afterLabel: 8,
-				afterName: 4,
-				afterTitle: 4,
+				afterLabel: -7,
+				afterName: -4,
+				afterTitle: -2,
 			},
 		},
 
 		terms: {
-			x: 480,
-			bottomOffset: 40,
-			width: 490,
-			headingSize: 16,
-			bodySize: 11,
-			lineHeight: 1.5,
-			gap: 6,
+			x: 523,
+			bottomOffset: 71,
+			width: 427,
+			headingSize: 23,
+			bodySize: 15,
+			lineHeight: 1.1,
+			gap: -6,
 		},
 	},
 };

@@ -16,8 +16,6 @@ import { Route as DevIdCardEditorRouteImport } from './routes/dev/id-card-editor
 import { Route as AuthedAdminRouteImport } from './routes/_authed/_admin'
 import { Route as AuthedVouchersIndexRouteImport } from './routes/_authed/vouchers/index'
 import { Route as AuthedBenefitsIndexRouteImport } from './routes/_authed/benefits/index'
-import { Route as ApiTestIdCardFrontRouteImport } from './routes/api/test-id-card/front'
-import { Route as ApiTestIdCardBackRouteImport } from './routes/api/test-id-card/back'
 import { Route as AuthedPeoplePersonIdRouteImport } from './routes/_authed/people.$personId'
 import { Route as AuthedBenefitsBenefitIdRouteImport } from './routes/_authed/benefits/$benefitId'
 import { Route as AuthedAdminUsersRouteImport } from './routes/_authed/_admin/users'
@@ -57,16 +55,6 @@ const AuthedBenefitsIndexRoute = AuthedBenefitsIndexRouteImport.update({
   path: '/benefits/',
   getParentRoute: () => AuthedRoute,
 } as any)
-const ApiTestIdCardFrontRoute = ApiTestIdCardFrontRouteImport.update({
-  id: '/api/test-id-card/front',
-  path: '/api/test-id-card/front',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiTestIdCardBackRoute = ApiTestIdCardBackRouteImport.update({
-  id: '/api/test-id-card/back',
-  path: '/api/test-id-card/back',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthedPeoplePersonIdRoute = AuthedPeoplePersonIdRouteImport.update({
   id: '/people/$personId',
   path: '/people/$personId',
@@ -102,8 +90,6 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthedAdminUsersRoute
   '/benefits/$benefitId': typeof AuthedBenefitsBenefitIdRoute
   '/people/$personId': typeof AuthedPeoplePersonIdRoute
-  '/api/test-id-card/back': typeof ApiTestIdCardBackRoute
-  '/api/test-id-card/front': typeof ApiTestIdCardFrontRoute
   '/benefits': typeof AuthedBenefitsIndexRoute
   '/vouchers': typeof AuthedVouchersIndexRoute
   '/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
@@ -116,8 +102,6 @@ export interface FileRoutesByTo {
   '/users': typeof AuthedAdminUsersRoute
   '/benefits/$benefitId': typeof AuthedBenefitsBenefitIdRoute
   '/people/$personId': typeof AuthedPeoplePersonIdRoute
-  '/api/test-id-card/back': typeof ApiTestIdCardBackRoute
-  '/api/test-id-card/front': typeof ApiTestIdCardFrontRoute
   '/benefits': typeof AuthedBenefitsIndexRoute
   '/vouchers': typeof AuthedVouchersIndexRoute
   '/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
@@ -133,8 +117,6 @@ export interface FileRoutesById {
   '/_authed/_admin/users': typeof AuthedAdminUsersRoute
   '/_authed/benefits/$benefitId': typeof AuthedBenefitsBenefitIdRoute
   '/_authed/people/$personId': typeof AuthedPeoplePersonIdRoute
-  '/api/test-id-card/back': typeof ApiTestIdCardBackRoute
-  '/api/test-id-card/front': typeof ApiTestIdCardFrontRoute
   '/_authed/benefits/': typeof AuthedBenefitsIndexRoute
   '/_authed/vouchers/': typeof AuthedVouchersIndexRoute
   '/_authed/vouchers/provide/$benefitId': typeof AuthedVouchersProvideBenefitIdRoute
@@ -149,8 +131,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/benefits/$benefitId'
     | '/people/$personId'
-    | '/api/test-id-card/back'
-    | '/api/test-id-card/front'
     | '/benefits'
     | '/vouchers'
     | '/vouchers/provide/$benefitId'
@@ -163,8 +143,6 @@ export interface FileRouteTypes {
     | '/users'
     | '/benefits/$benefitId'
     | '/people/$personId'
-    | '/api/test-id-card/back'
-    | '/api/test-id-card/front'
     | '/benefits'
     | '/vouchers'
     | '/vouchers/provide/$benefitId'
@@ -179,8 +157,6 @@ export interface FileRouteTypes {
     | '/_authed/_admin/users'
     | '/_authed/benefits/$benefitId'
     | '/_authed/people/$personId'
-    | '/api/test-id-card/back'
-    | '/api/test-id-card/front'
     | '/_authed/benefits/'
     | '/_authed/vouchers/'
     | '/_authed/vouchers/provide/$benefitId'
@@ -191,8 +167,6 @@ export interface RootRouteChildren {
   AuthedRoute: typeof AuthedRouteWithChildren
   LoginRoute: typeof LoginRoute
   DevIdCardEditorRoute: typeof DevIdCardEditorRoute
-  ApiTestIdCardBackRoute: typeof ApiTestIdCardBackRoute
-  ApiTestIdCardFrontRoute: typeof ApiTestIdCardFrontRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -245,20 +219,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/benefits'
       preLoaderRoute: typeof AuthedBenefitsIndexRouteImport
       parentRoute: typeof AuthedRoute
-    }
-    '/api/test-id-card/front': {
-      id: '/api/test-id-card/front'
-      path: '/api/test-id-card/front'
-      fullPath: '/api/test-id-card/front'
-      preLoaderRoute: typeof ApiTestIdCardFrontRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/test-id-card/back': {
-      id: '/api/test-id-card/back'
-      path: '/api/test-id-card/back'
-      fullPath: '/api/test-id-card/back'
-      preLoaderRoute: typeof ApiTestIdCardBackRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_authed/people/$personId': {
       id: '/_authed/people/$personId'
@@ -339,8 +299,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthedRoute: AuthedRouteWithChildren,
   LoginRoute: LoginRoute,
   DevIdCardEditorRoute: DevIdCardEditorRoute,
-  ApiTestIdCardBackRoute: ApiTestIdCardBackRoute,
-  ApiTestIdCardFrontRoute: ApiTestIdCardFrontRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

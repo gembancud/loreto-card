@@ -193,14 +193,6 @@ function IdCardEditor() {
 					>
 						Copy Config
 					</button>
-					<a
-						href={`/api/test-id-card/${activeTab === "front" ? "front" : "back"}`}
-						target="_blank"
-						rel="noreferrer"
-						className="px-3 py-1 text-sm bg-green-600 hover:bg-green-500 rounded"
-					>
-						Generate PNG
-					</a>
 				</div>
 			</div>
 
@@ -722,20 +714,7 @@ function IdCardEditor() {
 					) : (
 						<>
 							{/* Back card controls */}
-							<Section title="Overlay" defaultOpen>
-								<ConfigSlider
-									label="Opacity"
-									value={config.back.overlay.opacity * 100}
-									onChange={(v) =>
-										updateConfig(["back", "overlay", "opacity"], v / 100)
-									}
-									min={0}
-									max={100}
-									step={5}
-								/>
-							</Section>
-
-							<Section title="Left Column">
+							<Section title="Left Column" defaultOpen>
 								<ConfigSlider
 									label="X"
 									value={config.back.leftColumn.x}
@@ -749,6 +728,15 @@ function IdCardEditor() {
 									onChange={(v) => updateConfig(["back", "leftColumn", "y"], v)}
 									min={10}
 									max={80}
+								/>
+								<ConfigSlider
+									label="Column Width"
+									value={config.back.leftColumn.width}
+									onChange={(v) =>
+										updateConfig(["back", "leftColumn", "width"], v)
+									}
+									min={200}
+									max={900}
 								/>
 								<ConfigSlider
 									label="Label Size"
@@ -781,6 +769,18 @@ function IdCardEditor() {
 									max={48}
 								/>
 								<ConfigSlider
+									label="Blood Type Gap"
+									value={config.back.leftColumn.bloodType.marginTop}
+									onChange={(v) =>
+										updateConfig(
+											["back", "leftColumn", "bloodType", "marginTop"],
+											v,
+										)
+									}
+									min={-10}
+									max={20}
+								/>
+								<ConfigSlider
 									label="Gender Size"
 									value={config.back.leftColumn.gender.valueSize}
 									onChange={(v) =>
@@ -791,6 +791,18 @@ function IdCardEditor() {
 									}
 									min={16}
 									max={36}
+								/>
+								<ConfigSlider
+									label="Gender Gap"
+									value={config.back.leftColumn.gender.marginTop}
+									onChange={(v) =>
+										updateConfig(
+											["back", "leftColumn", "gender", "marginTop"],
+											v,
+										)
+									}
+									min={-10}
+									max={20}
 								/>
 								<ConfigSlider
 									label="Contact Size"
@@ -805,6 +817,18 @@ function IdCardEditor() {
 									max={36}
 								/>
 								<ConfigSlider
+									label="Contact Gap"
+									value={config.back.leftColumn.contact.marginTop}
+									onChange={(v) =>
+										updateConfig(
+											["back", "leftColumn", "contact", "marginTop"],
+											v,
+										)
+									}
+									min={-10}
+									max={20}
+								/>
+								<ConfigSlider
 									label="POB Size"
 									value={config.back.leftColumn.pob.valueSize}
 									onChange={(v) =>
@@ -812,6 +836,24 @@ function IdCardEditor() {
 									}
 									min={14}
 									max={28}
+								/>
+								<ConfigSlider
+									label="POB Gap"
+									value={config.back.leftColumn.pob.marginTop}
+									onChange={(v) =>
+										updateConfig(["back", "leftColumn", "pob", "marginTop"], v)
+									}
+									min={-10}
+									max={20}
+								/>
+								<ConfigSlider
+									label="POB Width"
+									value={config.back.leftColumn.pob.maxWidth}
+									onChange={(v) =>
+										updateConfig(["back", "leftColumn", "pob", "maxWidth"], v)
+									}
+									min={200}
+									max={1013}
 								/>
 								<ConfigSlider
 									label="PhilHealth Size"
@@ -824,6 +866,18 @@ function IdCardEditor() {
 									}
 									min={16}
 									max={32}
+								/>
+								<ConfigSlider
+									label="PhilHealth Gap"
+									value={config.back.leftColumn.philhealth.marginTop}
+									onChange={(v) =>
+										updateConfig(
+											["back", "leftColumn", "philhealth", "marginTop"],
+											v,
+										)
+									}
+									min={-10}
+									max={20}
 								/>
 							</Section>
 
@@ -842,7 +896,7 @@ function IdCardEditor() {
 										updateConfig(["back", "emergency", "bottomOffset"], v)
 									}
 									min={20}
-									max={100}
+									max={300}
 								/>
 								<ConfigSlider
 									label="Label Size"
@@ -871,6 +925,24 @@ function IdCardEditor() {
 									min={14}
 									max={28}
 								/>
+								<ConfigSlider
+									label="Name Gap"
+									value={config.back.emergency.nameGap}
+									onChange={(v) =>
+										updateConfig(["back", "emergency", "nameGap"], v)
+									}
+									min={-10}
+									max={20}
+								/>
+								<ConfigSlider
+									label="Phone Gap"
+									value={config.back.emergency.phoneGap}
+									onChange={(v) =>
+										updateConfig(["back", "emergency", "phoneGap"], v)
+									}
+									min={-10}
+									max={20}
+								/>
 							</Section>
 
 							<Section title="Issuing Authority">
@@ -887,6 +959,15 @@ function IdCardEditor() {
 									onChange={(v) => updateConfig(["back", "authority", "y"], v)}
 									min={10}
 									max={80}
+								/>
+								<ConfigSlider
+									label="Width"
+									value={config.back.authority.width}
+									onChange={(v) =>
+										updateConfig(["back", "authority", "width"], v)
+									}
+									min={200}
+									max={600}
 								/>
 								<ConfigSlider
 									label="Label Size"
@@ -923,6 +1004,33 @@ function IdCardEditor() {
 									}
 									min={12}
 									max={24}
+								/>
+								<ConfigSlider
+									label="Gap After Label"
+									value={config.back.authority.gaps.afterLabel}
+									onChange={(v) =>
+										updateConfig(["back", "authority", "gaps", "afterLabel"], v)
+									}
+									min={-10}
+									max={20}
+								/>
+								<ConfigSlider
+									label="Gap After Name"
+									value={config.back.authority.gaps.afterName}
+									onChange={(v) =>
+										updateConfig(["back", "authority", "gaps", "afterName"], v)
+									}
+									min={-10}
+									max={20}
+								/>
+								<ConfigSlider
+									label="Gap After Title"
+									value={config.back.authority.gaps.afterTitle}
+									onChange={(v) =>
+										updateConfig(["back", "authority", "gaps", "afterTitle"], v)
+									}
+									min={-10}
+									max={20}
 								/>
 							</Section>
 
@@ -976,6 +1084,13 @@ function IdCardEditor() {
 									}
 									min={10}
 									max={25}
+								/>
+								<ConfigSlider
+									label="Gap"
+									value={config.back.terms.gap}
+									onChange={(v) => updateConfig(["back", "terms", "gap"], v)}
+									min={-10}
+									max={20}
 								/>
 							</Section>
 						</>
