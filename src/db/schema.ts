@@ -32,6 +32,8 @@ export const people = pgTable("people", {
 	monthlyIncome: integer("monthly_income"),
 	status: text("status").notNull().default("active"), // active | inactive | pending
 	profilePhoto: text("profile_photo"),
+	emergencyContactName: text("emergency_contact_name"),
+	emergencyContactPhone: text("emergency_contact_phone"),
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -247,6 +249,7 @@ export type PersonStatus = "active" | "inactive" | "pending";
 
 export type PersonIdentification = typeof personIdentifications.$inferSelect;
 export type NewPersonIdentification = typeof personIdentifications.$inferInsert;
+
 export type IdentificationType =
 	| "voter"
 	| "philhealth"

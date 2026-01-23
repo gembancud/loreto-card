@@ -48,6 +48,9 @@ export interface Person {
 	pagibig: GovServiceRecord;
 	tin: GovServiceRecord;
 	barangayClearance: GovServiceRecord;
+	// Emergency contact
+	emergencyContactName?: string;
+	emergencyContactPhone?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -121,6 +124,8 @@ async function transformDbPersonToPerson(
 		pagibig: buildRecord("pagibig"),
 		tin: buildRecord("tin"),
 		barangayClearance: buildRecord("barangayClearance"),
+		emergencyContactName: dbPerson.emergencyContactName ?? undefined,
+		emergencyContactPhone: dbPerson.emergencyContactPhone ?? undefined,
 		createdAt: dbPerson.createdAt?.toISOString() ?? new Date().toISOString(),
 		updatedAt: dbPerson.updatedAt?.toISOString() ?? new Date().toISOString(),
 	};
@@ -210,6 +215,13 @@ export const updatePerson = createServerFn({
 				personUpdates.barangay = updates.address.barangay;
 		}
 
+		// Handle emergency contact fields
+		if (updates.emergencyContactName !== undefined)
+			personUpdates.emergencyContactName = updates.emergencyContactName ?? null;
+		if (updates.emergencyContactPhone !== undefined)
+			personUpdates.emergencyContactPhone =
+				updates.emergencyContactPhone ?? null;
+
 		// Update person record
 		personUpdates.updatedAt = new Date();
 		await db.update(people).set(personUpdates).where(eq(people.id, personId));
@@ -294,6 +306,8 @@ interface CreatePersonInput {
 	pagibig?: GovServiceRecord;
 	tin?: GovServiceRecord;
 	barangayClearance?: GovServiceRecord;
+	emergencyContactName?: string;
+	emergencyContactPhone?: string;
 }
 
 export const createPerson = createServerFn({
@@ -317,6 +331,8 @@ export const createPerson = createServerFn({
 				monthlyIncome: data.monthlyIncome ?? null,
 				status: data.status ?? "active",
 				profilePhoto: data.profilePhoto ?? null,
+				emergencyContactName: data.emergencyContactName ?? null,
+				emergencyContactPhone: data.emergencyContactPhone ?? null,
 			})
 			.returning();
 

@@ -81,6 +81,9 @@ interface EditPersonFormData {
 	pagibig: GovServiceRecord;
 	tin: GovServiceRecord;
 	barangayClearance: GovServiceRecord;
+	// Emergency contact
+	emergencyContactName: string;
+	emergencyContactPhone: string;
 }
 
 const VOUCHERS_PAGE_SIZE = 5;
@@ -113,6 +116,8 @@ function EditPerson() {
 		pagibig: { registered: false },
 		tin: { registered: false },
 		barangayClearance: { registered: false },
+		emergencyContactName: "",
+		emergencyContactPhone: "",
 	});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -152,7 +157,9 @@ function EditPerson() {
 			compareGovService(formData.soloParent, person.soloParent) ||
 			compareGovService(formData.pagibig, person.pagibig) ||
 			compareGovService(formData.tin, person.tin) ||
-			compareGovService(formData.barangayClearance, person.barangayClearance)
+			compareGovService(formData.barangayClearance, person.barangayClearance) ||
+			formData.emergencyContactName !== (person.emergencyContactName ?? "") ||
+			formData.emergencyContactPhone !== (person.emergencyContactPhone ?? "")
 		);
 	}, [formData, person]);
 
@@ -190,6 +197,8 @@ function EditPerson() {
 			pagibig: person.pagibig,
 			tin: person.tin,
 			barangayClearance: person.barangayClearance,
+			emergencyContactName: person.emergencyContactName ?? "",
+			emergencyContactPhone: person.emergencyContactPhone ?? "",
 		});
 	}, [person]);
 
@@ -312,6 +321,8 @@ function EditPerson() {
 						pagibig: formData.pagibig,
 						tin: formData.tin,
 						barangayClearance: formData.barangayClearance,
+						emergencyContactName: formData.emergencyContactName || undefined,
+						emergencyContactPhone: formData.emergencyContactPhone || undefined,
 					},
 				},
 			});
@@ -526,6 +537,36 @@ function EditPerson() {
 													<SelectItem value="inactive">Inactive</SelectItem>
 												</SelectContent>
 											</Select>
+										</div>
+
+										{/* Emergency Contact */}
+										<div className="grid grid-cols-2 gap-4">
+											<div className="grid gap-2">
+												<Label>Emergency Contact Name</Label>
+												<Input
+													value={formData.emergencyContactName}
+													onChange={(e) =>
+														setFormData((prev) => ({
+															...prev,
+															emergencyContactName: e.target.value,
+														}))
+													}
+													placeholder="Full name"
+												/>
+											</div>
+											<div className="grid gap-2">
+												<Label>Emergency Contact Phone</Label>
+												<Input
+													value={formData.emergencyContactPhone}
+													onChange={(e) =>
+														setFormData((prev) => ({
+															...prev,
+															emergencyContactPhone: e.target.value,
+														}))
+													}
+													placeholder="09XXXXXXXXX"
+												/>
+											</div>
 										</div>
 									</div>
 								</div>

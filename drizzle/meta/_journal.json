@@ -50,6 +50,20 @@
       "when": 1769062370763,
       "tag": "0006_fearless_elektra",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1769141268242,
+      "tag": "0007_chemical_violations",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1769142102690,
+      "tag": "0008_true_garia",
+      "breakpoints": true
     }
   ]
 }
