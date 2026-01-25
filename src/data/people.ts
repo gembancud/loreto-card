@@ -7,11 +7,13 @@ import {
 	type PersonIdentification,
 	people,
 	personIdentifications,
+	type ResidencyStatus,
 } from "@/db/schema";
 import { getPresignedUrl } from "@/lib/storage";
 import type { LoretoBarangay } from "./barangays";
 
 export type PersonStatus = "active" | "inactive" | "pending";
+export type { ResidencyStatus } from "@/db/schema";
 
 export interface GovServiceRecord {
 	registered: boolean;
@@ -57,6 +59,7 @@ export interface Person {
 	gender?: string;
 	civilStatus?: string;
 	placeOfBirth?: string;
+	residencyStatus: ResidencyStatus;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -136,6 +139,7 @@ async function transformDbPersonToPerson(
 		gender: dbPerson.gender ?? undefined,
 		civilStatus: dbPerson.civilStatus ?? undefined,
 		placeOfBirth: dbPerson.placeOfBirth ?? undefined,
+		residencyStatus: dbPerson.residencyStatus as ResidencyStatus,
 		createdAt: dbPerson.createdAt?.toISOString() ?? new Date().toISOString(),
 		updatedAt: dbPerson.updatedAt?.toISOString() ?? new Date().toISOString(),
 	};
@@ -243,6 +247,8 @@ export const updatePerson = createServerFn({
 			personUpdates.civilStatus = updates.civilStatus ?? null;
 		if (updates.placeOfBirth !== undefined)
 			personUpdates.placeOfBirth = updates.placeOfBirth ?? null;
+		if (updates.residencyStatus !== undefined)
+			personUpdates.residencyStatus = updates.residencyStatus;
 
 		// Update person record
 		personUpdates.updatedAt = new Date();
@@ -334,6 +340,7 @@ interface CreatePersonInput {
 	gender?: string;
 	civilStatus?: string;
 	placeOfBirth?: string;
+	residencyStatus?: ResidencyStatus;
 }
 
 export const createPerson = createServerFn({
@@ -363,6 +370,7 @@ export const createPerson = createServerFn({
 				gender: data.gender ?? null,
 				civilStatus: data.civilStatus ?? null,
 				placeOfBirth: data.placeOfBirth ?? null,
+				residencyStatus: data.residencyStatus ?? "resident",
 			})
 			.returning();
 

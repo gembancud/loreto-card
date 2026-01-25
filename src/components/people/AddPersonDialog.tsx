@@ -21,7 +21,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
-import type { PersonStatus } from "@/data/people";
+import type { PersonStatus, ResidencyStatus } from "@/data/people";
 import { createPerson } from "@/data/people";
 import { ProfilePhotoUpload } from "./ProfilePhotoUpload";
 
@@ -34,6 +34,7 @@ interface AddPersonFormData {
 	barangay: LoretoBarangay | "";
 	phoneNumber: string;
 	status: PersonStatus;
+	residencyStatus: ResidencyStatus;
 	profilePhoto: string | null;
 }
 
@@ -46,6 +47,7 @@ const initialFormData: AddPersonFormData = {
 	barangay: "",
 	phoneNumber: "",
 	status: "pending",
+	residencyStatus: "resident",
 	profilePhoto: null,
 };
 
@@ -72,6 +74,10 @@ export function AddPersonDialog() {
 
 	const handleStatusChange = (value: PersonStatus) => {
 		setFormData((prev) => ({ ...prev, status: value }));
+	};
+
+	const handleResidencyStatusChange = (value: ResidencyStatus) => {
+		setFormData((prev) => ({ ...prev, residencyStatus: value }));
 	};
 
 	const handleBarangayChange = (value: LoretoBarangay) => {
@@ -114,6 +120,7 @@ export function AddPersonDialog() {
 					},
 					phoneNumber: formData.phoneNumber,
 					status: formData.status,
+					residencyStatus: formData.residencyStatus,
 					profilePhoto: formData.profilePhoto || undefined,
 				},
 			});
@@ -254,22 +261,39 @@ export function AddPersonDialog() {
 							</div>
 						</div>
 
-						{/* Row 4: Status */}
-						<div className="grid gap-2">
-							<Label htmlFor={statusId}>Status</Label>
-							<Select
-								value={formData.status}
-								onValueChange={handleStatusChange}
-							>
-								<SelectTrigger id={statusId} className="w-full">
-									<SelectValue placeholder="Select status" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="pending">Pending</SelectItem>
-									<SelectItem value="active">Active</SelectItem>
-									<SelectItem value="inactive">Inactive</SelectItem>
-								</SelectContent>
-							</Select>
+						{/* Row 4: Status and Residency */}
+						<div className="grid grid-cols-2 gap-4">
+							<div className="grid gap-2">
+								<Label htmlFor={statusId}>Status</Label>
+								<Select
+									value={formData.status}
+									onValueChange={handleStatusChange}
+								>
+									<SelectTrigger id={statusId} className="w-full">
+										<SelectValue placeholder="Select status" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="pending">Pending</SelectItem>
+										<SelectItem value="active">Active</SelectItem>
+										<SelectItem value="inactive">Inactive</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="grid gap-2">
+								<Label>Residency</Label>
+								<Select
+									value={formData.residencyStatus}
+									onValueChange={handleResidencyStatusChange}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Select residency" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="resident">Resident</SelectItem>
+										<SelectItem value="nonResident">Non-Resident</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
 						</div>
 					</div>
 

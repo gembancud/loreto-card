@@ -42,6 +42,7 @@ import {
 	type GovServiceRecord,
 	getPersonById,
 	type PersonStatus,
+	type ResidencyStatus,
 	updatePerson,
 } from "@/data/people";
 import { deleteProfilePhoto, uploadProfilePhoto } from "@/data/storage";
@@ -70,6 +71,7 @@ interface EditPersonFormData {
 	phoneNumber: string;
 	monthlyIncome: number | null;
 	status: PersonStatus;
+	residencyStatus: ResidencyStatus;
 	bloodType: string;
 	gender: string;
 	civilStatus: string;
@@ -110,6 +112,7 @@ function EditPerson() {
 		phoneNumber: "",
 		monthlyIncome: null,
 		status: "pending",
+		residencyStatus: "resident",
 		bloodType: "",
 		gender: "",
 		civilStatus: "",
@@ -156,6 +159,7 @@ function EditPerson() {
 			formData.phoneNumber !== person.phoneNumber ||
 			formData.monthlyIncome !== person.monthlyIncome ||
 			formData.status !== person.status ||
+			formData.residencyStatus !== person.residencyStatus ||
 			formData.bloodType !== (person.bloodType ?? "") ||
 			formData.gender !== (person.gender ?? "") ||
 			formData.civilStatus !== (person.civilStatus ?? "") ||
@@ -199,6 +203,7 @@ function EditPerson() {
 			phoneNumber: person.phoneNumber,
 			monthlyIncome: person.monthlyIncome,
 			status: person.status,
+			residencyStatus: person.residencyStatus,
 			bloodType: person.bloodType ?? "",
 			gender: person.gender ?? "",
 			civilStatus: person.civilStatus ?? "",
@@ -263,6 +268,10 @@ function EditPerson() {
 
 	const handleStatusChange = (value: PersonStatus) => {
 		setFormData((prev) => ({ ...prev, status: value }));
+	};
+
+	const handleResidencyStatusChange = (value: ResidencyStatus) => {
+		setFormData((prev) => ({ ...prev, residencyStatus: value }));
 	};
 
 	const handleBarangayChange = (value: LoretoBarangay) => {
@@ -349,6 +358,7 @@ function EditPerson() {
 						phoneNumber: formData.phoneNumber,
 						monthlyIncome: formData.monthlyIncome,
 						status: formData.status,
+						residencyStatus: formData.residencyStatus,
 						bloodType: formData.bloodType || undefined,
 						gender: formData.gender || undefined,
 						civilStatus: formData.civilStatus || undefined,
@@ -560,8 +570,8 @@ function EditPerson() {
 											</div>
 										</div>
 
-										{/* Status and Blood Type */}
-										<div className="grid grid-cols-2 gap-4">
+										{/* Status, Residency, and Blood Type */}
+										<div className="grid grid-cols-3 gap-4">
 											<div className="grid gap-2">
 												<Label htmlFor={statusId}>Status</Label>
 												<Select
@@ -575,6 +585,23 @@ function EditPerson() {
 														<SelectItem value="pending">Pending</SelectItem>
 														<SelectItem value="active">Active</SelectItem>
 														<SelectItem value="inactive">Inactive</SelectItem>
+													</SelectContent>
+												</Select>
+											</div>
+											<div className="grid gap-2">
+												<Label>Residency</Label>
+												<Select
+													value={formData.residencyStatus}
+													onValueChange={handleResidencyStatusChange}
+												>
+													<SelectTrigger className="w-full">
+														<SelectValue placeholder="Select residency" />
+													</SelectTrigger>
+													<SelectContent>
+														<SelectItem value="resident">Resident</SelectItem>
+														<SelectItem value="nonResident">
+															Non-Resident
+														</SelectItem>
 													</SelectContent>
 												</Select>
 											</div>

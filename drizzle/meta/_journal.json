@@ -78,6 +78,13 @@
       "when": 1769148732300,
       "tag": "0010_old_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1769320355993,
+      "tag": "0011_conscious_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }

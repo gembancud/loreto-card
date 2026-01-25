@@ -38,6 +38,7 @@ export const people = pgTable("people", {
 	gender: text("gender"), // Male, Female
 	civilStatus: text("civil_status"), // Single, Married, Widowed, Separated
 	placeOfBirth: text("place_of_birth"),
+	residencyStatus: text("residency_status").notNull().default("resident"), // resident | nonResident
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -250,6 +251,7 @@ export const vouchersRelations = relations(vouchers, ({ one }) => ({
 export type DbPerson = typeof people.$inferSelect;
 export type NewPerson = typeof people.$inferInsert;
 export type PersonStatus = "active" | "inactive" | "pending";
+export type ResidencyStatus = "resident" | "nonResident";
 
 export type PersonIdentification = typeof personIdentifications.$inferSelect;
 export type NewPersonIdentification = typeof personIdentifications.$inferInsert;

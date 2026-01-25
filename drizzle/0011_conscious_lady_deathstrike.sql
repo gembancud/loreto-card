@@ -1,0 +1,1 @@
+ALTER TABLE "people" ADD COLUMN "residency_status" text DEFAULT 'resident' NOT NULL;

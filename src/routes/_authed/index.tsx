@@ -32,7 +32,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { LORETO_BARANGAYS } from "@/data/barangays";
-import { getPeople, type Person } from "@/data/people";
+import { getPeople, type Person, type ResidencyStatus } from "@/data/people";
 import {
 	type GovServiceKey,
 	personMatchesBadgeFilter,
@@ -49,6 +49,9 @@ function PeopleList() {
 	const router = useRouter();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [barangayFilter, setBarangayFilter] = useState("all");
+	const [residencyFilter, setResidencyFilter] = useState<
+		"all" | ResidencyStatus
+	>("all");
 	const [badgeFilter, setBadgeFilter] = useState<Set<GovServiceKey>>(new Set());
 	const [badgeFilterMode, setBadgeFilterMode] = useState<"any" | "all">("any");
 	const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
@@ -79,6 +82,14 @@ function PeopleList() {
 				return false;
 			}
 
+			// Filter by residency status
+			if (
+				residencyFilter !== "all" &&
+				person.residencyStatus !== residencyFilter
+			) {
+				return false;
+			}
+
 			// Filter by government services
 			if (!personMatchesBadgeFilter(person, badgeFilter, badgeFilterMode)) {
 				return false;
@@ -86,16 +97,25 @@ function PeopleList() {
 
 			return true;
 		});
-	}, [people, searchQuery, barangayFilter, badgeFilter, badgeFilterMode]);
+	}, [
+		people,
+		searchQuery,
+		barangayFilter,
+		residencyFilter,
+		badgeFilter,
+		badgeFilterMode,
+	]);
 
 	const hasActiveFilters =
 		searchQuery.trim() !== "" ||
 		barangayFilter !== "all" ||
+		residencyFilter !== "all" ||
 		badgeFilter.size > 0;
 
 	const clearFilters = () => {
 		setSearchQuery("");
 		setBarangayFilter("all");
+		setResidencyFilter("all");
 		setBadgeFilter(new Set());
 		setBadgeFilterMode("any");
 	};
@@ -187,6 +207,21 @@ function PeopleList() {
 									))}
 								</SelectContent>
 							</Select>
+							<Select
+								value={residencyFilter}
+								onValueChange={(value) =>
+									setResidencyFilter(value as "all" | ResidencyStatus)
+								}
+							>
+								<SelectTrigger className="w-[160px]">
+									<SelectValue placeholder="Residency" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="all">All Residency</SelectItem>
+									<SelectItem value="resident">Resident</SelectItem>
+									<SelectItem value="nonResident">Non-Resident</SelectItem>
+								</SelectContent>
+							</Select>
 							{hasActiveFilters && (
 								<Button
 									variant="ghost"
@@ -233,7 +268,10 @@ function PeopleList() {
 									</div>
 									<div className="text-sm text-muted-foreground mb-2">
 										{calculateAge(person.birthdate)} yrs old •{" "}
-										{person.address.barangay}
+										{person.address.barangay} •{" "}
+										{person.residencyStatus === "resident"
+											? "Resident"
+											: "Non-Resident"}
 									</div>
 									<GovServiceBadges person={person} />
 								</button>
@@ -250,6 +288,7 @@ function PeopleList() {
 									<TableHead className="w-[60px]">Age</TableHead>
 									<TableHead className="w-[15%]">Barangay</TableHead>
 									<TableHead className="w-[10%]">Purok</TableHead>
+									<TableHead className="w-[100px]">Residency</TableHead>
 									<TableHead>Services</TableHead>
 									<TableHead className="w-[100px]">Status</TableHead>
 									<TableHead className="w-[80px]">Actions</TableHead>
@@ -259,7 +298,7 @@ function PeopleList() {
 								{filteredPeople.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={7}
+											colSpan={8}
 											className="h-24 text-center text-muted-foreground"
 										>
 											No people found matching your filters
@@ -288,6 +327,11 @@ function PeopleList() {
 											<TableCell>{calculateAge(person.birthdate)}</TableCell>
 											<TableCell>{person.address.barangay}</TableCell>
 											<TableCell>{person.address.purok || "-"}</TableCell>
+											<TableCell>
+												{person.residencyStatus === "resident"
+													? "Resident"
+													: "Non-Resident"}
+											</TableCell>
 											<TableCell className="overflow-hidden">
 												<GovServiceBadges person={person} />
 											</TableCell>

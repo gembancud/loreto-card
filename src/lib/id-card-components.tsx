@@ -241,7 +241,7 @@ export function IdCardFront({
 				</div>
 			</div>
 
-			{/* Resident/Non-Resident bar - full width */}
+			{/* Status bar - full width, conditionally split for PWD */}
 			<div
 				style={{
 					position: "absolute",
@@ -249,27 +249,60 @@ export function IdCardFront({
 					left: 0,
 					width: "100%",
 					height: front.residentBar.height,
-					backgroundColor:
-						person.residencyStatus === "nonResident"
-							? colors.nonResidentBar
-							: colors.blueBar,
 					display: "flex",
-					alignItems: "center",
-					paddingLeft: front.residentBar.paddingLeft,
 				}}
 			>
-				<span
+				{/* Residency status - 35% if PWD, 100% otherwise */}
+				<div
 					style={{
-						color: colors.textWhite,
-						fontSize: front.residentBar.fontSize,
-						fontWeight: 700,
-						whiteSpace: "nowrap",
+						width: person.pwd.registered ? "35%" : "100%",
+						backgroundColor:
+							person.residencyStatus === "nonResident"
+								? colors.nonResidentBar
+								: colors.blueBar,
+						display: "flex",
+						alignItems: "center",
+						paddingLeft: front.residentBar.paddingLeft,
 					}}
 				>
-					{person.residencyStatus === "nonResident"
-						? "NON-RESIDENT"
-						: "RESIDENT"}
-				</span>
+					<span
+						style={{
+							color: colors.textWhite,
+							fontSize: front.residentBar.fontSize,
+							fontWeight: 700,
+							whiteSpace: "nowrap",
+						}}
+					>
+						{person.residencyStatus === "nonResident"
+							? "NON-RESIDENT"
+							: "RESIDENT"}
+					</span>
+				</div>
+
+				{/* PWD status - 65% only if registered */}
+				{person.pwd.registered && (
+					<div
+						style={{
+							width: "65%",
+							backgroundColor: colors.pwdBar,
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "flex-end",
+							paddingRight: front.residentBar.paddingLeft,
+						}}
+					>
+						<span
+							style={{
+								color: colors.textWhite,
+								fontSize: front.residentBar.fontSize,
+								fontWeight: 700,
+								whiteSpace: "nowrap",
+							}}
+						>
+							PERSON WITH DISABILITY
+						</span>
+					</div>
+				)}
 			</div>
 
 			{/* Main content area */}
