@@ -241,7 +241,7 @@ export function IdCardFront({
 				</div>
 			</div>
 
-			{/* Blue "RESIDENT" bar - full width */}
+			{/* Resident/Non-Resident bar - full width */}
 			<div
 				style={{
 					position: "absolute",
@@ -249,7 +249,10 @@ export function IdCardFront({
 					left: 0,
 					width: "100%",
 					height: front.residentBar.height,
-					backgroundColor: colors.blueBar,
+					backgroundColor:
+						person.residencyStatus === "nonResident"
+							? colors.nonResidentBar
+							: colors.blueBar,
 					display: "flex",
 					alignItems: "center",
 					paddingLeft: front.residentBar.paddingLeft,
@@ -260,9 +263,12 @@ export function IdCardFront({
 						color: colors.textWhite,
 						fontSize: front.residentBar.fontSize,
 						fontWeight: 700,
+						whiteSpace: "nowrap",
 					}}
 				>
-					RESIDENT
+					{person.residencyStatus === "nonResident"
+						? "NON-RESIDENT"
+						: "RESIDENT"}
 				</span>
 			</div>
 

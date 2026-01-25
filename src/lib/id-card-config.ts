@@ -13,6 +13,7 @@ export interface IdCardConfig {
 	// Color palette
 	colors: {
 		blueBar: string;
+		nonResidentBar: string;
 		textDark: string;
 		textLight: string;
 		textWhite: string;
@@ -165,6 +166,7 @@ export const defaultConfig: IdCardConfig = {
 
 	colors: {
 		blueBar: "#0000fe",
+		nonResidentBar: "#fe0204",
 		textDark: "#1a1a1a",
 		textLight: "#4a4a4a",
 		textWhite: "#ffffff",
@@ -322,6 +324,7 @@ export const mockPerson: Person = {
 	gender: "Male",
 	civilStatus: "Single",
 	placeOfBirth: "Purok 8, Poblacion, Loreto, Agusan del Sur",
+	residencyStatus: "resident",
 	createdAt: new Date().toISOString(),
 	updatedAt: new Date().toISOString(),
 };
