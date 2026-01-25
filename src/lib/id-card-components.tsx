@@ -46,6 +46,18 @@ export function getFullAddress(person: Person): string {
 	return parts.join(", ");
 }
 
+// Check if person is a senior citizen (60+ years old)
+export function isSeniorCitizen(birthdate: string): boolean {
+	const today = new Date();
+	const birth = new Date(birthdate);
+	let age = today.getFullYear() - birth.getFullYear();
+	const monthDiff = today.getMonth() - birth.getMonth();
+	if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+		age--;
+	}
+	return age >= 60;
+}
+
 // Format emergency contact name as "LAST NAME, FIRST NAME"
 export function formatEmergencyContactName(name: string | undefined): string {
 	if (!name) return "—";
@@ -241,69 +253,119 @@ export function IdCardFront({
 				</div>
 			</div>
 
-			{/* Status bar - full width, conditionally split for PWD */}
-			<div
-				style={{
-					position: "absolute",
-					top: front.residentBar.y,
-					left: 0,
-					width: "100%",
-					height: front.residentBar.height,
-					display: "flex",
-				}}
-			>
-				{/* Residency status - 35% if PWD, 100% otherwise */}
-				<div
-					style={{
-						width: person.pwd.registered ? "35%" : "100%",
-						backgroundColor:
-							person.residencyStatus === "nonResident"
-								? colors.nonResidentBar
-								: colors.blueBar,
-						display: "flex",
-						alignItems: "center",
-						paddingLeft: front.residentBar.paddingLeft,
-					}}
-				>
-					<span
-						style={{
-							color: colors.textWhite,
-							fontSize: front.residentBar.fontSize,
-							fontWeight: 700,
-							whiteSpace: "nowrap",
-						}}
-					>
-						{person.residencyStatus === "nonResident"
-							? "NON-RESIDENT"
-							: "RESIDENT"}
-					</span>
-				</div>
+			{/* Status bar - layout depends on senior/PWD status */}
+			{(() => {
+				const isSenior = isSeniorCitizen(person.birthdate);
+				const isPwd = person.pwd.registered;
+				const hasSpecialStatus = isSenior || isPwd;
+				const residencyColor =
+					person.residencyStatus === "nonResident"
+						? colors.nonResidentBar
+						: colors.blueBar;
 
-				{/* PWD status - 65% only if registered */}
-				{person.pwd.registered && (
+				// Widths depend on scenario:
+				// - Neither: 100% residency
+				// - Senior only: 35% residency, 65% yellow with "SENIOR CITIZEN"
+				// - PWD only: 35% residency, 65% green with "PERSON WITH DISABILITY"
+				// - Both: 27% residency, 22% yellow (no text), 50% green with combined text
+				const residencyWidth = !hasSpecialStatus
+					? "100%"
+					: isSenior && isPwd
+						? "27%"
+						: "35%";
+
+				return (
 					<div
 						style={{
-							width: "65%",
-							backgroundColor: colors.pwdBar,
+							position: "absolute",
+							top: front.residentBar.y,
+							left: 0,
+							width: "100%",
+							height: front.residentBar.height,
 							display: "flex",
-							alignItems: "center",
-							justifyContent: "flex-end",
-							paddingRight: front.residentBar.paddingLeft,
 						}}
 					>
-						<span
+						{/* Residency status */}
+						<div
 							style={{
-								color: colors.textWhite,
-								fontSize: front.residentBar.fontSize,
-								fontWeight: 700,
-								whiteSpace: "nowrap",
+								width: residencyWidth,
+								backgroundColor: residencyColor,
+								display: "flex",
+								alignItems: "center",
+								paddingLeft: front.residentBar.paddingLeft,
 							}}
 						>
-							PERSON WITH DISABILITY
-						</span>
+							<span
+								style={{
+									color: colors.textWhite,
+									fontSize: front.residentBar.fontSize,
+									fontWeight: 700,
+									whiteSpace: "nowrap",
+								}}
+							>
+								{person.residencyStatus === "nonResident"
+									? "NON-RESIDENT"
+									: "RESIDENT"}
+							</span>
+						</div>
+
+						{/* Senior citizen band (yellow) */}
+						{isSenior && (
+							<div
+								style={{
+									width: isPwd ? "22%" : "65%",
+									backgroundColor: colors.seniorBar,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: isPwd ? "center" : "flex-end",
+									paddingRight: isPwd ? 0 : front.residentBar.paddingLeft,
+								}}
+							>
+								{/* Text only if senior-only (not both) */}
+								{!isPwd && (
+									<span
+										style={{
+											color: colors.textWhite,
+											fontSize: front.residentBar.fontSize,
+											fontWeight: 700,
+											whiteSpace: "nowrap",
+										}}
+									>
+										SENIOR CITIZEN
+									</span>
+								)}
+							</div>
+						)}
+
+						{/* PWD band (green) */}
+						{isPwd && (
+							<div
+								style={{
+									width: isSenior ? "51%" : "65%",
+									backgroundColor: colors.pwdBar,
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "flex-end",
+									paddingRight: front.residentBar.paddingLeft,
+								}}
+							>
+								<span
+									style={{
+										color: colors.textWhite,
+										fontSize: front.residentBar.fontSize,
+										fontWeight: 700,
+										whiteSpace: "nowrap",
+									}}
+								>
+									{isSenior
+										? "SENIOR CITIZEN | PERSON WITH DISABILITY"
+										: "PERSON WITH DISABILITY"}
+								</span>
+							</div>
+						)}
 					</div>
-				)}
-			</div>
+				);
+			})()}
 
 			{/* Main content area */}
 			<div

@@ -15,6 +15,7 @@ export interface IdCardConfig {
 		blueBar: string;
 		nonResidentBar: string;
 		pwdBar: string;
+		seniorBar: string;
 		textDark: string;
 		textLight: string;
 		textWhite: string;
@@ -169,6 +170,7 @@ export const defaultConfig: IdCardConfig = {
 		blueBar: "#0000fe",
 		nonResidentBar: "#fe0204",
 		pwdBar: "#008100",
+		seniorBar: "#F5A623",
 		textDark: "#1a1a1a",
 		textLight: "#4a4a4a",
 		textWhite: "#ffffff",
