@@ -39,6 +39,14 @@ import {
 } from "@/lib/govServices";
 import { calculateAge, formatNameWithInitial } from "@/lib/utils";
 
+function formatDate(isoString: string): string {
+	return new Date(isoString).toLocaleDateString("en-US", {
+		month: "short",
+		day: "numeric",
+		year: "numeric",
+	});
+}
+
 export const Route = createFileRoute("/_authed/")({
 	component: PeopleList,
 	loader: async () => await getPeople(),
@@ -266,12 +274,16 @@ function PeopleList() {
 										</span>
 										<PersonStatusBadge status={person.status} />
 									</div>
-									<div className="text-sm text-muted-foreground mb-2">
+									<div className="text-sm text-muted-foreground mb-1">
 										{calculateAge(person.birthdate)} yrs old •{" "}
 										{person.address.barangay} •{" "}
 										{person.residencyStatus === "resident"
 											? "Resident"
 											: "Non-Resident"}
+									</div>
+									<div className="text-xs text-muted-foreground mb-2">
+										Created: {formatDate(person.createdAt)} • Updated:{" "}
+										{formatDate(person.updatedAt)}
 									</div>
 									<GovServiceBadges person={person} />
 								</button>
@@ -285,20 +297,22 @@ function PeopleList() {
 							<TableHeader className="sticky top-0 bg-background z-10">
 								<TableRow>
 									<TableHead className="w-[20%]">Name</TableHead>
+									<TableHead className="w-[80px]">Actions</TableHead>
 									<TableHead className="w-[60px]">Age</TableHead>
 									<TableHead className="w-[15%]">Barangay</TableHead>
 									<TableHead className="w-[10%]">Purok</TableHead>
 									<TableHead className="w-[100px]">Residency</TableHead>
 									<TableHead>Services</TableHead>
 									<TableHead className="w-[100px]">Status</TableHead>
-									<TableHead className="w-[80px]">Actions</TableHead>
+									<TableHead className="w-[100px]">Created</TableHead>
+									<TableHead className="w-[100px]">Updated</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{filteredPeople.length === 0 ? (
 									<TableRow>
 										<TableCell
-											colSpan={8}
+											colSpan={10}
 											className="h-24 text-center text-muted-foreground"
 										>
 											No people found matching your filters
@@ -324,6 +338,17 @@ function PeopleList() {
 											<TableCell className="font-medium">
 												{formatNameWithInitial(person)}
 											</TableCell>
+											<TableCell>
+												<Link
+													to="/people/$personId"
+													params={{ personId: person.id }}
+												>
+													<Button variant="ghost" size="icon">
+														<Pencil className="h-4 w-4" />
+														<span className="sr-only">Edit</span>
+													</Button>
+												</Link>
+											</TableCell>
 											<TableCell>{calculateAge(person.birthdate)}</TableCell>
 											<TableCell>{person.address.barangay}</TableCell>
 											<TableCell>{person.address.purok || "-"}</TableCell>
@@ -338,16 +363,11 @@ function PeopleList() {
 											<TableCell>
 												<PersonStatusBadge status={person.status} />
 											</TableCell>
-											<TableCell>
-												<Link
-													to="/people/$personId"
-													params={{ personId: person.id }}
-												>
-													<Button variant="ghost" size="icon">
-														<Pencil className="h-4 w-4" />
-														<span className="sr-only">Edit</span>
-													</Button>
-												</Link>
+											<TableCell className="text-sm text-muted-foreground">
+												{formatDate(person.createdAt)}
+											</TableCell>
+											<TableCell className="text-sm text-muted-foreground">
+												{formatDate(person.updatedAt)}
 											</TableCell>
 										</TableRow>
 									))
