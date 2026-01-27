@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Mail, Pencil, Plus } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -347,6 +347,28 @@ function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	const isDirty = useMemo(() => {
+		return (
+			phoneNumber !== "" ||
+			email !== "" ||
+			firstName !== "" ||
+			lastName !== "" ||
+			role !== "user" ||
+			departmentId !== ""
+		);
+	}, [phoneNumber, email, firstName, lastName, role, departmentId]);
+
+	const handleCancel = () => {
+		if (isDirty) {
+			if (
+				!confirm("You have unsaved changes. Are you sure you want to close?")
+			) {
+				return;
+			}
+		}
+		onCancel();
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError(null);
@@ -458,7 +480,7 @@ function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 				{error && <p className="text-sm text-destructive">{error}</p>}
 			</div>
 			<DialogFooter>
-				<Button type="button" variant="outline" onClick={onCancel}>
+				<Button type="button" variant="outline" onClick={handleCancel}>
 					Cancel
 				</Button>
 				<Button type="submit" disabled={isSubmitting}>
@@ -493,6 +515,48 @@ function EditUserForm({
 	);
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const initialValues = useMemo(
+		() => ({
+			phoneNumber: user.phoneNumber,
+			email: user.email ?? "",
+			firstName: user.firstName,
+			lastName: user.lastName,
+			role: user.role,
+			departmentId: user.departmentId ?? "",
+		}),
+		[user],
+	);
+
+	const isDirty = useMemo(() => {
+		return (
+			phoneNumber !== initialValues.phoneNumber ||
+			email !== initialValues.email ||
+			firstName !== initialValues.firstName ||
+			lastName !== initialValues.lastName ||
+			role !== initialValues.role ||
+			departmentId !== initialValues.departmentId
+		);
+	}, [
+		phoneNumber,
+		email,
+		firstName,
+		lastName,
+		role,
+		departmentId,
+		initialValues,
+	]);
+
+	const handleCancel = () => {
+		if (isDirty) {
+			if (
+				!confirm("You have unsaved changes. Are you sure you want to close?")
+			) {
+				return;
+			}
+		}
+		onCancel();
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -614,7 +678,7 @@ function EditUserForm({
 				{error && <p className="text-sm text-destructive">{error}</p>}
 			</div>
 			<DialogFooter>
-				<Button type="button" variant="outline" onClick={onCancel}>
+				<Button type="button" variant="outline" onClick={handleCancel}>
 					Cancel
 				</Button>
 				<Button type="submit" disabled={isSubmitting}>
