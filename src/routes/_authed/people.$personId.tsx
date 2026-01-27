@@ -10,10 +10,12 @@ import {
 	CheckCircle,
 	Clock,
 	Save,
+	Trash2,
 	XCircle,
 } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { IdCardDownloadButton } from "@/components/id-card/IdCardDownloadButton";
+import { DeletePersonDialog } from "@/components/people/DeletePersonDialog";
 import { ProfilePhotoUpload } from "@/components/people/ProfilePhotoUpload";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
 import {
+	deletePerson,
 	type GovServiceRecord,
 	getPersonById,
 	type PersonStatus,
@@ -132,6 +135,7 @@ function EditPerson() {
 	});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 	// Track if form has unsaved changes
 	const isDirty = useMemo(() => {
@@ -400,6 +404,25 @@ function EditPerson() {
 		router.navigate({ to: "/" });
 	};
 
+	// Format full name for delete confirmation
+	const getFullName = () => {
+		const parts = [person.firstName];
+		if (person.middleName) parts.push(person.middleName);
+		parts.push(person.lastName);
+		if (person.suffix) parts.push(person.suffix);
+		return parts.join(" ");
+	};
+
+	const handleDelete = async () => {
+		const result = await deletePerson({ data: person.id });
+		if (result.success) {
+			await router.invalidate();
+			router.navigate({ to: "/" });
+		} else {
+			console.error("Failed to delete person:", result.error);
+		}
+	};
+
 	return (
 		<div className="container mx-auto py-8 px-4">
 			<div className="max-w-5xl mx-auto">
@@ -410,7 +433,17 @@ function EditPerson() {
 							Back to People
 						</Button>
 					</Link>
-					<IdCardDownloadButton person={person} />
+					<div className="flex items-center gap-2">
+						<Button
+							variant="destructive"
+							className="gap-2"
+							onClick={() => setShowDeleteDialog(true)}
+						>
+							<Trash2 className="h-4 w-4" />
+							Delete
+						</Button>
+						<IdCardDownloadButton person={person} />
+					</div>
 				</div>
 
 				<Card>
@@ -1339,6 +1372,14 @@ function EditPerson() {
 					vouchers={vouchers}
 					currentPage={vouchersPage}
 					onPageChange={setVouchersPage}
+				/>
+
+				{/* Delete Person Dialog */}
+				<DeletePersonDialog
+					open={showDeleteDialog}
+					onOpenChange={setShowDeleteDialog}
+					personFullName={getFullName()}
+					onConfirm={handleDelete}
 				/>
 			</div>
 		</div>

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type DbPerson,
@@ -12,7 +12,7 @@ import {
 import { getPresignedUrl } from "@/lib/storage";
 import type { LoretoBarangay } from "./barangays";
 
-export type PersonStatus = "active" | "inactive" | "pending";
+export type PersonStatus = "active" | "inactive" | "pending" | "deleted";
 export type { ResidencyStatus } from "@/db/schema";
 
 export interface GovServiceRecord {
@@ -152,6 +152,7 @@ export const getPeople = createServerFn({
 		with: {
 			identifications: true,
 		},
+		where: ne(people.status, "deleted"),
 		orderBy: (people, { asc }) => [asc(people.lastName), asc(people.firstName)],
 	});
 
@@ -418,12 +419,15 @@ export const searchPeople = createServerFn({
 			with: {
 				identifications: true,
 			},
-			where: sql`(
-				LOWER(${people.firstName}) LIKE ${searchTerm} OR
-				LOWER(${people.lastName}) LIKE ${searchTerm} OR
-				LOWER(${people.middleName}) LIKE ${searchTerm} OR
-				${people.phoneNumber} LIKE ${searchTerm}
-			)`,
+			where: and(
+				ne(people.status, "deleted"),
+				sql`(
+					LOWER(${people.firstName}) LIKE ${searchTerm} OR
+					LOWER(${people.lastName}) LIKE ${searchTerm} OR
+					LOWER(${people.middleName}) LIKE ${searchTerm} OR
+					${people.phoneNumber} LIKE ${searchTerm}
+				)`,
+			),
 			orderBy: (people, { asc }) => [
 				asc(people.lastName),
 				asc(people.firstName),
@@ -435,3 +439,30 @@ export const searchPeople = createServerFn({
 			dbPeople.map((p) => transformDbPersonToPerson(p, p.identifications)),
 		);
 	});
+
+// Soft delete a person (sets status to "deleted")
+export const deletePerson = createServerFn({
+	method: "POST",
+})
+	.inputValidator((personId: string) => personId)
+	.handler(
+		async ({
+			data: personId,
+		}): Promise<{ success: boolean; error?: string }> => {
+			const person = await db.query.people.findFirst({
+				where: eq(people.id, personId),
+			});
+
+			if (!person) {
+				return { success: false, error: "Person not found" };
+			}
+
+			// Soft delete - set status to "deleted"
+			await db
+				.update(people)
+				.set({ status: "deleted", updatedAt: new Date() })
+				.where(eq(people.id, personId));
+
+			return { success: true };
+		},
+	);

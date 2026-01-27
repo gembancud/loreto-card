@@ -250,7 +250,7 @@ export const vouchersRelations = relations(vouchers, ({ one }) => ({
 // Type exports for use in application code
 export type DbPerson = typeof people.$inferSelect;
 export type NewPerson = typeof people.$inferInsert;
-export type PersonStatus = "active" | "inactive" | "pending";
+export type PersonStatus = "active" | "inactive" | "pending" | "deleted";
 export type ResidencyStatus = "resident" | "nonResident";
 
 export type PersonIdentification = typeof personIdentifications.$inferSelect;

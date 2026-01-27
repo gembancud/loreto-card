@@ -21,6 +21,10 @@ export function PersonStatusBadge({ status }: PersonStatusBadgeProps) {
 				"bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200",
 			label: "Pending",
 		},
+		deleted: {
+			className: "bg-red-100 text-red-700 border-red-300 hover:bg-red-200",
+			label: "Deleted",
+		},
 	};
 
 	const variant = variants[status];
