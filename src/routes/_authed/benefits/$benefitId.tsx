@@ -1,5 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle, Clock, Search, XCircle } from "lucide-react";
+import {
+	ArrowLeft,
+	CheckCircle,
+	Clock,
+	Filter,
+	Search,
+	XCircle,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getBenefitById } from "@/data/benefits";
 import { getVouchersForBenefit, type VoucherListItem } from "@/data/vouchers";
+import type { BenefitEligibility, IdentificationType } from "@/db/schema";
 
 export const Route = createFileRoute("/_authed/benefits/$benefitId")({
 	component: BenefitDetailPage,
@@ -35,6 +43,71 @@ export const Route = createFileRoute("/_authed/benefits/$benefitId")({
 });
 
 const PAGE_SIZE = 10;
+
+// Category labels for display
+const CATEGORY_LABELS: Record<IdentificationType, string> = {
+	voter: "Voter",
+	philhealth: "PhilHealth",
+	sss: "SSS",
+	fourPs: "4Ps",
+	pwd: "PWD",
+	soloParent: "Solo Parent",
+	pagibig: "Pag-IBIG",
+	tin: "TIN",
+	barangayClearance: "Barangay Clearance",
+};
+
+// Format eligibility criteria for display
+function formatEligibilitySummary(eligibility: BenefitEligibility): string[] {
+	const criteria: string[] = [];
+
+	if (eligibility.barangays && eligibility.barangays.length > 0) {
+		if (eligibility.barangays.length <= 3) {
+			criteria.push(`Barangay: ${eligibility.barangays.join(", ")}`);
+		} else {
+			criteria.push(`Barangay: ${eligibility.barangays.length} selected`);
+		}
+	}
+
+	if (eligibility.maxMonthlyIncome !== null) {
+		criteria.push(
+			`Max income: ₱${eligibility.maxMonthlyIncome.toLocaleString()}`,
+		);
+	}
+
+	if (eligibility.minAge !== null || eligibility.maxAge !== null) {
+		if (eligibility.minAge !== null && eligibility.maxAge !== null) {
+			criteria.push(`Age: ${eligibility.minAge}-${eligibility.maxAge}`);
+		} else if (eligibility.minAge !== null) {
+			criteria.push(`Age: ${eligibility.minAge}+`);
+		} else if (eligibility.maxAge !== null) {
+			criteria.push(`Age: up to ${eligibility.maxAge}`);
+		}
+	}
+
+	if (eligibility.gender !== null) {
+		criteria.push(`Gender: ${eligibility.gender}`);
+	}
+
+	if (eligibility.residencyStatus !== null) {
+		criteria.push(
+			`Residency: ${eligibility.residencyStatus === "resident" ? "Resident" : "Non-Resident"}`,
+		);
+	}
+
+	if (
+		eligibility.requiredCategories &&
+		eligibility.requiredCategories.length > 0
+	) {
+		const categoryNames = eligibility.requiredCategories.map(
+			(c) => CATEGORY_LABELS[c] || c,
+		);
+		const mode = eligibility.categoryMode === "all" ? "all of" : "any of";
+		criteria.push(`Must have ${mode}: ${categoryNames.join(", ")}`);
+	}
+
+	return criteria;
+}
 
 function BenefitDetailPage() {
 	const { benefit, vouchers } = Route.useLoaderData();
@@ -184,6 +257,23 @@ function BenefitDetailPage() {
 							<div>
 								<p className="text-sm text-muted-foreground">Description</p>
 								<p>{benefit.description}</p>
+							</div>
+						)}
+						{benefit.eligibility && (
+							<div className="border-t pt-4 mt-2">
+								<div className="flex items-center gap-2 mb-2">
+									<Filter className="h-4 w-4 text-muted-foreground" />
+									<p className="text-sm font-medium">Eligibility Criteria</p>
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{formatEligibilitySummary(benefit.eligibility).map(
+										(criterion) => (
+											<Badge key={criterion} variant="secondary">
+												{criterion}
+											</Badge>
+										),
+									)}
+								</div>
 							</div>
 						)}
 					</CardContent>

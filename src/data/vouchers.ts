@@ -3,13 +3,18 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type BenefitAssignmentRole,
+	type BenefitEligibility,
 	benefitAssignments,
 	benefits,
+	type IdentificationType,
+	people,
+	personIdentifications,
 	type VoucherStatus,
 	vouchers,
 } from "@/db/schema";
 import { getAppSession, type SessionData } from "@/lib/session";
 import { logActivity } from "./audit";
+import type { LoretoBarangay } from "./barangays";
 
 // Helper to get current authenticated user
 async function requireAuth(): Promise<SessionData> {
@@ -106,6 +111,208 @@ function buildPersonName(person: {
 	if (person.suffix) parts.push(person.suffix);
 	return parts.join(" ");
 }
+
+// Helper to calculate age from birthdate
+function calculateAge(birthdate: string): number {
+	const today = new Date();
+	const birth = new Date(birthdate);
+	let age = today.getFullYear() - birth.getFullYear();
+	const monthDiff = today.getMonth() - birth.getMonth();
+	if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+		age--;
+	}
+	return age;
+}
+
+// Eligibility check result
+export interface EligibilityResult {
+	eligible: boolean;
+	reasons: string[]; // List of reasons for ineligibility
+}
+
+// Helper to check if a person meets eligibility criteria
+function checkEligibility(
+	person: {
+		barangay: string;
+		monthlyIncome: number | null;
+		birthdate: string;
+		gender: string | null;
+		residencyStatus: string;
+	},
+	personCategoryIds: string[],
+	eligibility: BenefitEligibility,
+): EligibilityResult {
+	const reasons: string[] = [];
+
+	// Check barangay restriction
+	if (eligibility.barangays && eligibility.barangays.length > 0) {
+		if (!eligibility.barangays.includes(person.barangay as LoretoBarangay)) {
+			reasons.push(
+				`Barangay must be one of: ${eligibility.barangays.join(", ")}`,
+			);
+		}
+	}
+
+	// Check max monthly income
+	if (eligibility.maxMonthlyIncome !== null) {
+		if (person.monthlyIncome === null) {
+			reasons.push(
+				`Monthly income must be recorded (max: ₱${eligibility.maxMonthlyIncome.toLocaleString()})`,
+			);
+		} else if (person.monthlyIncome > eligibility.maxMonthlyIncome) {
+			reasons.push(
+				`Monthly income exceeds limit (₱${person.monthlyIncome.toLocaleString()} > ₱${eligibility.maxMonthlyIncome.toLocaleString()})`,
+			);
+		}
+	}
+
+	// Check age restrictions
+	const age = calculateAge(person.birthdate);
+	if (eligibility.minAge !== null && age < eligibility.minAge) {
+		reasons.push(
+			`Must be at least ${eligibility.minAge} years old (is ${age})`,
+		);
+	}
+	if (eligibility.maxAge !== null && age > eligibility.maxAge) {
+		reasons.push(`Must be at most ${eligibility.maxAge} years old (is ${age})`);
+	}
+
+	// Check gender restriction
+	if (eligibility.gender !== null) {
+		if (person.gender !== eligibility.gender) {
+			reasons.push(`Must be ${eligibility.gender}`);
+		}
+	}
+
+	// Check residency status restriction
+	if (eligibility.residencyStatus !== null) {
+		if (person.residencyStatus !== eligibility.residencyStatus) {
+			const label =
+				eligibility.residencyStatus === "resident"
+					? "Resident"
+					: "Non-Resident";
+			reasons.push(`Must be a ${label}`);
+		}
+	}
+
+	// Check required categories
+	if (
+		eligibility.requiredCategories &&
+		eligibility.requiredCategories.length > 0
+	) {
+		const hasCategories = eligibility.requiredCategories.filter((cat) =>
+			personCategoryIds.includes(cat),
+		);
+
+		if (eligibility.categoryMode === "all") {
+			// Must have ALL required categories
+			if (hasCategories.length !== eligibility.requiredCategories.length) {
+				const missing = eligibility.requiredCategories.filter(
+					(cat) => !personCategoryIds.includes(cat),
+				);
+				reasons.push(
+					`Missing required categories: ${missing.map(formatCategoryLabel).join(", ")}`,
+				);
+			}
+		} else {
+			// Must have ANY of the required categories
+			if (hasCategories.length === 0) {
+				reasons.push(
+					`Must have at least one of: ${eligibility.requiredCategories.map(formatCategoryLabel).join(", ")}`,
+				);
+			}
+		}
+	}
+
+	return {
+		eligible: reasons.length === 0,
+		reasons,
+	};
+}
+
+// Format category ID to human-readable label
+function formatCategoryLabel(category: IdentificationType): string {
+	const labels: Record<IdentificationType, string> = {
+		voter: "Voter",
+		philhealth: "PhilHealth",
+		sss: "SSS",
+		fourPs: "4Ps",
+		pwd: "PWD",
+		soloParent: "Solo Parent",
+		pagibig: "Pag-IBIG",
+		tin: "TIN",
+		barangayClearance: "Barangay Clearance",
+	};
+	return labels[category] || category;
+}
+
+// Server function to check person eligibility for a benefit
+export const checkPersonEligibility = createServerFn({ method: "POST" })
+	.inputValidator((data: { benefitId: string; personId: string }) => data)
+	.handler(
+		async ({
+			data,
+		}): Promise<{
+			success: boolean;
+			error?: string;
+			result?: EligibilityResult;
+			eligibility?: BenefitEligibility | null;
+		}> => {
+			await requireAuth();
+
+			// Get the benefit with eligibility
+			const benefit = await db.query.benefits.findFirst({
+				where: eq(benefits.id, data.benefitId),
+			});
+
+			if (!benefit) {
+				return { success: false, error: "Benefit not found" };
+			}
+
+			// If no eligibility criteria, everyone is eligible
+			if (!benefit.eligibility) {
+				return {
+					success: true,
+					result: { eligible: true, reasons: [] },
+					eligibility: null,
+				};
+			}
+
+			// Get person data
+			const person = await db.query.people.findFirst({
+				where: eq(people.id, data.personId),
+			});
+
+			if (!person) {
+				return { success: false, error: "Person not found" };
+			}
+
+			// Get person's identification types
+			const identifications = await db.query.personIdentifications.findMany({
+				where: eq(personIdentifications.personId, data.personId),
+			});
+			const personCategoryIds = identifications.map((id) => id.type);
+
+			// Check eligibility
+			const result = checkEligibility(
+				{
+					barangay: person.barangay,
+					monthlyIncome: person.monthlyIncome,
+					birthdate: person.birthdate,
+					gender: person.gender,
+					residencyStatus: person.residencyStatus,
+				},
+				personCategoryIds,
+				benefit.eligibility,
+			);
+
+			return {
+				success: true,
+				result,
+				eligibility: benefit.eligibility,
+			};
+		},
+	);
 
 // Get pending vouchers for benefits where current user is a releaser
 export const getPendingVouchersToRelease = createServerFn({
@@ -240,6 +447,7 @@ interface CreateVoucherInput {
 	benefitId: string;
 	personId: string;
 	notes?: string;
+	overrideEligibility?: boolean; // Allow provider to override eligibility check
 }
 
 // Create a new voucher (provider only)
@@ -252,6 +460,7 @@ export const createVoucher = createServerFn({ method: "POST" })
 			success: boolean;
 			error?: string;
 			voucher?: VoucherListItem;
+			eligibilityIssues?: string[]; // Return issues if blocked by eligibility
 		}> => {
 			const currentUser = await requireAuth();
 
@@ -274,6 +483,45 @@ export const createVoucher = createServerFn({ method: "POST" })
 
 			if (!assignment.benefit.isActive) {
 				return { success: false, error: "This benefit is no longer active" };
+			}
+
+			// Check eligibility if benefit has eligibility criteria
+			if (assignment.benefit.eligibility && !data.overrideEligibility) {
+				// Get person data
+				const person = await db.query.people.findFirst({
+					where: eq(people.id, data.personId),
+				});
+
+				if (!person) {
+					return { success: false, error: "Person not found" };
+				}
+
+				// Get person's identification types
+				const identifications = await db.query.personIdentifications.findMany({
+					where: eq(personIdentifications.personId, data.personId),
+				});
+				const personCategoryIds = identifications.map((id) => id.type);
+
+				// Check eligibility
+				const eligibilityResult = checkEligibility(
+					{
+						barangay: person.barangay,
+						monthlyIncome: person.monthlyIncome,
+						birthdate: person.birthdate,
+						gender: person.gender,
+						residencyStatus: person.residencyStatus,
+					},
+					personCategoryIds,
+					assignment.benefit.eligibility,
+				);
+
+				if (!eligibilityResult.eligible) {
+					return {
+						success: false,
+						error: "Person does not meet eligibility criteria",
+						eligibilityIssues: eligibilityResult.reasons,
+					};
+				}
 			}
 
 			// Check for existing pending voucher for same person-benefit

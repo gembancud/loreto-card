@@ -16,6 +16,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
 	Table,
@@ -26,6 +33,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { getCurrentUser } from "@/data/auth/session";
+import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
 import {
 	type BenefitListItem,
 	createBenefit,
@@ -34,6 +42,7 @@ import {
 	getDepartmentUsersForAssignment,
 	updateBenefit,
 } from "@/data/benefits";
+import type { BenefitEligibility, IdentificationType } from "@/db/schema";
 
 export const Route = createFileRoute("/_authed/benefits/")({
 	component: BenefitsPage,
@@ -448,13 +457,33 @@ interface BenefitFormProps {
 	onCancel: () => void;
 }
 
+// Category labels for display
+const CATEGORY_LABELS: Record<IdentificationType, string> = {
+	voter: "Voter",
+	philhealth: "PhilHealth",
+	sss: "SSS",
+	fourPs: "4Ps",
+	pwd: "PWD",
+	soloParent: "Solo Parent",
+	pagibig: "Pag-IBIG",
+	tin: "TIN",
+	barangayClearance: "Barangay Clearance",
+};
+
+// Category types that are commonly used for eligibility (subset of all ID types)
+const ELIGIBILITY_CATEGORIES: IdentificationType[] = [
+	"fourPs",
+	"pwd",
+	"soloParent",
+];
+
 function BenefitForm({
 	benefit,
 	departmentUsers,
 	onSuccess,
 	onCancel,
 }: BenefitFormProps) {
-	const id = useId();
+	const formId = useId();
 	const isEditing = !!benefit;
 
 	const [name, setName] = useState(benefit?.name ?? "");
@@ -472,18 +501,49 @@ function BenefitForm({
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	// Eligibility state
+	const [hasEligibility, setHasEligibility] = useState(
+		benefit?.eligibility !== null && benefit?.eligibility !== undefined,
+	);
+	const [selectedBarangays, setSelectedBarangays] = useState<LoretoBarangay[]>(
+		benefit?.eligibility?.barangays ?? [],
+	);
+	const [maxMonthlyIncome, setMaxMonthlyIncome] = useState(
+		benefit?.eligibility?.maxMonthlyIncome?.toString() ?? "",
+	);
+	const [minAge, setMinAge] = useState(
+		benefit?.eligibility?.minAge?.toString() ?? "",
+	);
+	const [maxAge, setMaxAge] = useState(
+		benefit?.eligibility?.maxAge?.toString() ?? "",
+	);
+	const [gender, setGender] = useState<"Male" | "Female" | null>(
+		benefit?.eligibility?.gender ?? null,
+	);
+	const [residencyStatus, setResidencyStatus] = useState<
+		"resident" | "nonResident" | null
+	>(benefit?.eligibility?.residencyStatus ?? null);
+	const [requiredCategories, setRequiredCategories] = useState<
+		IdentificationType[]
+	>(benefit?.eligibility?.requiredCategories ?? []);
+	const [categoryMode, setCategoryMode] = useState<"any" | "all">(
+		benefit?.eligibility?.categoryMode ?? "any",
+	);
+
 	// Detect users assigned to both provider AND releaser roles
-	const duplicateUserIds = providerIds.filter((id) => releaserIds.includes(id));
+	const duplicateUserIds = providerIds.filter((pid) =>
+		releaserIds.includes(pid),
+	);
 	const hasDuplicates = duplicateUserIds.length > 0;
 	const duplicateUserNames = duplicateUserIds
-		.map((id) => departmentUsers.find((u) => u.id === id)?.name)
+		.map((pid) => departmentUsers.find((u) => u.id === pid)?.name)
 		.filter(Boolean)
 		.join(", ");
 
 	const handleProviderToggle = (userId: string) => {
 		setProviderIds((prev) =>
 			prev.includes(userId)
-				? prev.filter((id) => id !== userId)
+				? prev.filter((pid) => pid !== userId)
 				: [...prev, userId],
 		);
 	};
@@ -491,15 +551,63 @@ function BenefitForm({
 	const handleReleaserToggle = (userId: string) => {
 		setReleaserIds((prev) =>
 			prev.includes(userId)
-				? prev.filter((id) => id !== userId)
+				? prev.filter((pid) => pid !== userId)
 				: [...prev, userId],
 		);
+	};
+
+	const handleBarangayToggle = (barangay: LoretoBarangay) => {
+		setSelectedBarangays((prev) =>
+			prev.includes(barangay)
+				? prev.filter((b) => b !== barangay)
+				: [...prev, barangay],
+		);
+	};
+
+	const handleCategoryToggle = (category: IdentificationType) => {
+		setRequiredCategories((prev) =>
+			prev.includes(category)
+				? prev.filter((c) => c !== category)
+				: [...prev, category],
+		);
+	};
+
+	// Build eligibility object from form state
+	const buildEligibility = (): BenefitEligibility | null => {
+		if (!hasEligibility) return null;
+
+		// Check if any criteria is set
+		const hasCriteria =
+			selectedBarangays.length > 0 ||
+			maxMonthlyIncome !== "" ||
+			minAge !== "" ||
+			maxAge !== "" ||
+			gender !== null ||
+			residencyStatus !== null ||
+			requiredCategories.length > 0;
+
+		if (!hasCriteria) return null;
+
+		return {
+			barangays: selectedBarangays.length > 0 ? selectedBarangays : null,
+			maxMonthlyIncome: maxMonthlyIncome
+				? Number.parseInt(maxMonthlyIncome, 10)
+				: null,
+			minAge: minAge ? Number.parseInt(minAge, 10) : null,
+			maxAge: maxAge ? Number.parseInt(maxAge, 10) : null,
+			gender,
+			residencyStatus,
+			requiredCategories,
+			categoryMode,
+		};
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError(null);
 		setIsSubmitting(true);
+
+		const eligibility = buildEligibility();
 
 		try {
 			if (isEditing) {
@@ -511,6 +619,7 @@ function BenefitForm({
 							description: description || null,
 							valuePesos: valuePesos ? Number.parseInt(valuePesos, 10) : null,
 							quantity: quantity ? Number.parseInt(quantity, 10) : null,
+							eligibility,
 						},
 						providerIds,
 						releaserIds,
@@ -523,6 +632,7 @@ function BenefitForm({
 						description: description || null,
 						valuePesos: valuePesos ? Number.parseInt(valuePesos, 10) : null,
 						quantity: quantity ? Number.parseInt(quantity, 10) : null,
+						eligibility,
 						providers: providerIds.map((userId) => {
 							const user = departmentUsers.find((u) => u.id === userId);
 							return {
@@ -554,6 +664,7 @@ function BenefitForm({
 							? Number.parseInt(valuePesos, 10)
 							: undefined,
 						quantity: quantity ? Number.parseInt(quantity, 10) : undefined,
+						eligibility,
 						providerIds,
 						releaserIds,
 					},
@@ -584,11 +695,11 @@ function BenefitForm({
 						: "Create a new benefit type for your department."}
 				</DialogDescription>
 			</DialogHeader>
-			<div className="grid gap-4 py-4">
+			<div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
 				<div className="grid gap-2">
-					<Label htmlFor={`${id}-name`}>Name</Label>
+					<Label htmlFor={`${formId}-name`}>Name</Label>
 					<Input
-						id={`${id}-name`}
+						id={`${formId}-name`}
 						placeholder="e.g., Senior Citizen Cash Aid"
 						value={name}
 						onChange={(e) => setName(e.target.value)}
@@ -596,9 +707,11 @@ function BenefitForm({
 					/>
 				</div>
 				<div className="grid gap-2">
-					<Label htmlFor={`${id}-description`}>Description (optional)</Label>
+					<Label htmlFor={`${formId}-description`}>
+						Description (optional)
+					</Label>
 					<Input
-						id={`${id}-description`}
+						id={`${formId}-description`}
 						placeholder="Brief description of the benefit"
 						value={description}
 						onChange={(e) => setDescription(e.target.value)}
@@ -606,11 +719,11 @@ function BenefitForm({
 				</div>
 				<div className="grid grid-cols-2 gap-4">
 					<div className="grid gap-2">
-						<Label htmlFor={`${id}-valuePesos`}>
+						<Label htmlFor={`${formId}-valuePesos`}>
 							Value in Pesos (optional)
 						</Label>
 						<Input
-							id={`${id}-valuePesos`}
+							id={`${formId}-valuePesos`}
 							type="number"
 							placeholder="e.g., 5000"
 							value={valuePesos}
@@ -618,9 +731,9 @@ function BenefitForm({
 						/>
 					</div>
 					<div className="grid gap-2">
-						<Label htmlFor={`${id}-quantity`}>Quantity (optional)</Label>
+						<Label htmlFor={`${formId}-quantity`}>Quantity (optional)</Label>
 						<Input
-							id={`${id}-quantity`}
+							id={`${formId}-quantity`}
 							type="number"
 							placeholder="e.g., 10"
 							value={quantity}
@@ -629,57 +742,216 @@ function BenefitForm({
 					</div>
 				</div>
 
-				<div className="grid grid-cols-2 gap-4">
-					<div className="grid gap-2">
-						<Label>Providers (can issue vouchers)</Label>
-						<div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-							{departmentUsers.length === 0 ? (
-								<p className="text-sm text-muted-foreground">
-									No users available in department
-								</p>
-							) : (
-								departmentUsers.map((user) => (
-									<div key={user.id} className="flex items-center space-x-2">
-										<Checkbox
-											id={`${id}-provider-${user.id}`}
-											checked={providerIds.includes(user.id)}
-											onCheckedChange={() => handleProviderToggle(user.id)}
-										/>
-										<Label
-											htmlFor={`${id}-provider-${user.id}`}
-											className="text-sm font-normal cursor-pointer"
-										>
-											{user.name}
-										</Label>
-									</div>
-								))
-							)}
+				{/* Eligibility Section */}
+				<div className="border-t pt-4 mt-2">
+					<div className="flex items-center justify-between mb-4">
+						<div>
+							<Label className="text-base">Eligibility Restrictions</Label>
+							<p className="text-sm text-muted-foreground">
+								Limit who can receive this benefit
+							</p>
 						</div>
+						<Switch
+							checked={hasEligibility}
+							onCheckedChange={setHasEligibility}
+						/>
 					</div>
-					<div className="grid gap-2">
-						<Label>Releasers (can release vouchers)</Label>
-						<div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-							{departmentUsers.length === 0 ? (
-								<p className="text-sm text-muted-foreground">
-									No users available in department
-								</p>
-							) : (
-								departmentUsers.map((user) => (
-									<div key={user.id} className="flex items-center space-x-2">
-										<Checkbox
-											id={`${id}-releaser-${user.id}`}
-											checked={releaserIds.includes(user.id)}
-											onCheckedChange={() => handleReleaserToggle(user.id)}
-										/>
-										<Label
-											htmlFor={`${id}-releaser-${user.id}`}
-											className="text-sm font-normal cursor-pointer"
+
+					{hasEligibility && (
+						<div className="space-y-4 pl-1">
+							{/* Barangay Restriction */}
+							<div className="grid gap-2">
+								<Label>Barangays (leave empty for all)</Label>
+								<div className="border rounded-md p-3 max-h-32 overflow-y-auto grid grid-cols-2 gap-1">
+									{LORETO_BARANGAYS.map((barangay) => (
+										<div key={barangay} className="flex items-center space-x-2">
+											<Checkbox
+												id={`${formId}-barangay-${barangay}`}
+												checked={selectedBarangays.includes(barangay)}
+												onCheckedChange={() => handleBarangayToggle(barangay)}
+											/>
+											<Label
+												htmlFor={`${formId}-barangay-${barangay}`}
+												className="text-xs font-normal cursor-pointer"
+											>
+												{barangay}
+											</Label>
+										</div>
+									))}
+								</div>
+							</div>
+
+							{/* Income, Age, Gender, Residency */}
+							<div className="grid grid-cols-2 gap-4">
+								<div className="grid gap-2">
+									<Label htmlFor={`${formId}-maxIncome`}>
+										Max Monthly Income (₱)
+									</Label>
+									<Input
+										id={`${formId}-maxIncome`}
+										type="number"
+										placeholder="e.g., 15000"
+										value={maxMonthlyIncome}
+										onChange={(e) => setMaxMonthlyIncome(e.target.value)}
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label>Gender</Label>
+									<Select
+										value={gender ?? "any"}
+										onValueChange={(v) =>
+											setGender(v === "any" ? null : (v as "Male" | "Female"))
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Any" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="any">Any</SelectItem>
+											<SelectItem value="Male">Male</SelectItem>
+											<SelectItem value="Female">Female</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-3 gap-4">
+								<div className="grid gap-2">
+									<Label htmlFor={`${formId}-minAge`}>Min Age</Label>
+									<Input
+										id={`${formId}-minAge`}
+										type="number"
+										placeholder="e.g., 60"
+										value={minAge}
+										onChange={(e) => setMinAge(e.target.value)}
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label htmlFor={`${formId}-maxAge`}>Max Age</Label>
+									<Input
+										id={`${formId}-maxAge`}
+										type="number"
+										placeholder="e.g., 65"
+										value={maxAge}
+										onChange={(e) => setMaxAge(e.target.value)}
+									/>
+								</div>
+								<div className="grid gap-2">
+									<Label>Residency</Label>
+									<Select
+										value={residencyStatus ?? "any"}
+										onValueChange={(v) =>
+											setResidencyStatus(
+												v === "any" ? null : (v as "resident" | "nonResident"),
+											)
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Any" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="any">Any</SelectItem>
+											<SelectItem value="resident">Resident</SelectItem>
+											<SelectItem value="nonResident">Non-Resident</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							</div>
+
+							{/* Required Categories */}
+							<div className="grid gap-2">
+								<div className="flex items-center justify-between">
+									<Label>Required Categories</Label>
+									{requiredCategories.length > 1 && (
+										<Select
+											value={categoryMode}
+											onValueChange={(v) => setCategoryMode(v as "any" | "all")}
 										>
-											{user.name}
-										</Label>
-									</div>
-								))
-							)}
+											<SelectTrigger className="w-32 h-8">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="any">Must have any</SelectItem>
+												<SelectItem value="all">Must have all</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								</div>
+								<div className="flex flex-wrap gap-2">
+									{ELIGIBILITY_CATEGORIES.map((category) => (
+										<button
+											key={category}
+											type="button"
+											onClick={() => handleCategoryToggle(category)}
+											className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border cursor-pointer transition-colors text-sm ${
+												requiredCategories.includes(category)
+													? "bg-primary text-primary-foreground border-primary"
+													: "bg-background hover:bg-muted"
+											}`}
+										>
+											{CATEGORY_LABELS[category]}
+										</button>
+									))}
+								</div>
+							</div>
+						</div>
+					)}
+				</div>
+
+				{/* Provider/Releaser Section */}
+				<div className="border-t pt-4 mt-2">
+					<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label>Providers (can issue vouchers)</Label>
+							<div className="border rounded-md p-3 max-h-36 overflow-y-auto space-y-2">
+								{departmentUsers.length === 0 ? (
+									<p className="text-sm text-muted-foreground">
+										No users available in department
+									</p>
+								) : (
+									departmentUsers.map((user) => (
+										<div key={user.id} className="flex items-center space-x-2">
+											<Checkbox
+												id={`${formId}-provider-${user.id}`}
+												checked={providerIds.includes(user.id)}
+												onCheckedChange={() => handleProviderToggle(user.id)}
+											/>
+											<Label
+												htmlFor={`${formId}-provider-${user.id}`}
+												className="text-sm font-normal cursor-pointer"
+											>
+												{user.name}
+											</Label>
+										</div>
+									))
+								)}
+							</div>
+						</div>
+						<div className="grid gap-2">
+							<Label>Releasers (can release vouchers)</Label>
+							<div className="border rounded-md p-3 max-h-36 overflow-y-auto space-y-2">
+								{departmentUsers.length === 0 ? (
+									<p className="text-sm text-muted-foreground">
+										No users available in department
+									</p>
+								) : (
+									departmentUsers.map((user) => (
+										<div key={user.id} className="flex items-center space-x-2">
+											<Checkbox
+												id={`${formId}-releaser-${user.id}`}
+												checked={releaserIds.includes(user.id)}
+												onCheckedChange={() => handleReleaserToggle(user.id)}
+											/>
+											<Label
+												htmlFor={`${formId}-releaser-${user.id}`}
+												className="text-sm font-normal cursor-pointer"
+											>
+												{user.name}
+											</Label>
+										</div>
+									))
+								)}
+							</div>
 						</div>
 					</div>
 				</div>

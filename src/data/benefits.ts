@@ -3,6 +3,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type BenefitAssignmentRole,
+	type BenefitEligibility,
 	benefitAssignments,
 	benefits,
 	users,
@@ -43,6 +44,7 @@ export interface BenefitListItem {
 	description: string | null;
 	valuePesos: number | null;
 	quantity: number | null;
+	eligibility: BenefitEligibility | null;
 	isActive: boolean;
 	createdAt: Date | null;
 	createdById: string | null;
@@ -83,6 +85,7 @@ export const getBenefits = createServerFn({ method: "GET" }).handler(
 			description: benefit.description,
 			valuePesos: benefit.valuePesos,
 			quantity: benefit.quantity,
+			eligibility: benefit.eligibility ?? null,
 			isActive: benefit.isActive,
 			createdAt: benefit.createdAt,
 			createdById: benefit.createdById,
@@ -145,6 +148,7 @@ export const getBenefitById = createServerFn({ method: "GET" })
 			description: benefit.description,
 			valuePesos: benefit.valuePesos,
 			quantity: benefit.quantity,
+			eligibility: benefit.eligibility ?? null,
 			isActive: benefit.isActive,
 			createdAt: benefit.createdAt,
 			createdById: benefit.createdById,
@@ -175,6 +179,7 @@ interface CreateBenefitInput {
 	description?: string;
 	valuePesos?: number;
 	quantity?: number;
+	eligibility?: BenefitEligibility | null;
 	departmentId?: string; // Only superusers can set this
 	providerIds: string[];
 	releaserIds: string[];
@@ -242,6 +247,7 @@ export const createBenefit = createServerFn({ method: "POST" })
 					description: data.description ?? null,
 					valuePesos: data.valuePesos ?? null,
 					quantity: data.quantity ?? null,
+					eligibility: data.eligibility ?? null,
 					departmentId,
 					createdById: currentUser.userId,
 				})
@@ -292,6 +298,7 @@ interface UpdateBenefitInput {
 		description?: string | null;
 		valuePesos?: number | null;
 		quantity?: number | null;
+		eligibility?: BenefitEligibility | null;
 		isActive?: boolean;
 	};
 	providerIds?: string[];

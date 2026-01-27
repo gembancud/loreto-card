@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
+	AlertTriangle,
 	ArrowLeft,
 	CheckCircle,
 	ChevronsUpDown,
@@ -19,6 +20,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Command,
 	CommandEmpty,
@@ -35,7 +37,12 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { getPersonById, type Person, searchPeople } from "@/data/people";
-import { createVoucher, getMyAssignedBenefits } from "@/data/vouchers";
+import {
+	checkPersonEligibility,
+	createVoucher,
+	type EligibilityResult,
+	getMyAssignedBenefits,
+} from "@/data/vouchers";
 
 export const Route = createFileRoute("/_authed/vouchers/provide/$benefitId")({
 	component: ProvideVoucherPage,
@@ -81,6 +88,46 @@ function ProvideVoucherPage() {
 	const [scannerOpen, setScannerOpen] = useState(false);
 	const [isLoadingPerson, setIsLoadingPerson] = useState(false);
 
+	// Eligibility state
+	const [eligibilityResult, setEligibilityResult] =
+		useState<EligibilityResult | null>(null);
+	const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
+	const [overrideConfirmed, setOverrideConfirmed] = useState(false);
+
+	// Check eligibility when person is selected
+	useEffect(() => {
+		if (!selectedPerson) {
+			setEligibilityResult(null);
+			setOverrideConfirmed(false);
+			return;
+		}
+
+		const checkEligibility = async () => {
+			setIsCheckingEligibility(true);
+			setOverrideConfirmed(false);
+			try {
+				const result = await checkPersonEligibility({
+					data: {
+						benefitId: benefit.id,
+						personId: selectedPerson.id,
+					},
+				});
+				if (result.success && result.result) {
+					setEligibilityResult(result.result);
+				} else {
+					setEligibilityResult(null);
+				}
+			} catch (err) {
+				console.error("Eligibility check failed:", err);
+				setEligibilityResult(null);
+			} finally {
+				setIsCheckingEligibility(false);
+			}
+		};
+
+		checkEligibility();
+	}, [selectedPerson, benefit.id]);
+
 	// Debounced search
 	useEffect(() => {
 		if (!searchQuery.trim()) {
@@ -118,6 +165,13 @@ function ProvideVoucherPage() {
 		}
 	};
 
+	// Determine if form can be submitted
+	const isEligible = eligibilityResult?.eligible ?? true;
+	const canSubmit =
+		selectedPerson &&
+		!isCheckingEligibility &&
+		(isEligible || overrideConfirmed);
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError(null);
@@ -135,6 +189,7 @@ function ProvideVoucherPage() {
 					benefitId: benefit.id,
 					personId: selectedPerson.id,
 					notes: notes.trim() || undefined,
+					overrideEligibility: !isEligible && overrideConfirmed,
 				},
 			});
 
@@ -144,6 +199,8 @@ function ProvideVoucherPage() {
 				setSelectedPerson(null);
 				setSearchQuery("");
 				setNotes("");
+				setEligibilityResult(null);
+				setOverrideConfirmed(false);
 				setSuccessMessage(`Voucher issued for ${personName}`);
 				setTimeout(() => setSuccessMessage(null), 4000);
 				await router.invalidate();
@@ -350,6 +407,64 @@ function ProvideVoucherPage() {
 								)}
 							</div>
 
+							{/* Eligibility Status */}
+							{selectedPerson && isCheckingEligibility && (
+								<div className="text-sm text-muted-foreground">
+									Checking eligibility...
+								</div>
+							)}
+
+							{selectedPerson &&
+								!isCheckingEligibility &&
+								eligibilityResult &&
+								eligibilityResult.eligible && (
+									<div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 flex items-start gap-2">
+										<CheckCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+										<div>
+											<p className="font-medium">Eligible</p>
+											<p className="text-sm text-green-700">
+												This person meets all eligibility criteria.
+											</p>
+										</div>
+									</div>
+								)}
+
+							{selectedPerson &&
+								!isCheckingEligibility &&
+								eligibilityResult &&
+								!eligibilityResult.eligible && (
+									<div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
+										<div className="flex items-start gap-2">
+											<AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+											<div className="flex-1">
+												<p className="font-medium">Eligibility Issues</p>
+												<ul className="text-sm text-amber-700 list-disc list-inside mt-1 space-y-0.5">
+													{eligibilityResult.reasons.map((reason) => (
+														<li key={reason}>{reason}</li>
+													))}
+												</ul>
+											</div>
+										</div>
+										<div className="mt-3 pt-3 border-t border-amber-200 flex items-start gap-2">
+											<Checkbox
+												id={`${id}-override`}
+												checked={overrideConfirmed}
+												onCheckedChange={(checked) =>
+													setOverrideConfirmed(checked === true)
+												}
+												className="mt-0.5"
+											/>
+											<Label
+												htmlFor={`${id}-override`}
+												className="text-sm font-normal cursor-pointer"
+											>
+												I confirm that I want to issue this voucher despite the
+												eligibility issues
+											</Label>
+										</div>
+									</div>
+								)}
+
 							<div className="space-y-2">
 								<Label htmlFor={`${id}-notes`}>Notes (optional)</Label>
 								<Input
@@ -378,7 +493,7 @@ function ProvideVoucherPage() {
 								<Button
 									type="submit"
 									className="flex-1 gap-2"
-									disabled={isSubmitting}
+									disabled={isSubmitting || !canSubmit}
 								>
 									<Send className="h-4 w-4" />
 									{isSubmitting ? "Issuing..." : "Issue Voucher"}

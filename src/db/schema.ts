@@ -11,6 +11,31 @@ import {
 	unique,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { LoretoBarangay } from "@/data/barangays";
+
+// Type for person identification types (defined early for use in BenefitEligibility)
+export type IdentificationType =
+	| "voter"
+	| "philhealth"
+	| "sss"
+	| "fourPs"
+	| "pwd"
+	| "soloParent"
+	| "pagibig"
+	| "tin"
+	| "barangayClearance";
+
+// Benefit eligibility criteria stored as JSONB
+export interface BenefitEligibility {
+	barangays: LoretoBarangay[] | null; // null = all allowed
+	maxMonthlyIncome: number | null; // null = no limit
+	minAge: number | null; // null = no minimum
+	maxAge: number | null; // null = no maximum
+	gender: "Male" | "Female" | null; // null = any
+	residencyStatus: "resident" | "nonResident" | null; // null = any
+	requiredCategories: IdentificationType[]; // empty = no requirement
+	categoryMode: "any" | "all"; // must have any vs all categories
+}
 
 export const todos = pgTable("todos", {
 	id: serial("id").primaryKey(),
@@ -117,6 +142,7 @@ export const benefits = pgTable("benefits", {
 	description: text("description"),
 	valuePesos: integer("value_pesos"), // Optional monetary value
 	quantity: integer("quantity"), // Optional quantity/units
+	eligibility: jsonb("eligibility").$type<BenefitEligibility>(), // null = open to all
 	isActive: boolean("is_active").notNull().default(true),
 	createdById: uuid("created_by_id").references(() => users.id), // Nullable for existing data
 	createdAt: timestamp("created_at").defaultNow(),
@@ -295,16 +321,7 @@ export type ResidencyStatus = "resident" | "nonResident";
 export type PersonIdentification = typeof personIdentifications.$inferSelect;
 export type NewPersonIdentification = typeof personIdentifications.$inferInsert;
 
-export type IdentificationType =
-	| "voter"
-	| "philhealth"
-	| "sss"
-	| "fourPs"
-	| "pwd"
-	| "soloParent"
-	| "pagibig"
-	| "tin"
-	| "barangayClearance";
+// IdentificationType is defined at the top of this file (used by BenefitEligibility)
 
 export type Department = typeof departments.$inferSelect;
 export type NewDepartment = typeof departments.$inferInsert;
