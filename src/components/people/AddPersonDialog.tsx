@@ -134,7 +134,7 @@ export function AddPersonDialog() {
 
 		setIsSubmitting(true);
 		try {
-			await createPerson({
+			const createdPerson = await createPerson({
 				data: {
 					firstName: formData.firstName,
 					lastName: formData.lastName,
@@ -154,9 +154,11 @@ export function AddPersonDialog() {
 			toast.success(
 				`${formData.firstName} ${formData.lastName} added successfully`,
 			);
-			await router.invalidate();
 			resetForm();
-			setOpen(false);
+			router.navigate({
+				to: "/people/$personId",
+				params: { personId: createdPerson.id },
+			});
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Failed to add person");
 		} finally {
