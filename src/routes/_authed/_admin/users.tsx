@@ -226,17 +226,19 @@ function UsersPage() {
 						</div>
 
 						{/* Desktop table view */}
-						<div className="hidden md:block">
-							<Table>
+						<div className="hidden md:block overflow-auto rounded-md border">
+							<Table className="table-fixed">
 								<TableHeader>
 									<TableRow>
-										<TableHead>Name</TableHead>
-										<TableHead>Phone</TableHead>
-										<TableHead>Email</TableHead>
-										<TableHead>Department</TableHead>
-										<TableHead>Role</TableHead>
-										<TableHead>Status</TableHead>
-										{isSuperuser && <TableHead>Actions</TableHead>}
+										<TableHead className="w-[20%]">Name</TableHead>
+										<TableHead className="w-[120px]">Phone</TableHead>
+										<TableHead className="w-[20%]">Email</TableHead>
+										<TableHead className="w-[20%]">Department</TableHead>
+										<TableHead className="w-[100px]">Role</TableHead>
+										<TableHead className="w-[80px]">Status</TableHead>
+										{isSuperuser && (
+											<TableHead className="w-[100px]">Actions</TableHead>
+										)}
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -252,14 +254,14 @@ function UsersPage() {
 									) : (
 										users.map((user) => (
 											<TableRow key={user.id}>
-												<TableCell className="font-medium">
+												<TableCell className="font-medium truncate">
 													{user.firstName} {user.lastName}
 												</TableCell>
 												<TableCell>{user.phoneNumber}</TableCell>
-												<TableCell className="text-muted-foreground">
+												<TableCell className="text-muted-foreground truncate">
 													{user.email ?? "—"}
 												</TableCell>
-												<TableCell className="text-muted-foreground">
+												<TableCell className="text-muted-foreground truncate">
 													{user.departmentName ?? "—"}
 												</TableCell>
 												<TableCell className="capitalize">
