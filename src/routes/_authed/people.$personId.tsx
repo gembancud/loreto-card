@@ -440,7 +440,7 @@ function EditPerson() {
 					</Link>
 					<div className="flex items-center gap-2">
 						<Button
-							variant="destructive"
+							variant="secondary"
 							className="gap-2"
 							onClick={() => setShowDeleteDialog(true)}
 						>
