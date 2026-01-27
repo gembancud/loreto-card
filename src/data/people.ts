@@ -10,6 +10,7 @@ import {
 	type ResidencyStatus,
 } from "@/db/schema";
 import { getPresignedUrl } from "@/lib/storage";
+import { computeChanges, logActivity } from "./audit";
 import type { LoretoBarangay } from "./barangays";
 
 export type PersonStatus = "active" | "inactive" | "pending" | "deleted";
@@ -309,6 +310,29 @@ export const updatePerson = createServerFn({
 			throw new Error(`Person with ID ${personId} not found after update`);
 		}
 
+		// Log activity with changes
+		const changes = computeChanges(
+			existingPerson as Record<string, unknown>,
+			personUpdates as Record<string, unknown>,
+		);
+		const personName = [
+			updatedPerson.firstName,
+			updatedPerson.middleName,
+			updatedPerson.lastName,
+			updatedPerson.suffix,
+		]
+			.filter(Boolean)
+			.join(" ");
+		await logActivity({
+			data: {
+				action: "update",
+				entityType: "person",
+				entityId: personId,
+				entityName: personName,
+				changes,
+			},
+		});
+
 		return await transformDbPersonToPerson(
 			updatedPerson,
 			updatedPerson.identifications,
@@ -401,6 +425,24 @@ export const createPerson = createServerFn({
 			throw new Error("Failed to create person");
 		}
 
+		// Log activity
+		const personName = [
+			data.firstName,
+			data.middleName,
+			data.lastName,
+			data.suffix,
+		]
+			.filter(Boolean)
+			.join(" ");
+		await logActivity({
+			data: {
+				action: "create",
+				entityType: "person",
+				entityId: newPerson.id,
+				entityName: personName,
+			},
+		});
+
 		return await transformDbPersonToPerson(
 			createdPerson,
 			createdPerson.identifications,
@@ -462,6 +504,24 @@ export const deletePerson = createServerFn({
 				.update(people)
 				.set({ status: "deleted", updatedAt: new Date() })
 				.where(eq(people.id, personId));
+
+			// Log activity
+			const personName = [
+				person.firstName,
+				person.middleName,
+				person.lastName,
+				person.suffix,
+			]
+				.filter(Boolean)
+				.join(" ");
+			await logActivity({
+				data: {
+					action: "delete",
+					entityType: "person",
+					entityId: personId,
+					entityName: personName,
+				},
+			});
 
 			return { success: true };
 		},

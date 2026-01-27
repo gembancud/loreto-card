@@ -8,6 +8,7 @@ import {
 	users,
 } from "@/db/schema";
 import { getAppSession, type SessionData } from "@/lib/session";
+import { computeChanges, logActivity } from "./audit";
 
 // Helper to verify current user is authenticated, returns session data
 async function requireAuth(): Promise<SessionData> {
@@ -267,6 +268,16 @@ export const createBenefit = createServerFn({ method: "POST" })
 			// Fetch the complete benefit
 			const createdBenefit = await getBenefitById({ data: newBenefit.id });
 
+			// Log activity
+			await logActivity({
+				data: {
+					action: "create",
+					entityType: "benefit",
+					entityId: newBenefit.id,
+					entityName: data.name,
+				},
+			});
+
 			return {
 				success: true,
 				benefit: createdBenefit ?? undefined,
@@ -382,6 +393,21 @@ export const updateBenefit = createServerFn({ method: "POST" })
 			}
 		}
 
+		// Log activity with changes
+		const changes = computeChanges(
+			existingBenefit as Record<string, unknown>,
+			updates as Record<string, unknown>,
+		);
+		await logActivity({
+			data: {
+				action: "update",
+				entityType: "benefit",
+				entityId: benefitId,
+				entityName: existingBenefit.name,
+				changes,
+			},
+		});
+
 		return { success: true };
 	});
 
@@ -414,6 +440,16 @@ export const deactivateBenefit = createServerFn({ method: "POST" })
 				.update(benefits)
 				.set({ isActive: false, updatedAt: new Date() })
 				.where(eq(benefits.id, benefitId));
+
+			// Log activity
+			await logActivity({
+				data: {
+					action: "deactivate",
+					entityType: "benefit",
+					entityId: benefitId,
+					entityName: existingBenefit.name,
+				},
+			});
 
 			return { success: true };
 		},

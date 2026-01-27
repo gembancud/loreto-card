@@ -9,6 +9,7 @@ import {
 	vouchers,
 } from "@/db/schema";
 import { getAppSession, type SessionData } from "@/lib/session";
+import { logActivity } from "./audit";
 
 // Helper to get current authenticated user
 async function requireAuth(): Promise<SessionData> {
@@ -317,6 +318,17 @@ export const createVoucher = createServerFn({ method: "POST" })
 				return { success: true };
 			}
 
+			// Log activity
+			const personName = buildPersonName(voucherWithRelations.person);
+			await logActivity({
+				data: {
+					action: "create",
+					entityType: "voucher",
+					entityId: newVoucher.id,
+					entityName: `${voucherWithRelations.benefit.name} for ${personName}`,
+				},
+			});
+
 			return {
 				success: true,
 				voucher: {
@@ -324,7 +336,7 @@ export const createVoucher = createServerFn({ method: "POST" })
 					benefitId: voucherWithRelations.benefitId,
 					benefitName: voucherWithRelations.benefit.name,
 					personId: voucherWithRelations.personId,
-					personName: buildPersonName(voucherWithRelations.person),
+					personName: personName,
 					status: voucherWithRelations.status as VoucherStatus,
 					providedById: voucherWithRelations.providedById,
 					providedByName: `${voucherWithRelations.providedBy.firstName} ${voucherWithRelations.providedBy.lastName}`,
@@ -395,6 +407,25 @@ export const releaseVoucher = createServerFn({ method: "POST" })
 				})
 				.where(eq(vouchers.id, voucherId));
 
+			// Fetch voucher with relations for log message
+			const releasedVoucher = await db.query.vouchers.findFirst({
+				with: { benefit: true, person: true },
+				where: eq(vouchers.id, voucherId),
+			});
+
+			// Log activity
+			if (releasedVoucher) {
+				const personName = buildPersonName(releasedVoucher.person);
+				await logActivity({
+					data: {
+						action: "release",
+						entityType: "voucher",
+						entityId: voucherId,
+						entityName: `${releasedVoucher.benefit.name} for ${personName}`,
+					},
+				});
+			}
+
 			return { success: true };
 		},
 	);
@@ -409,7 +440,7 @@ export const cancelVoucher = createServerFn({ method: "POST" })
 			const currentUser = await requireAuth();
 
 			const voucher = await db.query.vouchers.findFirst({
-				with: { benefit: true },
+				with: { benefit: true, person: true },
 				where: eq(vouchers.id, voucherId),
 			});
 
@@ -447,6 +478,17 @@ export const cancelVoucher = createServerFn({ method: "POST" })
 				.update(vouchers)
 				.set({ status: "cancelled" })
 				.where(eq(vouchers.id, voucherId));
+
+			// Log activity
+			const personName = buildPersonName(voucher.person);
+			await logActivity({
+				data: {
+					action: "cancel",
+					entityType: "voucher",
+					entityId: voucherId,
+					entityName: `${voucher.benefit.name} for ${personName}`,
+				},
+			});
 
 			return { success: true };
 		},

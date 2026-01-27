@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { departments } from "@/db/schema";
 import { getAppSession } from "@/lib/session";
+import { computeChanges, logActivity } from "./audit";
 
 // Helper to verify current user is admin or superuser
 async function requireAdmin(): Promise<void> {
@@ -117,6 +118,16 @@ export const createDepartment = createServerFn({ method: "POST" })
 				})
 				.returning();
 
+			// Log activity
+			await logActivity({
+				data: {
+					action: "create",
+					entityType: "department",
+					entityId: newDept.id,
+					entityName: data.name,
+				},
+			});
+
 			return {
 				success: true,
 				department: {
@@ -175,6 +186,21 @@ export const updateDepartment = createServerFn({ method: "POST" })
 			.update(departments)
 			.set(updates)
 			.where(eq(departments.id, departmentId));
+
+		// Log activity with changes
+		const changes = computeChanges(
+			currentDept as Record<string, unknown>,
+			updates as Record<string, unknown>,
+		);
+		await logActivity({
+			data: {
+				action: "update",
+				entityType: "department",
+				entityId: departmentId,
+				entityName: currentDept.name,
+				changes,
+			},
+		});
 
 		return { success: true };
 	});

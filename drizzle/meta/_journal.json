@@ -85,6 +85,13 @@
       "when": 1769320355993,
       "tag": "0011_conscious_lady_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1769487732919,
+      "tag": "0012_ancient_sentry",
+      "breakpoints": true
     }
   ]
 }

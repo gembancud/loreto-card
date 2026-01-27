@@ -1,5 +1,13 @@
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import { Gift, LogOut, Settings, Ticket, User, Users } from "lucide-react";
+import {
+	Clock,
+	Gift,
+	LogOut,
+	Settings,
+	Ticket,
+	User,
+	Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,6 +105,17 @@ export default function Header() {
 								>
 									<Gift className="h-4 w-4" />
 									<span className="hidden sm:inline">Benefits</span>
+								</Button>
+							</Link>
+
+							<Link to="/activity">
+								<Button
+									variant="ghost"
+									size="sm"
+									className={`gap-2 ${isActive("/activity") ? "bg-muted" : ""}`}
+								>
+									<Clock className="h-4 w-4" />
+									<span className="hidden sm:inline">Activity</span>
 								</Button>
 							</Link>
 						</nav>

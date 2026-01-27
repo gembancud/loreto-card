@@ -14,6 +14,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
+import { ActivityLog } from "@/components/activity/ActivityLog";
 import { IdCardDownloadButton } from "@/components/id-card/IdCardDownloadButton";
 import { DeletePersonDialog } from "@/components/people/DeletePersonDialog";
 import { ProfilePhotoUpload } from "@/components/people/ProfilePhotoUpload";
@@ -39,6 +40,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { getEntityHistory } from "@/data/audit";
 import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
 import {
 	deletePerson,
@@ -54,11 +56,14 @@ import { getVouchersForPerson, type VoucherListItem } from "@/data/vouchers";
 export const Route = createFileRoute("/_authed/people/$personId")({
 	component: EditPerson,
 	loader: async ({ params }) => {
-		const [person, vouchers] = await Promise.all([
+		const [person, vouchers, activityHistory] = await Promise.all([
 			getPersonById({ data: params.personId }),
 			getVouchersForPerson({ data: params.personId }),
+			getEntityHistory({
+				data: { entityType: "person", entityId: params.personId, limit: 10 },
+			}),
 		]);
-		return { person, vouchers };
+		return { person, vouchers, activityHistory };
 	},
 });
 
@@ -98,7 +103,7 @@ interface EditPersonFormData {
 const VOUCHERS_PAGE_SIZE = 5;
 
 function EditPerson() {
-	const { person, vouchers } = Route.useLoaderData();
+	const { person, vouchers, activityHistory } = Route.useLoaderData();
 	const router = useRouter();
 	const id = useId();
 	const [vouchersPage, setVouchersPage] = useState(1);
@@ -1373,6 +1378,16 @@ function EditPerson() {
 					currentPage={vouchersPage}
 					onPageChange={setVouchersPage}
 				/>
+
+				{/* Activity History Section */}
+				<div className="mt-8">
+					<ActivityLog
+						logs={activityHistory}
+						title="Activity History"
+						showEntityColumns={false}
+						emptyMessage="No activity history for this person."
+					/>
+				</div>
 
 				{/* Delete Person Dialog */}
 				<DeletePersonDialog

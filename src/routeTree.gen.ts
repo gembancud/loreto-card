@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
 import { Route as DevIdCardEditorRouteImport } from './routes/dev/id-card-editor'
+import { Route as AuthedActivityRouteImport } from './routes/_authed/activity'
 import { Route as AuthedAdminRouteImport } from './routes/_authed/_admin'
 import { Route as AuthedVouchersIndexRouteImport } from './routes/_authed/vouchers/index'
 import { Route as AuthedBenefitsIndexRouteImport } from './routes/_authed/benefits/index'
@@ -40,6 +41,11 @@ const DevIdCardEditorRoute = DevIdCardEditorRouteImport.update({
   id: '/dev/id-card-editor',
   path: '/dev/id-card-editor',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedActivityRoute = AuthedActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedAdminRoute = AuthedAdminRouteImport.update({
   id: '/_admin',
@@ -85,6 +91,7 @@ const AuthedVouchersProvideBenefitIdRoute =
 
 export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
+  '/activity': typeof AuthedActivityRoute
   '/dev/id-card-editor': typeof DevIdCardEditorRoute
   '/': typeof AuthedIndexRoute
   '/users': typeof AuthedAdminUsersRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/activity': typeof AuthedActivityRoute
   '/dev/id-card-editor': typeof DevIdCardEditorRoute
   '/': typeof AuthedIndexRoute
   '/users': typeof AuthedAdminUsersRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authed/_admin': typeof AuthedAdminRouteWithChildren
+  '/_authed/activity': typeof AuthedActivityRoute
   '/dev/id-card-editor': typeof DevIdCardEditorRoute
   '/_authed/': typeof AuthedIndexRoute
   '/_authed/_admin/users': typeof AuthedAdminUsersRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/login'
+    | '/activity'
     | '/dev/id-card-editor'
     | '/'
     | '/users'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/activity'
     | '/dev/id-card-editor'
     | '/'
     | '/users'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/_authed'
     | '/login'
     | '/_authed/_admin'
+    | '/_authed/activity'
     | '/dev/id-card-editor'
     | '/_authed/'
     | '/_authed/_admin/users'
@@ -198,6 +210,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dev/id-card-editor'
       preLoaderRoute: typeof DevIdCardEditorRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authed/activity': {
+      id: '/_authed/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AuthedActivityRouteImport
+      parentRoute: typeof AuthedRoute
     }
     '/_authed/_admin': {
       id: '/_authed/_admin'
@@ -272,6 +291,7 @@ const AuthedAdminRouteWithChildren = AuthedAdminRoute._addFileChildren(
 
 interface AuthedRouteChildren {
   AuthedAdminRoute: typeof AuthedAdminRouteWithChildren
+  AuthedActivityRoute: typeof AuthedActivityRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
   AuthedBenefitsBenefitIdRoute: typeof AuthedBenefitsBenefitIdRoute
   AuthedPeoplePersonIdRoute: typeof AuthedPeoplePersonIdRoute
@@ -283,6 +303,7 @@ interface AuthedRouteChildren {
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedAdminRoute: AuthedAdminRouteWithChildren,
+  AuthedActivityRoute: AuthedActivityRoute,
   AuthedIndexRoute: AuthedIndexRoute,
   AuthedBenefitsBenefitIdRoute: AuthedBenefitsBenefitIdRoute,
   AuthedPeoplePersonIdRoute: AuthedPeoplePersonIdRoute,

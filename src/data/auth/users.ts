@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq } from "drizzle-orm";
+import { computeChanges, logActivity } from "@/data/audit";
 import { db } from "@/db";
 import { type UserRole, users } from "@/db/schema";
 import { getAppSession, type SessionData } from "@/lib/session";
@@ -163,6 +164,16 @@ export const createUser = createServerFn({ method: "POST" })
 				where: eq(users.id, newUser.id),
 			});
 
+			// Log activity
+			await logActivity({
+				data: {
+					action: "create",
+					entityType: "user",
+					entityId: newUser.id,
+					entityName: `${data.firstName} ${data.lastName}`,
+				},
+			});
+
 			return {
 				success: true,
 				user: {
@@ -253,6 +264,21 @@ export const updateUser = createServerFn({ method: "POST" })
 			})
 			.where(eq(users.id, userId));
 
+		// Log activity with changes
+		const changes = computeChanges(
+			currentUser as Record<string, unknown>,
+			updates as Record<string, unknown>,
+		);
+		await logActivity({
+			data: {
+				action: "update",
+				entityType: "user",
+				entityId: userId,
+				entityName: `${currentUser.firstName} ${currentUser.lastName}`,
+				changes,
+			},
+		});
+
 		return { success: true };
 	});
 
@@ -281,6 +307,16 @@ export const deleteUser = createServerFn({ method: "POST" })
 				.update(users)
 				.set({ isActive: false, updatedAt: new Date() })
 				.where(eq(users.id, userId));
+
+			// Log activity
+			await logActivity({
+				data: {
+					action: "deactivate",
+					entityType: "user",
+					entityId: userId,
+					entityName: `${user.firstName} ${user.lastName}`,
+				},
+			});
 
 			return { success: true };
 		},

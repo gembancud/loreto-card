@@ -3,6 +3,7 @@ import {
 	boolean,
 	date,
 	integer,
+	jsonb,
 	pgTable,
 	serial,
 	text,
@@ -247,6 +248,44 @@ export const vouchersRelations = relations(vouchers, ({ one }) => ({
 	}),
 }));
 
+// Audit logs - tracks all system activities
+export const auditLogs = pgTable("audit_logs", {
+	id: uuid("id").primaryKey().defaultRandom(),
+
+	// Actor info (denormalized for historical accuracy)
+	actorId: uuid("actor_id")
+		.notNull()
+		.references(() => users.id),
+	actorName: text("actor_name").notNull(),
+	actorRole: text("actor_role").notNull(),
+	actorDepartmentId: uuid("actor_department_id").references(
+		() => departments.id,
+	),
+	actorDepartmentName: text("actor_department_name"),
+
+	// Action details
+	action: text("action").notNull(), // create | update | delete | deactivate | release | cancel
+	entityType: text("entity_type").notNull(), // person | benefit | voucher | user | department
+	entityId: uuid("entity_id").notNull(),
+	entityName: text("entity_name"), // Human-readable (e.g., person name)
+
+	// Change tracking
+	changes: jsonb("changes"), // { field: { old: value, new: value } }
+
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+	actor: one(users, {
+		fields: [auditLogs.actorId],
+		references: [users.id],
+	}),
+	actorDepartment: one(departments, {
+		fields: [auditLogs.actorDepartmentId],
+		references: [departments.id],
+	}),
+}));
+
 // Type exports for use in application code
 export type DbPerson = typeof people.$inferSelect;
 export type NewPerson = typeof people.$inferInsert;
@@ -291,3 +330,19 @@ export type BenefitAssignmentRole = "provider" | "releaser";
 export type Voucher = typeof vouchers.$inferSelect;
 export type NewVoucher = typeof vouchers.$inferInsert;
 export type VoucherStatus = "pending" | "released" | "cancelled";
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;
+export type AuditAction =
+	| "create"
+	| "update"
+	| "delete"
+	| "deactivate"
+	| "release"
+	| "cancel";
+export type AuditEntityType =
+	| "person"
+	| "benefit"
+	| "voucher"
+	| "user"
+	| "department";
