@@ -16,6 +16,7 @@ import { BadgeFilterToggle } from "@/components/people/BadgeFilterToggle";
 import { GovServiceBadges } from "@/components/people/GovServiceBadges";
 import { PersonQuickViewPopover } from "@/components/people/PersonQuickViewPopover";
 import { PersonStatusBadge } from "@/components/people/PersonStatusBadge";
+import { ResidencyBadge } from "@/components/people/ResidencyBadge";
 import { QrScannerDialog } from "@/components/qr/QrScannerDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -442,7 +443,7 @@ function PeopleList() {
 										onSort={handleSort}
 										className="w-[15%]"
 									/>
-									<TableHead className="w-[10%]">Purok</TableHead>
+									<TableHead className="w-[60px]">Purok</TableHead>
 									<TableHead className="w-[100px]">Residency</TableHead>
 									<TableHead>Services</TableHead>
 									<TableHead className="w-[100px]">Status</TableHead>
@@ -509,9 +510,7 @@ function PeopleList() {
 											<TableCell>{person.address.barangay}</TableCell>
 											<TableCell>{person.address.purok || "-"}</TableCell>
 											<TableCell>
-												{person.residencyStatus === "resident"
-													? "Resident"
-													: "Non-Resident"}
+												<ResidencyBadge status={person.residencyStatus} />
 											</TableCell>
 											<TableCell className="overflow-hidden">
 												<GovServiceBadges person={person} />
