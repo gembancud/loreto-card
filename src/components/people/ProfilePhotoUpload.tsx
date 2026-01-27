@@ -196,6 +196,7 @@ export function ProfilePhotoUpload({
 								src={value}
 								alt="Profile preview"
 								className="h-full w-full object-cover"
+								onError={() => onChange(null)}
 							/>
 						) : (
 							<Camera className="h-8 w-8 text-muted-foreground" />

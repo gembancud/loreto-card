@@ -76,7 +76,7 @@ async function getFontEmbedCSS(): Promise<string> {
  * Returns null if profile photo doesn't exist or fails to load
  */
 async function loadProfilePhoto(
-	profilePhoto: string | undefined,
+	profilePhoto: string | null | undefined,
 ): Promise<string | null> {
 	if (!profilePhoto) return null;
 

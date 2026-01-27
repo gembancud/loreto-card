@@ -40,7 +40,7 @@ export interface Person {
 	phoneNumber: string;
 	monthlyIncome: number | null;
 	status: PersonStatus;
-	profilePhoto?: string;
+	profilePhoto?: string | null;
 	// Government service fields
 	voter: GovServiceRecord;
 	philhealth: GovServiceRecord;
@@ -349,7 +349,7 @@ interface CreatePersonInput {
 	phoneNumber: string;
 	monthlyIncome?: number | null;
 	status?: PersonStatus;
-	profilePhoto?: string;
+	profilePhoto?: string | null;
 	voter?: GovServiceRecord;
 	philhealth?: GovServiceRecord;
 	sss?: GovServiceRecord;

@@ -372,7 +372,7 @@ function EditPerson() {
 						gender: formData.gender || undefined,
 						civilStatus: formData.civilStatus || undefined,
 						placeOfBirth: formData.placeOfBirth || undefined,
-						profilePhoto: finalPhotoUrl ?? undefined,
+						profilePhoto: finalPhotoUrl,
 						voter: formData.voter,
 						philhealth: formData.philhealth,
 						sss: formData.sss,
