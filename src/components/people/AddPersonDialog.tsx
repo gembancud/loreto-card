@@ -1,6 +1,6 @@
 import { useRouter } from "@tanstack/react-router";
 import { Loader2, UserPlus } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -92,6 +92,32 @@ export function AddPersonDialog() {
 		setFormData(initialFormData);
 	};
 
+	const isDirty = useMemo(() => {
+		return (
+			formData.firstName !== initialFormData.firstName ||
+			formData.lastName !== initialFormData.lastName ||
+			formData.birthdate !== initialFormData.birthdate ||
+			formData.street !== initialFormData.street ||
+			formData.purok !== initialFormData.purok ||
+			formData.barangay !== initialFormData.barangay ||
+			formData.phoneNumber !== initialFormData.phoneNumber ||
+			formData.status !== initialFormData.status ||
+			formData.residencyStatus !== initialFormData.residencyStatus ||
+			formData.profilePhoto !== initialFormData.profilePhoto
+		);
+	}, [formData]);
+
+	const handleOpenChange = (newOpen: boolean) => {
+		if (!newOpen && isDirty) {
+			const shouldClose = confirm(
+				"You have unsaved changes. Are you sure you want to close?",
+			);
+			if (!shouldClose) return;
+			resetForm();
+		}
+		setOpen(newOpen);
+	};
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -139,12 +165,11 @@ export function AddPersonDialog() {
 	};
 
 	const handleCancel = () => {
-		resetForm();
-		setOpen(false);
+		handleOpenChange(false);
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogTrigger asChild>
 				<Button>
 					<UserPlus className="h-4 w-4" />
