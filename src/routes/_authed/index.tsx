@@ -1,5 +1,14 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Pencil, QrCode, Search, Users, X } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	Pencil,
+	QrCode,
+	Search,
+	Users,
+	X,
+} from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AddPersonDialog } from "@/components/people/AddPersonDialog";
@@ -39,12 +48,53 @@ import {
 } from "@/lib/govServices";
 import { calculateAge, formatNameWithInitial } from "@/lib/utils";
 
+type SortField = "name" | "barangay" | "createdAt" | "updatedAt";
+type SortDirection = "asc" | "desc";
+
 function formatDate(isoString: string): string {
 	return new Date(isoString).toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
 		year: "numeric",
 	});
+}
+
+function SortableTableHead({
+	label,
+	field,
+	currentField,
+	direction,
+	onSort,
+	className,
+}: {
+	label: string;
+	field: SortField;
+	currentField: SortField;
+	direction: SortDirection;
+	onSort: (field: SortField) => void;
+	className?: string;
+}) {
+	const isActive = currentField === field;
+	return (
+		<TableHead className={className}>
+			<button
+				type="button"
+				onClick={() => onSort(field)}
+				className="flex items-center gap-1 hover:text-foreground transition-colors -ml-1 px-1 py-0.5 rounded"
+			>
+				{label}
+				{isActive ? (
+					direction === "asc" ? (
+						<ArrowUp className="h-4 w-4" />
+					) : (
+						<ArrowDown className="h-4 w-4" />
+					)
+				) : (
+					<ArrowUpDown className="h-4 w-4 text-muted-foreground/50" />
+				)}
+			</button>
+		</TableHead>
+	);
 }
 
 export const Route = createFileRoute("/_authed/")({
@@ -66,6 +116,8 @@ function PeopleList() {
 	const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
 	const [popoverOpen, setPopoverOpen] = useState(false);
 	const [qrScannerOpen, setQrScannerOpen] = useState(false);
+	const [sortField, setSortField] = useState<SortField>("name");
+	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
 	const filteredPeople = useMemo(() => {
 		const query = searchQuery.trim().toLowerCase();
@@ -113,6 +165,51 @@ function PeopleList() {
 		badgeFilter,
 		badgeFilterMode,
 	]);
+
+	const sortedPeople = useMemo(() => {
+		return [...filteredPeople].sort((a, b) => {
+			const multiplier = sortDirection === "asc" ? 1 : -1;
+			switch (sortField) {
+				case "name": {
+					const lastCmp = a.lastName.localeCompare(b.lastName);
+					return (
+						(lastCmp !== 0 ? lastCmp : a.firstName.localeCompare(b.firstName)) *
+						multiplier
+					);
+				}
+				case "barangay":
+					return (
+						a.address.barangay.localeCompare(b.address.barangay) * multiplier
+					);
+				case "createdAt":
+					return (
+						(new Date(a.createdAt).getTime() -
+							new Date(b.createdAt).getTime()) *
+						multiplier
+					);
+				case "updatedAt":
+					return (
+						(new Date(a.updatedAt).getTime() -
+							new Date(b.updatedAt).getTime()) *
+						multiplier
+					);
+				default:
+					return 0;
+			}
+		});
+	}, [filteredPeople, sortField, sortDirection]);
+
+	const handleSort = useCallback(
+		(field: SortField) => {
+			if (sortField === field) {
+				setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+			} else {
+				setSortField(field);
+				setSortDirection("asc");
+			}
+		},
+		[sortField],
+	);
 
 	const hasActiveFilters =
 		searchQuery.trim() !== "" ||
@@ -249,14 +346,45 @@ function PeopleList() {
 							onFilterModeChange={setBadgeFilterMode}
 						/>
 					</div>
+					{/* Mobile Sort Dropdown */}
+					<div className="md:hidden flex-shrink-0 pb-3">
+						<Select
+							value={`${sortField}-${sortDirection}`}
+							onValueChange={(value) => {
+								const [field, dir] = value.split("-") as [
+									SortField,
+									SortDirection,
+								];
+								setSortField(field);
+								setSortDirection(dir);
+							}}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Sort by..." />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="name-asc">Name (A-Z)</SelectItem>
+								<SelectItem value="name-desc">Name (Z-A)</SelectItem>
+								<SelectItem value="barangay-asc">Barangay (A-Z)</SelectItem>
+								<SelectItem value="barangay-desc">Barangay (Z-A)</SelectItem>
+								<SelectItem value="createdAt-desc">Newest First</SelectItem>
+								<SelectItem value="createdAt-asc">Oldest First</SelectItem>
+								<SelectItem value="updatedAt-desc">Recently Updated</SelectItem>
+								<SelectItem value="updatedAt-asc">
+									Least Recently Updated
+								</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
+
 					{/* Mobile Card View */}
 					<div className="md:hidden flex-1 overflow-auto min-h-0 space-y-3">
-						{filteredPeople.length === 0 ? (
+						{sortedPeople.length === 0 ? (
 							<div className="text-center text-muted-foreground py-8">
 								No people found matching your filters
 							</div>
 						) : (
-							filteredPeople.map((person) => (
+							sortedPeople.map((person) => (
 								<button
 									type="button"
 									key={person.id}
@@ -296,20 +424,48 @@ function PeopleList() {
 						<Table className="table-fixed">
 							<TableHeader className="sticky top-0 bg-background z-10">
 								<TableRow>
-									<TableHead className="w-[20%]">Name</TableHead>
+									<SortableTableHead
+										label="Name"
+										field="name"
+										currentField={sortField}
+										direction={sortDirection}
+										onSort={handleSort}
+										className="w-[20%]"
+									/>
 									<TableHead className="w-[80px]">Actions</TableHead>
 									<TableHead className="w-[60px]">Age</TableHead>
-									<TableHead className="w-[15%]">Barangay</TableHead>
+									<SortableTableHead
+										label="Barangay"
+										field="barangay"
+										currentField={sortField}
+										direction={sortDirection}
+										onSort={handleSort}
+										className="w-[15%]"
+									/>
 									<TableHead className="w-[10%]">Purok</TableHead>
 									<TableHead className="w-[100px]">Residency</TableHead>
 									<TableHead>Services</TableHead>
 									<TableHead className="w-[100px]">Status</TableHead>
-									<TableHead className="w-[100px]">Created</TableHead>
-									<TableHead className="w-[100px]">Updated</TableHead>
+									<SortableTableHead
+										label="Created"
+										field="createdAt"
+										currentField={sortField}
+										direction={sortDirection}
+										onSort={handleSort}
+										className="w-[100px]"
+									/>
+									<SortableTableHead
+										label="Updated"
+										field="updatedAt"
+										currentField={sortField}
+										direction={sortDirection}
+										onSort={handleSort}
+										className="w-[100px]"
+									/>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{filteredPeople.length === 0 ? (
+								{sortedPeople.length === 0 ? (
 									<TableRow>
 										<TableCell
 											colSpan={10}
@@ -319,7 +475,7 @@ function PeopleList() {
 										</TableCell>
 									</TableRow>
 								) : (
-									filteredPeople.map((person) => (
+									sortedPeople.map((person) => (
 										<TableRow
 											key={person.id}
 											className="cursor-pointer hover:bg-muted/50"
@@ -377,7 +533,7 @@ function PeopleList() {
 					</div>
 					<div className="flex-shrink-0 pt-4 text-sm text-muted-foreground text-center">
 						{hasActiveFilters
-							? `Showing ${filteredPeople.length} of ${people.length} records`
+							? `Showing ${sortedPeople.length} of ${people.length} records`
 							: `Total Records: ${people.length}`}
 					</div>
 				</CardContent>
