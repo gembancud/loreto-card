@@ -182,9 +182,10 @@ export const verifyOtp = createServerFn({ method: "POST" })
 			.set({ verified: true })
 			.where(eq(otpVerifications.id, otpRecord.id));
 
-		// Get user
+		// Get user with department
 		const user = await db.query.users.findFirst({
 			where: eq(users.phoneNumber, normalizedPhone),
+			with: { department: true },
 		});
 
 		if (!user) {
@@ -207,6 +208,7 @@ export const verifyOtp = createServerFn({ method: "POST" })
 			lastName: user.lastName,
 			role: user.role as "superuser" | "admin" | "user",
 			departmentId: user.departmentId,
+			departmentName: user.department?.name ?? null,
 		});
 
 		return { success: true };
@@ -346,9 +348,10 @@ export const verifyEmailOtp = createServerFn({ method: "POST" })
 			.set({ verified: true })
 			.where(eq(otpVerifications.id, otpRecord.id));
 
-		// Get user by email
+		// Get user by email with department
 		const user = await db.query.users.findFirst({
 			where: eq(users.email, normalizedEmail),
+			with: { department: true },
 		});
 
 		if (!user) {
@@ -371,6 +374,7 @@ export const verifyEmailOtp = createServerFn({ method: "POST" })
 			lastName: user.lastName,
 			role: user.role as "superuser" | "admin" | "user",
 			departmentId: user.departmentId,
+			departmentName: user.department?.name ?? null,
 		});
 
 		return { success: true };

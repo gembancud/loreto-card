@@ -54,7 +54,15 @@ export default function Header() {
 						className="flex items-center gap-2 text-xl font-semibold text-gray-900"
 					>
 						<img src="/favicon.png" alt="" className="h-7 w-7" />
-						LoreCard
+						<span>
+							LoreCard
+							{session?.departmentName && (
+								<span className="text-muted-foreground font-normal">
+									{" "}
+									· {session.departmentName}
+								</span>
+							)}
+						</span>
 					</Link>
 
 					{session && (
