@@ -12,8 +12,8 @@ const SEAL_PATH = "/id-card/loreto-seal.png";
 const LOGO_PATH = "/id-card/shine-loreto-logo.png";
 
 // Font paths
-const INTER_REGULAR_PATH = "/fonts/Inter-Regular.ttf";
-const INTER_BOLD_PATH = "/fonts/Inter-Bold.ttf";
+const MONTSERRAT_REGULAR_PATH = "/fonts/Montserrat-Regular.ttf";
+const MONTSERRAT_BOLD_PATH = "/fonts/Montserrat-Bold.ttf";
 
 // Cache for embedded font CSS
 let fontEmbedCSSCache: string | null = null;
@@ -42,27 +42,27 @@ async function loadAsDataUrl(url: string): Promise<string> {
 }
 
 /**
- * Generate CSS with embedded Inter fonts for html-to-image
+ * Generate CSS with embedded Montserrat fonts for html-to-image
  * Caches the result to avoid re-fetching fonts
  */
 async function getFontEmbedCSS(): Promise<string> {
 	if (fontEmbedCSSCache) return fontEmbedCSSCache;
 
-	const [interRegularDataUrl, interBoldDataUrl] = await Promise.all([
-		loadAsDataUrl(INTER_REGULAR_PATH),
-		loadAsDataUrl(INTER_BOLD_PATH),
+	const [montserratRegularDataUrl, montserratBoldDataUrl] = await Promise.all([
+		loadAsDataUrl(MONTSERRAT_REGULAR_PATH),
+		loadAsDataUrl(MONTSERRAT_BOLD_PATH),
 	]);
 
 	fontEmbedCSSCache = `
 @font-face {
-  font-family: 'Inter';
-  src: url('${interRegularDataUrl}') format('truetype');
+  font-family: 'Montserrat';
+  src: url('${montserratRegularDataUrl}') format('truetype');
   font-weight: 400;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Inter';
-  src: url('${interBoldDataUrl}') format('truetype');
+  font-family: 'Montserrat';
+  src: url('${montserratBoldDataUrl}') format('truetype');
   font-weight: 700;
   font-style: normal;
 }

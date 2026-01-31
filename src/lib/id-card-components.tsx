@@ -149,7 +149,7 @@ export function IdCardFront({
 				position: "relative",
 				display: "flex",
 				flexDirection: "column",
-				fontFamily: "Inter",
+				fontFamily: "Montserrat",
 			}}
 		>
 			{/* Background */}
@@ -666,7 +666,7 @@ export function IdCardBack({
 				height: card.height,
 				position: "relative",
 				display: "flex",
-				fontFamily: "Inter",
+				fontFamily: "Montserrat",
 			}}
 		>
 			{/* Background */}
