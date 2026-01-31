@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import {
 	AlertTriangle,
 	ArrowLeft,
@@ -10,7 +10,7 @@ import {
 	User,
 	X,
 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { QrScannerDialog } from "@/components/qr/QrScannerDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,6 +93,22 @@ function ProvideVoucherPage() {
 		useState<EligibilityResult | null>(null);
 	const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
 	const [overrideConfirmed, setOverrideConfirmed] = useState(false);
+
+	// Detect if form has unsaved changes (person selected or notes entered)
+	const isDirty = useMemo(() => {
+		return selectedPerson !== null || notes.trim() !== "";
+	}, [selectedPerson, notes]);
+
+	const handleCancel = () => {
+		if (isDirty) {
+			if (
+				!confirm("You have unsaved changes. Are you sure you want to leave?")
+			) {
+				return;
+			}
+		}
+		router.navigate({ to: "/vouchers" });
+	};
 
 	// Check eligibility when person is selected
 	useEffect(() => {
@@ -219,12 +235,10 @@ function ProvideVoucherPage() {
 		<div className="container mx-auto py-8 px-4">
 			<div className="max-w-xl mx-auto">
 				<div className="mb-6">
-					<Link to="/vouchers">
-						<Button variant="ghost" className="gap-2">
-							<ArrowLeft className="h-4 w-4" />
-							Back to Vouchers
-						</Button>
-					</Link>
+					<Button variant="ghost" className="gap-2" onClick={handleCancel}>
+						<ArrowLeft className="h-4 w-4" />
+						Back to Vouchers
+					</Button>
 				</div>
 
 				<Card>
@@ -486,7 +500,7 @@ function ProvideVoucherPage() {
 									type="button"
 									variant="outline"
 									className="flex-1"
-									onClick={() => router.navigate({ to: "/vouchers" })}
+									onClick={handleCancel}
 								>
 									Cancel
 								</Button>

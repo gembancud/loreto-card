@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -457,6 +457,14 @@ interface BenefitFormProps {
 	onCancel: () => void;
 }
 
+// Helper to compare string arrays for equality (order-independent)
+function arraysEqual(a: string[], b: string[]): boolean {
+	if (a.length !== b.length) return false;
+	const sortedA = [...a].sort();
+	const sortedB = [...b].sort();
+	return sortedA.every((val, idx) => val === sortedB[idx]);
+}
+
 // Category labels for display
 const CATEGORY_LABELS: Record<IdentificationType, string> = {
 	voter: "Voter",
@@ -486,49 +494,116 @@ function BenefitForm({
 	const formId = useId();
 	const isEditing = !!benefit;
 
-	const [name, setName] = useState(benefit?.name ?? "");
-	const [description, setDescription] = useState(benefit?.description ?? "");
-	const [valuePesos, setValuePesos] = useState(
-		benefit?.valuePesos?.toString() ?? "",
+	// Track initial values for dirty detection
+	const initialValues = useMemo(
+		() => ({
+			name: benefit?.name ?? "",
+			description: benefit?.description ?? "",
+			valuePesos: benefit?.valuePesos?.toString() ?? "",
+			quantity: benefit?.quantity?.toString() ?? "",
+			providerIds: benefit?.providers.map((p) => p.userId) ?? [],
+			releaserIds: benefit?.releasers.map((r) => r.userId) ?? [],
+			hasEligibility:
+				benefit?.eligibility !== null && benefit?.eligibility !== undefined,
+			selectedBarangays: benefit?.eligibility?.barangays ?? [],
+			maxMonthlyIncome:
+				benefit?.eligibility?.maxMonthlyIncome?.toString() ?? "",
+			minAge: benefit?.eligibility?.minAge?.toString() ?? "",
+			maxAge: benefit?.eligibility?.maxAge?.toString() ?? "",
+			gender: benefit?.eligibility?.gender ?? null,
+			residencyStatus: benefit?.eligibility?.residencyStatus ?? null,
+			requiredCategories: benefit?.eligibility?.requiredCategories ?? [],
+			categoryMode: benefit?.eligibility?.categoryMode ?? "any",
+		}),
+		[benefit],
 	);
-	const [quantity, setQuantity] = useState(benefit?.quantity?.toString() ?? "");
+
+	const [name, setName] = useState(initialValues.name);
+	const [description, setDescription] = useState(initialValues.description);
+	const [valuePesos, setValuePesos] = useState(initialValues.valuePesos);
+	const [quantity, setQuantity] = useState(initialValues.quantity);
 	const [providerIds, setProviderIds] = useState<string[]>(
-		benefit?.providers.map((p) => p.userId) ?? [],
+		initialValues.providerIds,
 	);
 	const [releaserIds, setReleaserIds] = useState<string[]>(
-		benefit?.releasers.map((r) => r.userId) ?? [],
+		initialValues.releaserIds,
 	);
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	// Eligibility state
 	const [hasEligibility, setHasEligibility] = useState(
-		benefit?.eligibility !== null && benefit?.eligibility !== undefined,
+		initialValues.hasEligibility,
 	);
 	const [selectedBarangays, setSelectedBarangays] = useState<LoretoBarangay[]>(
-		benefit?.eligibility?.barangays ?? [],
+		initialValues.selectedBarangays,
 	);
 	const [maxMonthlyIncome, setMaxMonthlyIncome] = useState(
-		benefit?.eligibility?.maxMonthlyIncome?.toString() ?? "",
+		initialValues.maxMonthlyIncome,
 	);
-	const [minAge, setMinAge] = useState(
-		benefit?.eligibility?.minAge?.toString() ?? "",
-	);
-	const [maxAge, setMaxAge] = useState(
-		benefit?.eligibility?.maxAge?.toString() ?? "",
-	);
+	const [minAge, setMinAge] = useState(initialValues.minAge);
+	const [maxAge, setMaxAge] = useState(initialValues.maxAge);
 	const [gender, setGender] = useState<"Male" | "Female" | null>(
-		benefit?.eligibility?.gender ?? null,
+		initialValues.gender,
 	);
 	const [residencyStatus, setResidencyStatus] = useState<
 		"resident" | "nonResident" | null
-	>(benefit?.eligibility?.residencyStatus ?? null);
+	>(initialValues.residencyStatus);
 	const [requiredCategories, setRequiredCategories] = useState<
 		IdentificationType[]
-	>(benefit?.eligibility?.requiredCategories ?? []);
+	>(initialValues.requiredCategories);
 	const [categoryMode, setCategoryMode] = useState<"any" | "all">(
-		benefit?.eligibility?.categoryMode ?? "any",
+		initialValues.categoryMode,
 	);
+
+	// Detect if form has unsaved changes
+	const isDirty = useMemo(() => {
+		return (
+			name !== initialValues.name ||
+			description !== initialValues.description ||
+			valuePesos !== initialValues.valuePesos ||
+			quantity !== initialValues.quantity ||
+			!arraysEqual(providerIds, initialValues.providerIds) ||
+			!arraysEqual(releaserIds, initialValues.releaserIds) ||
+			hasEligibility !== initialValues.hasEligibility ||
+			!arraysEqual(selectedBarangays, initialValues.selectedBarangays) ||
+			maxMonthlyIncome !== initialValues.maxMonthlyIncome ||
+			minAge !== initialValues.minAge ||
+			maxAge !== initialValues.maxAge ||
+			gender !== initialValues.gender ||
+			residencyStatus !== initialValues.residencyStatus ||
+			!arraysEqual(requiredCategories, initialValues.requiredCategories) ||
+			categoryMode !== initialValues.categoryMode
+		);
+	}, [
+		name,
+		description,
+		valuePesos,
+		quantity,
+		providerIds,
+		releaserIds,
+		hasEligibility,
+		selectedBarangays,
+		maxMonthlyIncome,
+		minAge,
+		maxAge,
+		gender,
+		residencyStatus,
+		requiredCategories,
+		categoryMode,
+		initialValues,
+	]);
+
+	const handleCancel = () => {
+		if (isDirty) {
+			if (
+				!confirm("You have unsaved changes. Are you sure you want to close?")
+			) {
+				return;
+			}
+		}
+		onCancel();
+	};
 
 	// Detect users assigned to both provider AND releaser roles
 	const duplicateUserIds = providerIds.filter((pid) =>
@@ -964,7 +1039,7 @@ function BenefitForm({
 				{error && <p className="text-sm text-destructive">{error}</p>}
 			</div>
 			<DialogFooter>
-				<Button type="button" variant="outline" onClick={onCancel}>
+				<Button type="button" variant="outline" onClick={handleCancel}>
 					Cancel
 				</Button>
 				<Button type="submit" disabled={isSubmitting || hasDuplicates}>
