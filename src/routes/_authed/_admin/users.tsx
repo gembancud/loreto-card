@@ -518,23 +518,6 @@ function AddUserForm({
 						/>
 					</div>
 				</div>
-				{showDepartment && (
-					<div className="grid gap-2">
-						<Label htmlFor={`${id}-department`}>Department</Label>
-						<Select value={departmentId} onValueChange={setDepartmentId}>
-							<SelectTrigger>
-								<SelectValue placeholder="Select department" />
-							</SelectTrigger>
-							<SelectContent>
-								{departments.map((dept) => (
-									<SelectItem key={dept.id} value={dept.id}>
-										{dept.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-				)}
 				<div className="grid gap-2">
 					<Label htmlFor={`${id}-role`}>Role</Label>
 					{isBarangayAdminUser ? (
@@ -574,6 +557,23 @@ function AddUserForm({
 						</Select>
 					)}
 				</div>
+				{showDepartment && (
+					<div className="grid gap-2">
+						<Label htmlFor={`${id}-department`}>Department</Label>
+						<Select value={departmentId} onValueChange={setDepartmentId}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select department" />
+							</SelectTrigger>
+							<SelectContent>
+								{departments.map((dept) => (
+									<SelectItem key={dept.id} value={dept.id}>
+										{dept.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				)}
 				{showBarangay && (
 					<div className="grid gap-2">
 						<Label htmlFor={`${id}-barangay`}>Barangay</Label>
@@ -779,23 +779,6 @@ function EditUserForm({
 						/>
 					</div>
 				</div>
-				{showDepartment && (
-					<div className="grid gap-2">
-						<Label htmlFor={`${id}-department`}>Department</Label>
-						<Select value={departmentId} onValueChange={setDepartmentId}>
-							<SelectTrigger>
-								<SelectValue placeholder="Select department" />
-							</SelectTrigger>
-							<SelectContent>
-								{departments.map((dept) => (
-									<SelectItem key={dept.id} value={dept.id}>
-										{dept.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-				)}
 				<div className="grid gap-2">
 					<Label htmlFor={`${id}-role`}>Role</Label>
 					{isBarangayAdminUser ? (
@@ -833,6 +816,23 @@ function EditUserForm({
 						</Select>
 					)}
 				</div>
+				{showDepartment && (
+					<div className="grid gap-2">
+						<Label htmlFor={`${id}-department`}>Department</Label>
+						<Select value={departmentId} onValueChange={setDepartmentId}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select department" />
+							</SelectTrigger>
+							<SelectContent>
+								{departments.map((dept) => (
+									<SelectItem key={dept.id} value={dept.id}>
+										{dept.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				)}
 				{showBarangay && (
 					<div className="grid gap-2">
 						<Label htmlFor={`${id}-barangay`}>Barangay</Label>
