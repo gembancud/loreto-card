@@ -41,7 +41,10 @@ export default function Header() {
 		setIsLoggingOut(false);
 	};
 
-	const isAdmin = session?.role === "admin" || session?.role === "superuser";
+	const isAdmin =
+		session?.role === "department_admin" || session?.role === "superuser";
+	const isDeptStaff =
+		session?.role === "department_admin" || session?.role === "department_user";
 	const isBarangay =
 		session?.role === "barangay_admin" || session?.role === "barangay_user";
 	const canAccessUsers = isAdmin || session?.role === "barangay_admin";
@@ -83,16 +86,18 @@ export default function Header() {
 
 					{session && (
 						<nav className="hidden md:flex items-center gap-1">
-							<Link to="/">
-								<Button
-									variant="ghost"
-									size="sm"
-									className={`gap-2 ${isActive("/") ? "bg-muted" : ""}`}
-								>
-									<Users className="h-4 w-4" />
-									<span className="hidden sm:inline">People</span>
-								</Button>
-							</Link>
+							{!isDeptStaff && (
+								<Link to="/">
+									<Button
+										variant="ghost"
+										size="sm"
+										className={`gap-2 ${isActive("/") ? "bg-muted" : ""}`}
+									>
+										<Users className="h-4 w-4" />
+										<span className="hidden sm:inline">People</span>
+									</Button>
+								</Link>
+							)}
 
 							{!isBarangay && (
 								<>
@@ -168,8 +173,10 @@ export default function Header() {
 										<p className="text-sm text-muted-foreground">
 											{session.phoneNumber}
 										</p>
-										<p className="text-xs text-muted-foreground capitalize">
-											{session.role}
+										<p className="text-xs text-muted-foreground">
+											{session.role
+												.replace(/_/g, " ")
+												.replace(/\b\w/g, (c) => c.toUpperCase())}
 										</p>
 									</div>
 									<Button

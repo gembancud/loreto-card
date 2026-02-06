@@ -357,10 +357,10 @@ function formatRole(role: UserRole): string {
 	switch (role) {
 		case "superuser":
 			return "Superuser";
-		case "admin":
-			return "Admin";
-		case "user":
-			return "User";
+		case "department_admin":
+			return "Dept Admin";
+		case "department_user":
+			return "Dept User";
 		case "barangay_admin":
 			return "Brgy Admin";
 		case "barangay_user":
@@ -391,7 +391,7 @@ function AddUserForm({
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
 	const [role, setRole] = useState<UserRole>(
-		isBarangayAdminUser ? "barangay_user" : "user",
+		isBarangayAdminUser ? "barangay_user" : "department_user",
 	);
 	const [departmentId, setDepartmentId] = useState<string>("");
 	const [barangay, setBarangay] = useState<string>(
@@ -410,7 +410,7 @@ function AddUserForm({
 			email !== "" ||
 			firstName !== "" ||
 			lastName !== "" ||
-			role !== (isBarangayAdminUser ? "barangay_user" : "user") ||
+			role !== (isBarangayAdminUser ? "barangay_user" : "department_user") ||
 			departmentId !== "" ||
 			barangay !== (isBarangayAdminUser ? (currentUser.barangay ?? "") : "")
 		);
@@ -548,8 +548,8 @@ function AddUserForm({
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="user">User</SelectItem>
-								<SelectItem value="admin">Admin</SelectItem>
+								<SelectItem value="department_user">Dept User</SelectItem>
+								<SelectItem value="department_admin">Dept Admin</SelectItem>
 								<SelectItem value="superuser">Superuser</SelectItem>
 								<SelectItem value="barangay_admin">Brgy Admin</SelectItem>
 								<SelectItem value="barangay_user">Brgy User</SelectItem>
@@ -807,8 +807,8 @@ function EditUserForm({
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="user">User</SelectItem>
-								<SelectItem value="admin">Admin</SelectItem>
+								<SelectItem value="department_user">Dept User</SelectItem>
+								<SelectItem value="department_admin">Dept Admin</SelectItem>
 								<SelectItem value="superuser">Superuser</SelectItem>
 								<SelectItem value="barangay_admin">Brgy Admin</SelectItem>
 								<SelectItem value="barangay_user">Brgy User</SelectItem>

@@ -23,7 +23,7 @@ async function requireAuth(): Promise<SessionData> {
 // Helper to verify current user is admin or superuser, returns session data
 async function requireAdmin(): Promise<SessionData> {
 	const session = await requireAuth();
-	if (session.role !== "admin" && session.role !== "superuser") {
+	if (session.role !== "department_admin" && session.role !== "superuser") {
 		throw new Error("Unauthorized: Admin access required");
 	}
 	return session;

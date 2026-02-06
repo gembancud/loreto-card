@@ -71,14 +71,19 @@ export function hasRole(
 	return requiredRoles.includes(user.role);
 }
 
-// Helper to check if user is admin or superuser
+// Helper to check if user is department admin or superuser
 export function isAdmin(user: AuthenticatedUser | null): boolean {
-	return hasRole(user, ["admin", "superuser"]);
+	return hasRole(user, ["department_admin", "superuser"]);
 }
 
 // Helper to check if user is superuser
 export function isSuperuser(user: AuthenticatedUser | null): boolean {
 	return hasRole(user, ["superuser"]);
+}
+
+// Helper to check if user is department staff (admin or user)
+export function isDepartmentStaff(user: AuthenticatedUser | null): boolean {
+	return hasRole(user, ["department_admin", "department_user"]);
 }
 
 // Helper to check if user is barangay staff (admin or user)

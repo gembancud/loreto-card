@@ -103,7 +103,7 @@ export const users = pgTable("users", {
 	email: text("email").unique(), // Optional - users may have phone, email, or both
 	firstName: text("first_name").notNull(),
 	lastName: text("last_name").notNull(),
-	role: text("role").notNull().default("user"), // 'superuser' | 'admin' | 'user' | 'barangay_admin' | 'barangay_user'
+	role: text("role").notNull().default("department_user"), // 'superuser' | 'department_admin' | 'department_user' | 'barangay_admin' | 'barangay_user'
 	departmentId: uuid("department_id").references(() => departments.id),
 	barangay: text("barangay"), // Only set for barangay staff roles
 	isActive: boolean("is_active").notNull().default(true),
@@ -331,8 +331,8 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserRole =
 	| "superuser"
-	| "admin"
-	| "user"
+	| "department_admin"
+	| "department_user"
 	| "barangay_admin"
 	| "barangay_user";
 

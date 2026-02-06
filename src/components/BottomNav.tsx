@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Gift, Ticket, Users } from "lucide-react";
+import { Gift, QrCode, Ticket, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getSessionData } from "@/data/auth/session";
 import type { SessionData } from "@/lib/session";
@@ -30,24 +30,42 @@ export default function BottomNav() {
 
 	const isBarangay =
 		session.role === "barangay_admin" || session.role === "barangay_user";
+	const isDeptStaff =
+		session.role === "department_admin" || session.role === "department_user";
 
 	const navItems = isBarangay
 		? ([{ to: "/", icon: Users, label: "People", path: "/" }] as const)
-		: ([
-				{ to: "/", icon: Users, label: "People", path: "/" },
-				{
-					to: "/vouchers",
-					icon: Ticket,
-					label: "Vouchers",
-					path: "/vouchers",
-				},
-				{
-					to: "/benefits",
-					icon: Gift,
-					label: "Benefits",
-					path: "/benefits",
-				},
-			] as const);
+		: isDeptStaff
+			? ([
+					{ to: "/", icon: QrCode, label: "Scan", path: "/" },
+					{
+						to: "/vouchers",
+						icon: Ticket,
+						label: "Vouchers",
+						path: "/vouchers",
+					},
+					{
+						to: "/benefits",
+						icon: Gift,
+						label: "Benefits",
+						path: "/benefits",
+					},
+				] as const)
+			: ([
+					{ to: "/", icon: Users, label: "People", path: "/" },
+					{
+						to: "/vouchers",
+						icon: Ticket,
+						label: "Vouchers",
+						path: "/vouchers",
+					},
+					{
+						to: "/benefits",
+						icon: Gift,
+						label: "Benefits",
+						path: "/benefits",
+					},
+				] as const);
 
 	return (
 		<nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-white pb-safe">

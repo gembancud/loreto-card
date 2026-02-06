@@ -38,24 +38,28 @@ interface AddPersonFormData {
 	profilePhoto: string | null;
 }
 
-const initialFormData: AddPersonFormData = {
-	firstName: "",
-	lastName: "",
-	birthdate: "",
-	street: "",
-	purok: "",
-	barangay: "",
-	phoneNumber: "",
-	status: "pending",
-	residencyStatus: "resident",
-	profilePhoto: null,
-};
+interface AddPersonDialogProps {
+	fixedBarangay?: LoretoBarangay;
+}
 
-export function AddPersonDialog() {
+export function AddPersonDialog({ fixedBarangay }: AddPersonDialogProps) {
 	const id = useId();
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
-	const [formData, setFormData] = useState<AddPersonFormData>(initialFormData);
+	const getInitialFormData = (): AddPersonFormData => ({
+		firstName: "",
+		lastName: "",
+		birthdate: "",
+		street: "",
+		purok: "",
+		barangay: fixedBarangay ?? "",
+		phoneNumber: "",
+		status: "pending",
+		residencyStatus: "resident",
+		profilePhoto: null,
+	});
+	const [formData, setFormData] =
+		useState<AddPersonFormData>(getInitialFormData);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const firstNameId = `${id}-firstName`;
@@ -89,23 +93,24 @@ export function AddPersonDialog() {
 	};
 
 	const resetForm = () => {
-		setFormData(initialFormData);
+		setFormData(getInitialFormData());
 	};
 
 	const isDirty = useMemo(() => {
+		const defaultBarangay = fixedBarangay ?? "";
 		return (
-			formData.firstName !== initialFormData.firstName ||
-			formData.lastName !== initialFormData.lastName ||
-			formData.birthdate !== initialFormData.birthdate ||
-			formData.street !== initialFormData.street ||
-			formData.purok !== initialFormData.purok ||
-			formData.barangay !== initialFormData.barangay ||
-			formData.phoneNumber !== initialFormData.phoneNumber ||
-			formData.status !== initialFormData.status ||
-			formData.residencyStatus !== initialFormData.residencyStatus ||
-			formData.profilePhoto !== initialFormData.profilePhoto
+			formData.firstName !== "" ||
+			formData.lastName !== "" ||
+			formData.birthdate !== "" ||
+			formData.street !== "" ||
+			formData.purok !== "" ||
+			formData.barangay !== defaultBarangay ||
+			formData.phoneNumber !== "" ||
+			formData.status !== "pending" ||
+			formData.residencyStatus !== "resident" ||
+			formData.profilePhoto !== null
 		);
-	}, [formData]);
+	}, [formData, fixedBarangay]);
 
 	const handleOpenChange = (newOpen: boolean) => {
 		if (!newOpen && isDirty) {
@@ -236,21 +241,30 @@ export function AddPersonDialog() {
 								<Label htmlFor={barangayId}>
 									Barangay <span className="text-destructive">*</span>
 								</Label>
-								<Select
-									value={formData.barangay}
-									onValueChange={handleBarangayChange}
-								>
-									<SelectTrigger id={barangayId} className="w-full">
-										<SelectValue placeholder="Select barangay" />
-									</SelectTrigger>
-									<SelectContent>
-										{LORETO_BARANGAYS.map((barangay) => (
-											<SelectItem key={barangay} value={barangay}>
-												{barangay}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
+								{fixedBarangay ? (
+									<Input
+										id={barangayId}
+										value={fixedBarangay}
+										disabled
+										className="bg-muted"
+									/>
+								) : (
+									<Select
+										value={formData.barangay}
+										onValueChange={handleBarangayChange}
+									>
+										<SelectTrigger id={barangayId} className="w-full">
+											<SelectValue placeholder="Select barangay" />
+										</SelectTrigger>
+										<SelectContent>
+											{LORETO_BARANGAYS.map((barangay) => (
+												<SelectItem key={barangay} value={barangay}>
+													{barangay}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
 							</div>
 						</div>
 

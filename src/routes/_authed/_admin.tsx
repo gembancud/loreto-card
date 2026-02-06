@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_authed/_admin")({
 			throw redirect({ to: "/login" });
 		}
 		if (
-			user.role !== "admin" &&
+			user.role !== "department_admin" &&
 			user.role !== "superuser" &&
 			user.role !== "barangay_admin"
 		) {

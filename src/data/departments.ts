@@ -11,7 +11,10 @@ async function requireAdmin(): Promise<void> {
 	if (!session.data.userId) {
 		throw new Error("Unauthorized: Not authenticated");
 	}
-	if (session.data.role !== "admin" && session.data.role !== "superuser") {
+	if (
+		session.data.role !== "department_admin" &&
+		session.data.role !== "superuser"
+	) {
 		throw new Error("Unauthorized: Admin access required");
 	}
 }

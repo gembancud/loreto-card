@@ -31,7 +31,10 @@ async function requireAdmin(): Promise<SessionData> {
 	if (!session.data.userId) {
 		throw new Error("Unauthorized: Not authenticated");
 	}
-	if (session.data.role !== "admin" && session.data.role !== "superuser") {
+	if (
+		session.data.role !== "department_admin" &&
+		session.data.role !== "superuser"
+	) {
 		throw new Error("Unauthorized: Admin access required");
 	}
 	return session.data as SessionData;
@@ -700,13 +703,14 @@ export const cancelVoucher = createServerFn({ method: "POST" })
 				return { success: false, error: "Can only cancel pending vouchers" };
 			}
 
-			// Check authorization: admin/superuser OR original provider
+			// Check authorization: department_admin/superuser OR original provider
 			const isAdmin =
-				currentUser.role === "admin" || currentUser.role === "superuser";
+				currentUser.role === "department_admin" ||
+				currentUser.role === "superuser";
 			const isProvider = voucher.providedById === currentUser.userId;
 
-			// For admins, check they have access to the benefit's department
-			if (isAdmin && currentUser.role === "admin") {
+			// For department admins, check they have access to the benefit's department
+			if (isAdmin && currentUser.role === "department_admin") {
 				if (voucher.benefit.departmentId !== currentUser.departmentId) {
 					return {
 						success: false,

@@ -167,15 +167,15 @@ export const getAuditLogs = createServerFn({ method: "GET" })
 
 			if (currentUser.role === "superuser") {
 				// Superuser sees all - no permission filter
-			} else if (currentUser.role === "admin") {
-				// Admin sees admin and user activities in their department
+			} else if (currentUser.role === "department_admin") {
+				// Department admin sees department_admin and department_user activities in their department
 				if (currentUser.departmentId) {
 					permissionConditions.push(
 						and(
 							eq(auditLogs.actorDepartmentId, currentUser.departmentId),
 							or(
-								eq(auditLogs.actorRole, "admin"),
-								eq(auditLogs.actorRole, "user"),
+								eq(auditLogs.actorRole, "department_admin"),
+								eq(auditLogs.actorRole, "department_user"),
 							),
 						),
 					);
@@ -184,12 +184,12 @@ export const getAuditLogs = createServerFn({ method: "GET" })
 					permissionConditions.push(eq(auditLogs.actorId, currentUser.userId));
 				}
 			} else {
-				// Regular user sees only user activities in their department
+				// Regular department user sees only department_user activities in their department
 				if (currentUser.departmentId) {
 					permissionConditions.push(
 						and(
 							eq(auditLogs.actorDepartmentId, currentUser.departmentId),
-							eq(auditLogs.actorRole, "user"),
+							eq(auditLogs.actorRole, "department_user"),
 						),
 					);
 				} else {
@@ -281,14 +281,14 @@ export const getEntityHistory = createServerFn({ method: "GET" })
 
 		if (currentUser.role === "superuser") {
 			// Superuser sees all
-		} else if (currentUser.role === "admin") {
+		} else if (currentUser.role === "department_admin") {
 			if (currentUser.departmentId) {
 				permissionConditions.push(
 					and(
 						eq(auditLogs.actorDepartmentId, currentUser.departmentId),
 						or(
-							eq(auditLogs.actorRole, "admin"),
-							eq(auditLogs.actorRole, "user"),
+							eq(auditLogs.actorRole, "department_admin"),
+							eq(auditLogs.actorRole, "department_user"),
 						),
 					),
 				);
@@ -300,7 +300,7 @@ export const getEntityHistory = createServerFn({ method: "GET" })
 				permissionConditions.push(
 					and(
 						eq(auditLogs.actorDepartmentId, currentUser.departmentId),
-						eq(auditLogs.actorRole, "user"),
+						eq(auditLogs.actorRole, "department_user"),
 					),
 				);
 			} else {

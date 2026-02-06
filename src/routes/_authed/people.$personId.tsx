@@ -109,9 +109,14 @@ function EditPerson() {
 	const router = useRouter();
 	const id = useId();
 	const [vouchersPage, setVouchersPage] = useState(1);
-	const isBarangay =
+	const isSuperuser = session?.role === "superuser";
+	const isBarangayStaff =
 		session?.role === "barangay_admin" || session?.role === "barangay_user";
-	const isReadOnly = isBarangay;
+	const isOwnBarangay =
+		isBarangayStaff && session?.barangay === person.address.barangay;
+	const canEdit = isSuperuser || isOwnBarangay;
+	const canDelete =
+		isSuperuser || (session?.role === "barangay_admin" && isOwnBarangay);
 
 	const [formData, setFormData] = useState<EditPersonFormData>({
 		firstName: "",
@@ -443,17 +448,19 @@ function EditPerson() {
 							Back to People
 						</Button>
 					</Link>
-					{!isReadOnly && (
+					{(canEdit || canDelete) && (
 						<div className="flex items-center gap-2">
-							<Button
-								variant="secondary"
-								className="gap-2"
-								onClick={() => setShowDeleteDialog(true)}
-							>
-								<Trash2 className="h-4 w-4" />
-								Delete
-							</Button>
-							<IdCardDownloadButton person={person} />
+							{canDelete && (
+								<Button
+									variant="secondary"
+									className="gap-2"
+									onClick={() => setShowDeleteDialog(true)}
+								>
+									<Trash2 className="h-4 w-4" />
+									Delete
+								</Button>
+							)}
+							{canEdit && <IdCardDownloadButton person={person} />}
 						</div>
 					)}
 				</div>
@@ -597,21 +604,30 @@ function EditPerson() {
 											</div>
 											<div className="grid gap-2">
 												<Label htmlFor={barangayId}>Barangay</Label>
-												<Select
-													value={formData.barangay}
-													onValueChange={handleBarangayChange}
-												>
-													<SelectTrigger id={barangayId} className="w-full">
-														<SelectValue placeholder="Select" />
-													</SelectTrigger>
-													<SelectContent>
-														{LORETO_BARANGAYS.map((barangay) => (
-															<SelectItem key={barangay} value={barangay}>
-																{barangay}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
+												{isBarangayStaff ? (
+													<Input
+														id={barangayId}
+														value={formData.barangay}
+														disabled
+														className="bg-muted"
+													/>
+												) : (
+													<Select
+														value={formData.barangay}
+														onValueChange={handleBarangayChange}
+													>
+														<SelectTrigger id={barangayId} className="w-full">
+															<SelectValue placeholder="Select" />
+														</SelectTrigger>
+														<SelectContent>
+															{LORETO_BARANGAYS.map((barangay) => (
+																<SelectItem key={barangay} value={barangay}>
+																	{barangay}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+												)}
 											</div>
 										</div>
 
@@ -1355,7 +1371,7 @@ function EditPerson() {
 							</div>
 
 							{/* Actions - outside two-column layout */}
-							{!isReadOnly && (
+							{canEdit && (
 								<div className="flex justify-end items-center gap-3 pt-6 mt-6 border-t">
 									{showSaveSuccess && (
 										<span className="flex items-center gap-1.5 text-sm text-green-600">

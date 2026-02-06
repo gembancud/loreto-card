@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { DepartmentLanding } from "@/components/DepartmentLanding";
 import { AddPersonDialog } from "@/components/people/AddPersonDialog";
 import { BadgeFilterToggle } from "@/components/people/BadgeFilterToggle";
 import { GovServiceBadges } from "@/components/people/GovServiceBadges";
@@ -42,7 +43,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { getSessionData } from "@/data/auth/session";
-import { LORETO_BARANGAYS } from "@/data/barangays";
+import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
 import { getPeople, type Person, type ResidencyStatus } from "@/data/people";
 import {
 	type GovServiceKey,
@@ -102,10 +103,11 @@ function SortableTableHead({
 export const Route = createFileRoute("/_authed/")({
 	component: PeopleList,
 	loader: async () => {
-		const [people, session] = await Promise.all([
-			getPeople(),
-			getSessionData(),
-		]);
+		const session = await getSessionData();
+		const isDeptStaff =
+			session?.role === "department_admin" ||
+			session?.role === "department_user";
+		const people = isDeptStaff ? [] : await getPeople();
 		return { people, session };
 	},
 });
@@ -113,6 +115,9 @@ export const Route = createFileRoute("/_authed/")({
 function PeopleList() {
 	const { people, session } = Route.useLoaderData();
 	const router = useRouter();
+	const isSuperuser = session?.role === "superuser";
+	const isDeptStaff =
+		session?.role === "department_admin" || session?.role === "department_user";
 	const isBarangay =
 		session?.role === "barangay_admin" || session?.role === "barangay_user";
 	const [searchQuery, setSearchQuery] = useState("");
@@ -277,6 +282,10 @@ function PeopleList() {
 		setSelectedPerson(null);
 	}, []);
 
+	if (isDeptStaff) {
+		return <DepartmentLanding />;
+	}
+
 	return (
 		<div className="h-full flex flex-col p-4">
 			<Card className="flex-1 flex flex-col min-h-0">
@@ -286,7 +295,13 @@ function PeopleList() {
 							<Users className="h-6 w-6" />
 							<CardTitle className="text-2xl">People Records</CardTitle>
 						</div>
-						{!isBarangay && <AddPersonDialog />}
+						{(isSuperuser || isBarangay) && (
+							<AddPersonDialog
+								fixedBarangay={
+									isBarangay ? (session?.barangay as LoretoBarangay) : undefined
+								}
+							/>
+						)}
 					</div>
 				</CardHeader>
 				<CardContent className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -447,7 +462,7 @@ function PeopleList() {
 										onSort={handleSort}
 										className="w-[20%]"
 									/>
-									{!isBarangay && (
+									{(isSuperuser || isBarangay) && (
 										<TableHead className="w-[80px]">Actions</TableHead>
 									)}
 									<TableHead className="w-[60px]">Age</TableHead>
@@ -511,7 +526,7 @@ function PeopleList() {
 											<TableCell className="font-medium">
 												{formatNameWithInitial(person)}
 											</TableCell>
-											{!isBarangay && (
+											{(isSuperuser || isBarangay) && (
 												<TableCell>
 													<Link
 														to="/people/$personId"

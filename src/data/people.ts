@@ -152,6 +152,13 @@ export const getPeople = createServerFn({
 }).handler(async (): Promise<Person[]> => {
 	const session = await getAppSession();
 	const role = session.data.role;
+
+	// Department staff don't access the people table — they use QR/search lookup
+	const isDeptStaff = role === "department_admin" || role === "department_user";
+	if (isDeptStaff) {
+		return [];
+	}
+
 	const isBarangay = role === "barangay_admin" || role === "barangay_user";
 
 	const whereClause =
@@ -215,13 +222,11 @@ export const updatePerson = createServerFn({
 })
 	.inputValidator((input: UpdatePersonInput) => input)
 	.handler(async ({ data: { personId, updates } }): Promise<Person> => {
-		// Barangay staff cannot edit people
 		const session = await getAppSession();
 		const role = session.data.role;
-		if (role === "barangay_admin" || role === "barangay_user") {
-			throw new Error(
-				"Unauthorized: Barangay staff cannot edit people records",
-			);
+		const isBarangay = role === "barangay_admin" || role === "barangay_user";
+		if (role !== "superuser" && !isBarangay) {
+			throw new Error("Unauthorized");
 		}
 
 		// Verify person exists
@@ -231,6 +236,16 @@ export const updatePerson = createServerFn({
 
 		if (!existingPerson) {
 			throw new Error(`Person with ID ${personId} not found`);
+		}
+
+		if (isBarangay) {
+			if (existingPerson.barangay !== session.data.barangay)
+				throw new Error("Can only edit people in your own barangay");
+			if (
+				updates.address?.barangay &&
+				updates.address.barangay !== session.data.barangay
+			)
+				throw new Error("Cannot move person to different barangay");
 		}
 
 		// Build update values for person table
@@ -406,13 +421,16 @@ export const createPerson = createServerFn({
 })
 	.inputValidator((input: CreatePersonInput) => input)
 	.handler(async ({ data }): Promise<Person> => {
-		// Barangay staff cannot create people
 		const session = await getAppSession();
 		const role = session.data.role;
-		if (role === "barangay_admin" || role === "barangay_user") {
-			throw new Error(
-				"Unauthorized: Barangay staff cannot create people records",
-			);
+		const isBarangay = role === "barangay_admin" || role === "barangay_user";
+		if (role !== "superuser" && !isBarangay) {
+			throw new Error("Unauthorized");
+		}
+		if (isBarangay) {
+			if (!session.data.barangay) throw new Error("No assigned barangay");
+			if (data.address.barangay !== session.data.barangay)
+				throw new Error("Can only add people to your own barangay");
 		}
 
 		// Insert person
@@ -533,13 +551,11 @@ export const deletePerson = createServerFn({
 		async ({
 			data: personId,
 		}): Promise<{ success: boolean; error?: string }> => {
-			// Barangay staff cannot delete people
 			const session = await getAppSession();
 			const role = session.data.role;
-			if (role === "barangay_admin" || role === "barangay_user") {
-				throw new Error(
-					"Unauthorized: Barangay staff cannot delete people records",
-				);
+			const isBarangayAdmin = role === "barangay_admin";
+			if (role !== "superuser" && !isBarangayAdmin) {
+				throw new Error("Unauthorized");
 			}
 
 			const person = await db.query.people.findFirst({
@@ -548,6 +564,11 @@ export const deletePerson = createServerFn({
 
 			if (!person) {
 				return { success: false, error: "Person not found" };
+			}
+
+			if (isBarangayAdmin) {
+				if (!session.data.barangay || person.barangay !== session.data.barangay)
+					throw new Error("Can only delete people in your own barangay");
 			}
 
 			// Soft delete - set status to "deleted"

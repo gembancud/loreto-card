@@ -55,22 +55,27 @@ pnpm start            # Run production server (after build)
 
 **Protected routes**: Use `_authed.tsx` layout route which checks session in `beforeLoad` and redirects to `/login` if not authenticated.
 
-**User roles**: `superuser`, `admin`, `user` (defined in schema). Check with `isAdmin()` helper from `src/data/auth/session.ts`.
+**User roles**: `superuser`, `department_admin`, `department_user`, `barangay_admin`, `barangay_user` (defined in schema). Check with `isAdmin()`, `isSuperuser()`, `isDepartmentStaff()`, `isBarangayStaff()` helpers from `src/data/auth/session.ts`.
 
 **After login/logout**: Call `router.invalidate()` to refresh loaders, then `router.navigate()` for client-side redirect.
 
 ### User Roles & Permissions
 
-Users are assigned to **departments** (government offices). Role permissions:
+Users are assigned to **departments** (government offices) or **barangays**. Role permissions:
 
-| Action | User | Admin | Superuser |
-|--------|------|-------|-----------|
-| Access admin area | No | Yes | Yes |
-| View users | No | Own department only | All |
-| Create/edit/deactivate users | No | No | Yes |
-| Manage departments | No | Yes | Yes |
+| Action | Dept User | Dept Admin | Superuser | Brgy Admin | Brgy User |
+|--------|-----------|------------|-----------|------------|-----------|
+| View people | Yes (all) | Yes (all) | Yes (all) | Own barangay | Own barangay |
+| Create people | No | No | Yes | Own barangay | Own barangay |
+| Edit people | No | No | Yes | Own barangay | Own barangay |
+| Delete people | No | No | Yes | Own barangay | No |
+| Access vouchers/benefits | When assigned | Yes | Yes | No | No |
+| Access admin area | No | Yes | Yes | Yes | No |
+| View users | No | Own department | All | Own barangay | No |
+| Create/edit/deactivate users | No | No | Yes | Brgy users only | No |
+| Manage departments | No | Yes | Yes | No | No |
 
-**Department scoping**: Admins only see users within their own department. Superusers see all users across all departments. Admins without a department assignment can only see themselves.
+**Department scoping**: Department admins only see users within their own department. Superusers see all users across all departments. Admins without a department assignment can only see themselves.
 
 **Session data** includes `departmentId` - set on login from the user's record.
 

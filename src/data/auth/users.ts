@@ -13,7 +13,11 @@ async function requireAdminOrBarangayAdmin(): Promise<SessionData> {
 		throw new Error("Unauthorized: Not authenticated");
 	}
 	const role = session.data.role;
-	if (role !== "admin" && role !== "superuser" && role !== "barangay_admin") {
+	if (
+		role !== "department_admin" &&
+		role !== "superuser" &&
+		role !== "barangay_admin"
+	) {
 		throw new Error("Unauthorized: Admin access required");
 	}
 	return session.data as SessionData;
