@@ -52,8 +52,7 @@ export const Route = createFileRoute("/_authed/benefits/")({
 			getCurrentUser(),
 		]);
 		// Only fetch department users for admins/superusers (needed for management UI)
-		const canManage =
-			currentUser?.role === "admin" || currentUser?.role === "superuser";
+		const canManage = currentUser?.role === "superuser";
 		const departmentUsers = canManage
 			? await getDepartmentUsersForAssignment({ data: undefined })
 			: [];

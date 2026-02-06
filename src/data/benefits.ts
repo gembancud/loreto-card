@@ -29,6 +29,15 @@ async function requireAdmin(): Promise<SessionData> {
 	return session;
 }
 
+// Helper to verify current user is superuser, returns session data
+async function requireSuperuser(): Promise<SessionData> {
+	const session = await requireAuth();
+	if (session.role !== "superuser") {
+		throw new Error("Unauthorized: Superuser access required");
+	}
+	return session;
+}
+
 export interface BenefitAssignmentItem {
 	id: string;
 	userId: string;
@@ -195,7 +204,7 @@ export const createBenefit = createServerFn({ method: "POST" })
 			error?: string;
 			benefit?: BenefitListItem;
 		}> => {
-			const currentUser = await requireAdmin();
+			const currentUser = await requireSuperuser();
 			const isSuperuser = currentUser.role === "superuser";
 
 			// Determine department - superusers can specify, admins use their own
@@ -308,7 +317,7 @@ interface UpdateBenefitInput {
 export const updateBenefit = createServerFn({ method: "POST" })
 	.inputValidator((data: UpdateBenefitInput) => data)
 	.handler(async ({ data }): Promise<{ success: boolean; error?: string }> => {
-		const currentUser = await requireAdmin();
+		const currentUser = await requireSuperuser();
 		const isSuperuser = currentUser.role === "superuser";
 
 		const { benefitId, updates, providerIds, releaserIds } = data;
@@ -424,7 +433,7 @@ export const deactivateBenefit = createServerFn({ method: "POST" })
 		async ({
 			data: benefitId,
 		}): Promise<{ success: boolean; error?: string }> => {
-			const currentUser = await requireAdmin();
+			const currentUser = await requireSuperuser();
 			const isSuperuser = currentUser.role === "superuser";
 
 			// Verify benefit exists and user has access
