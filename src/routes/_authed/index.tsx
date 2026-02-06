@@ -41,6 +41,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { getSessionData } from "@/data/auth/session";
 import { LORETO_BARANGAYS } from "@/data/barangays";
 import { getPeople, type Person, type ResidencyStatus } from "@/data/people";
 import {
@@ -100,12 +101,20 @@ function SortableTableHead({
 
 export const Route = createFileRoute("/_authed/")({
 	component: PeopleList,
-	loader: async () => await getPeople(),
+	loader: async () => {
+		const [people, session] = await Promise.all([
+			getPeople(),
+			getSessionData(),
+		]);
+		return { people, session };
+	},
 });
 
 function PeopleList() {
-	const people = Route.useLoaderData();
+	const { people, session } = Route.useLoaderData();
 	const router = useRouter();
+	const isBarangay =
+		session?.role === "barangay_admin" || session?.role === "barangay_user";
 	const [searchQuery, setSearchQuery] = useState("");
 	const [barangayFilter, setBarangayFilter] = useState("all");
 	const [residencyFilter, setResidencyFilter] = useState<
@@ -277,7 +286,7 @@ function PeopleList() {
 							<Users className="h-6 w-6" />
 							<CardTitle className="text-2xl">People Records</CardTitle>
 						</div>
-						<AddPersonDialog />
+						{!isBarangay && <AddPersonDialog />}
 					</div>
 				</CardHeader>
 				<CardContent className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -300,19 +309,24 @@ function PeopleList() {
 							>
 								<QrCode className="h-4 w-4" />
 							</Button>
-							<Select value={barangayFilter} onValueChange={setBarangayFilter}>
-								<SelectTrigger className="w-[200px]">
-									<SelectValue placeholder="Filter by barangay" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">All Barangays</SelectItem>
-									{LORETO_BARANGAYS.map((barangay) => (
-										<SelectItem key={barangay} value={barangay}>
-											{barangay}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+							{!isBarangay && (
+								<Select
+									value={barangayFilter}
+									onValueChange={setBarangayFilter}
+								>
+									<SelectTrigger className="w-[200px]">
+										<SelectValue placeholder="Filter by barangay" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">All Barangays</SelectItem>
+										{LORETO_BARANGAYS.map((barangay) => (
+											<SelectItem key={barangay} value={barangay}>
+												{barangay}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							)}
 							<Select
 								value={residencyFilter}
 								onValueChange={(value) =>
@@ -433,7 +447,9 @@ function PeopleList() {
 										onSort={handleSort}
 										className="w-[20%]"
 									/>
-									<TableHead className="w-[80px]">Actions</TableHead>
+									{!isBarangay && (
+										<TableHead className="w-[80px]">Actions</TableHead>
+									)}
 									<TableHead className="w-[60px]">Age</TableHead>
 									<SortableTableHead
 										label="Barangay"
@@ -495,17 +511,19 @@ function PeopleList() {
 											<TableCell className="font-medium">
 												{formatNameWithInitial(person)}
 											</TableCell>
-											<TableCell>
-												<Link
-													to="/people/$personId"
-													params={{ personId: person.id }}
-												>
-													<Button variant="ghost" size="icon">
-														<Pencil className="h-4 w-4" />
-														<span className="sr-only">Edit</span>
-													</Button>
-												</Link>
-											</TableCell>
+											{!isBarangay && (
+												<TableCell>
+													<Link
+														to="/people/$personId"
+														params={{ personId: person.id }}
+													>
+														<Button variant="ghost" size="icon">
+															<Pencil className="h-4 w-4" />
+															<span className="sr-only">Edit</span>
+														</Button>
+													</Link>
+												</TableCell>
+											)}
 											<TableCell>{calculateAge(person.birthdate)}</TableCell>
 											<TableCell>{person.address.barangay}</TableCell>
 											<TableCell>{person.address.purok || "-"}</TableCell>

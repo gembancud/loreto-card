@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
 	ChevronDown,
 	ChevronRight,
@@ -39,10 +39,17 @@ import {
 	type ChangesRecord,
 	getAuditLogs,
 } from "@/data/audit";
+import { getCurrentUser, isBarangayStaff } from "@/data/auth/session";
 import type { AuditAction, AuditEntityType } from "@/db/schema";
 
 export const Route = createFileRoute("/_authed/activity")({
 	component: ActivityPage,
+	beforeLoad: async () => {
+		const user = await getCurrentUser();
+		if (isBarangayStaff(user)) {
+			throw redirect({ to: "/" });
+		}
+	},
 	loaderDeps: ({ search }) => ({
 		entityType: (search as { entityType?: AuditEntityType }).entityType,
 		startDate: (search as { startDate?: string }).startDate,

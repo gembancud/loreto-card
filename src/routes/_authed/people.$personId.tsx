@@ -41,6 +41,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { getEntityHistory } from "@/data/audit";
+import { getSessionData } from "@/data/auth/session";
 import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
 import {
 	deletePerson,
@@ -56,14 +57,15 @@ import { getVouchersForPerson, type VoucherListItem } from "@/data/vouchers";
 export const Route = createFileRoute("/_authed/people/$personId")({
 	component: EditPerson,
 	loader: async ({ params }) => {
-		const [person, vouchers, activityHistory] = await Promise.all([
+		const [person, vouchers, activityHistory, session] = await Promise.all([
 			getPersonById({ data: params.personId }),
 			getVouchersForPerson({ data: params.personId }),
 			getEntityHistory({
 				data: { entityType: "person", entityId: params.personId, limit: 10 },
 			}),
+			getSessionData(),
 		]);
-		return { person, vouchers, activityHistory };
+		return { person, vouchers, activityHistory, session };
 	},
 });
 
@@ -103,10 +105,13 @@ interface EditPersonFormData {
 const VOUCHERS_PAGE_SIZE = 5;
 
 function EditPerson() {
-	const { person, vouchers, activityHistory } = Route.useLoaderData();
+	const { person, vouchers, activityHistory, session } = Route.useLoaderData();
 	const router = useRouter();
 	const id = useId();
 	const [vouchersPage, setVouchersPage] = useState(1);
+	const isBarangay =
+		session?.role === "barangay_admin" || session?.role === "barangay_user";
+	const isReadOnly = isBarangay;
 
 	const [formData, setFormData] = useState<EditPersonFormData>({
 		firstName: "",
@@ -438,17 +443,19 @@ function EditPerson() {
 							Back to People
 						</Button>
 					</Link>
-					<div className="flex items-center gap-2">
-						<Button
-							variant="secondary"
-							className="gap-2"
-							onClick={() => setShowDeleteDialog(true)}
-						>
-							<Trash2 className="h-4 w-4" />
-							Delete
-						</Button>
-						<IdCardDownloadButton person={person} />
-					</div>
+					{!isReadOnly && (
+						<div className="flex items-center gap-2">
+							<Button
+								variant="secondary"
+								className="gap-2"
+								onClick={() => setShowDeleteDialog(true)}
+							>
+								<Trash2 className="h-4 w-4" />
+								Delete
+							</Button>
+							<IdCardDownloadButton person={person} />
+						</div>
+					)}
 				</div>
 
 				<Card>
@@ -1348,26 +1355,32 @@ function EditPerson() {
 							</div>
 
 							{/* Actions - outside two-column layout */}
-							<div className="flex justify-end items-center gap-3 pt-6 mt-6 border-t">
-								{showSaveSuccess && (
-									<span className="flex items-center gap-1.5 text-sm text-green-600">
-										<Check className="h-4 w-4" />
-										Changes saved
-									</span>
-								)}
-								<Button
-									type="button"
-									variant="outline"
-									onClick={handleCancel}
-									disabled={isSubmitting}
-								>
-									Cancel
-								</Button>
-								<Button type="submit" disabled={isSubmitting} className="gap-2">
-									<Save className="h-4 w-4" />
-									{isSubmitting ? "Saving..." : "Save Changes"}
-								</Button>
-							</div>
+							{!isReadOnly && (
+								<div className="flex justify-end items-center gap-3 pt-6 mt-6 border-t">
+									{showSaveSuccess && (
+										<span className="flex items-center gap-1.5 text-sm text-green-600">
+											<Check className="h-4 w-4" />
+											Changes saved
+										</span>
+									)}
+									<Button
+										type="button"
+										variant="outline"
+										onClick={handleCancel}
+										disabled={isSubmitting}
+									>
+										Cancel
+									</Button>
+									<Button
+										type="submit"
+										disabled={isSubmitting}
+										className="gap-2"
+									>
+										<Save className="h-4 w-4" />
+										{isSubmitting ? "Saving..." : "Save Changes"}
+									</Button>
+								</div>
+							)}
 						</form>
 					</CardContent>
 				</Card>

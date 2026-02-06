@@ -1,4 +1,9 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	redirect,
+	useRouter,
+} from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	CheckCircle,
@@ -32,6 +37,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { getCurrentUser, isBarangayStaff } from "@/data/auth/session";
 import { getPersonById, type Person, searchPeople } from "@/data/people";
 import {
 	findPendingVoucherForRelease,
@@ -42,6 +48,12 @@ import {
 
 export const Route = createFileRoute("/_authed/vouchers/release/$benefitId")({
 	component: ReleaseVoucherPage,
+	beforeLoad: async () => {
+		const user = await getCurrentUser();
+		if (isBarangayStaff(user)) {
+			throw redirect({ to: "/" });
+		}
+	},
 	loader: async ({ params }) => {
 		const benefits = await getMyAssignedBenefits();
 		const benefit = benefits.find(

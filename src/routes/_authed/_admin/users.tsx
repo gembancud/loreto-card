@@ -30,13 +30,14 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { getCurrentUser } from "@/data/auth/session";
+import { type AuthenticatedUser, getCurrentUser } from "@/data/auth/session";
 import {
 	createUser,
 	getUsers,
 	type UserListItem,
 	updateUser,
 } from "@/data/auth/users";
+import { LORETO_BARANGAYS } from "@/data/barangays";
 import {
 	type DepartmentListItem,
 	getActiveDepartments,
@@ -46,11 +47,15 @@ import type { UserRole } from "@/db/schema";
 export const Route = createFileRoute("/_authed/_admin/users")({
 	component: UsersPage,
 	loader: async () => {
-		const [users, currentUser, departments] = await Promise.all([
+		const [users, currentUser] = await Promise.all([
 			getUsers(),
 			getCurrentUser(),
-			getActiveDepartments(),
 		]);
+		// Barangay admins don't need departments
+		const departments =
+			currentUser?.role === "barangay_admin"
+				? []
+				: await getActiveDepartments();
 		return { users, currentUser, departments };
 	},
 });
@@ -65,7 +70,10 @@ function UsersPage() {
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const [editingUser, setEditingUser] = useState<UserListItem | null>(null);
 
-	const isSuperuser = currentUser?.role === "superuser";
+	if (!currentUser) return null;
+
+	const canManageUsers =
+		currentUser.role === "superuser" || currentUser.role === "barangay_admin";
 
 	const handleUserCreated = (newUser: UserListItem) => {
 		setUsers((prev) => [...prev, newUser]);
@@ -97,7 +105,7 @@ function UsersPage() {
 
 	return (
 		<div className="container mx-auto py-8 px-4">
-			<div className="max-w-4xl mx-auto">
+			<div className="max-w-5xl mx-auto">
 				<div className="mb-6 flex items-center justify-between">
 					<Link to="/">
 						<Button variant="ghost" className="gap-2">
@@ -106,7 +114,7 @@ function UsersPage() {
 						</Button>
 					</Link>
 
-					{isSuperuser && (
+					{canManageUsers && (
 						<Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
 							<DialogTrigger asChild>
 								<Button className="gap-2">
@@ -116,6 +124,7 @@ function UsersPage() {
 							</DialogTrigger>
 							<DialogContent>
 								<AddUserForm
+									currentUser={currentUser}
 									departments={departments}
 									onSuccess={handleUserCreated}
 									onCancel={() => setIsAddDialogOpen(false)}
@@ -178,13 +187,23 @@ function UsersPage() {
 											</div>
 										)}
 
+										{/* Barangay */}
+										{user.barangay && (
+											<div className="text-sm text-muted-foreground">
+												Brgy. {user.barangay}
+											</div>
+										)}
+
 										{/* Role */}
 										<div className="text-sm">
-											Role: <span className="capitalize">{user.role}</span>
+											Role:{" "}
+											<span className="capitalize">
+												{formatRole(user.role)}
+											</span>
 										</div>
 
-										{/* Actions (superuser only) */}
-										{isSuperuser && (
+										{/* Actions (canManageUsers) */}
+										{canManageUsers && (
 											<div className="pt-2 border-t flex items-center justify-between">
 												<Dialog
 													open={editingUser?.id === user.id}
@@ -200,6 +219,7 @@ function UsersPage() {
 													</DialogTrigger>
 													<DialogContent>
 														<EditUserForm
+															currentUser={currentUser}
 															user={user}
 															departments={departments}
 															onSuccess={handleUserUpdated}
@@ -207,7 +227,7 @@ function UsersPage() {
 														/>
 													</DialogContent>
 												</Dialog>
-												{user.id !== currentUser?.id && (
+												{user.id !== currentUser.id && (
 													<Switch
 														checked={user.isActive}
 														onCheckedChange={() => handleToggleActive(user)}
@@ -230,13 +250,14 @@ function UsersPage() {
 							<Table className="table-fixed">
 								<TableHeader>
 									<TableRow>
-										<TableHead className="w-[20%]">Name</TableHead>
-										<TableHead className="w-[120px]">Phone</TableHead>
-										<TableHead className="w-[20%]">Email</TableHead>
-										<TableHead className="w-[20%]">Department</TableHead>
+										<TableHead className="w-[18%]">Name</TableHead>
+										<TableHead className="w-[110px]">Phone</TableHead>
+										<TableHead className="w-[18%]">Email</TableHead>
+										<TableHead className="w-[15%]">Department</TableHead>
+										<TableHead className="w-[12%]">Barangay</TableHead>
 										<TableHead className="w-[100px]">Role</TableHead>
 										<TableHead className="w-[80px]">Status</TableHead>
-										{isSuperuser && (
+										{canManageUsers && (
 											<TableHead className="w-[100px]">Actions</TableHead>
 										)}
 									</TableRow>
@@ -245,7 +266,7 @@ function UsersPage() {
 									{users.length === 0 ? (
 										<TableRow>
 											<TableCell
-												colSpan={isSuperuser ? 7 : 6}
+												colSpan={canManageUsers ? 8 : 7}
 												className="text-center text-muted-foreground py-8"
 											>
 												No users found
@@ -264,9 +285,10 @@ function UsersPage() {
 												<TableCell className="text-muted-foreground truncate">
 													{user.departmentName ?? "—"}
 												</TableCell>
-												<TableCell className="capitalize">
-													{user.role}
+												<TableCell className="text-muted-foreground truncate">
+													{user.barangay ?? "—"}
 												</TableCell>
+												<TableCell>{formatRole(user.role)}</TableCell>
 												<TableCell>
 													<span
 														className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
@@ -278,7 +300,7 @@ function UsersPage() {
 														{user.isActive ? "Active" : "Inactive"}
 													</span>
 												</TableCell>
-												{isSuperuser && (
+												{canManageUsers && (
 													<TableCell>
 														<div className="flex items-center gap-2">
 															<Dialog
@@ -294,6 +316,7 @@ function UsersPage() {
 																</DialogTrigger>
 																<DialogContent>
 																	<EditUserForm
+																		currentUser={currentUser}
 																		user={user}
 																		departments={departments}
 																		onSuccess={handleUserUpdated}
@@ -301,7 +324,7 @@ function UsersPage() {
 																	/>
 																</DialogContent>
 															</Dialog>
-															{user.id !== currentUser?.id && (
+															{user.id !== currentUser.id && (
 																<Switch
 																	checked={user.isActive}
 																	onCheckedChange={() =>
@@ -330,22 +353,56 @@ function UsersPage() {
 	);
 }
 
+function formatRole(role: UserRole): string {
+	switch (role) {
+		case "superuser":
+			return "Superuser";
+		case "admin":
+			return "Admin";
+		case "user":
+			return "User";
+		case "barangay_admin":
+			return "Brgy Admin";
+		case "barangay_user":
+			return "Brgy User";
+		default:
+			return role;
+	}
+}
+
 interface AddUserFormProps {
+	currentUser: AuthenticatedUser;
 	departments: DepartmentListItem[];
 	onSuccess: (user: UserListItem) => void;
 	onCancel: () => void;
 }
 
-function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
+function AddUserForm({
+	currentUser,
+	departments,
+	onSuccess,
+	onCancel,
+}: AddUserFormProps) {
 	const id = useId();
+	const isBarangayAdminUser = currentUser.role === "barangay_admin";
+
 	const [phoneNumber, setPhoneNumber] = useState("");
 	const [email, setEmail] = useState("");
 	const [firstName, setFirstName] = useState("");
 	const [lastName, setLastName] = useState("");
-	const [role, setRole] = useState<UserRole>("user");
+	const [role, setRole] = useState<UserRole>(
+		isBarangayAdminUser ? "barangay_user" : "user",
+	);
 	const [departmentId, setDepartmentId] = useState<string>("");
+	const [barangay, setBarangay] = useState<string>(
+		isBarangayAdminUser ? (currentUser.barangay ?? "") : "",
+	);
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const isBarangayRole = role === "barangay_admin" || role === "barangay_user";
+	const showDepartment = !isBarangayAdminUser && !isBarangayRole;
+	const showBarangay = isBarangayRole;
 
 	const isDirty = useMemo(() => {
 		return (
@@ -353,10 +410,21 @@ function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 			email !== "" ||
 			firstName !== "" ||
 			lastName !== "" ||
-			role !== "user" ||
-			departmentId !== ""
+			role !== (isBarangayAdminUser ? "barangay_user" : "user") ||
+			departmentId !== "" ||
+			barangay !== (isBarangayAdminUser ? (currentUser.barangay ?? "") : "")
 		);
-	}, [phoneNumber, email, firstName, lastName, role, departmentId]);
+	}, [
+		phoneNumber,
+		email,
+		firstName,
+		lastName,
+		role,
+		departmentId,
+		barangay,
+		isBarangayAdminUser,
+		currentUser.barangay,
+	]);
 
 	const handleCancel = () => {
 		if (isDirty) {
@@ -382,7 +450,8 @@ function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 					firstName,
 					lastName,
 					role,
-					departmentId: departmentId || undefined,
+					departmentId: showDepartment ? departmentId || undefined : undefined,
+					barangay: isBarangayRole ? barangay || undefined : undefined,
 				},
 			});
 			if (result.success && result.user) {
@@ -449,34 +518,83 @@ function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 						/>
 					</div>
 				</div>
-				<div className="grid gap-2">
-					<Label htmlFor={`${id}-department`}>Department</Label>
-					<Select value={departmentId} onValueChange={setDepartmentId}>
-						<SelectTrigger>
-							<SelectValue placeholder="Select department" />
-						</SelectTrigger>
-						<SelectContent>
-							{departments.map((dept) => (
-								<SelectItem key={dept.id} value={dept.id}>
-									{dept.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
+				{showDepartment && (
+					<div className="grid gap-2">
+						<Label htmlFor={`${id}-department`}>Department</Label>
+						<Select value={departmentId} onValueChange={setDepartmentId}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select department" />
+							</SelectTrigger>
+							<SelectContent>
+								{departments.map((dept) => (
+									<SelectItem key={dept.id} value={dept.id}>
+										{dept.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				)}
 				<div className="grid gap-2">
 					<Label htmlFor={`${id}-role`}>Role</Label>
-					<Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
-						<SelectTrigger>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="user">User</SelectItem>
-							<SelectItem value="admin">Admin</SelectItem>
-							<SelectItem value="superuser">Superuser</SelectItem>
-						</SelectContent>
-					</Select>
+					{isBarangayAdminUser ? (
+						<Input value="Barangay User" disabled />
+					) : (
+						<Select
+							value={role}
+							onValueChange={(v) => {
+								const newRole = v as UserRole;
+								setRole(newRole);
+								// Clear department when switching to barangay role
+								if (
+									newRole === "barangay_admin" ||
+									newRole === "barangay_user"
+								) {
+									setDepartmentId("");
+								}
+								// Clear barangay when switching away from barangay role
+								if (
+									newRole !== "barangay_admin" &&
+									newRole !== "barangay_user"
+								) {
+									setBarangay("");
+								}
+							}}
+						>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="user">User</SelectItem>
+								<SelectItem value="admin">Admin</SelectItem>
+								<SelectItem value="superuser">Superuser</SelectItem>
+								<SelectItem value="barangay_admin">Brgy Admin</SelectItem>
+								<SelectItem value="barangay_user">Brgy User</SelectItem>
+							</SelectContent>
+						</Select>
+					)}
 				</div>
+				{showBarangay && (
+					<div className="grid gap-2">
+						<Label htmlFor={`${id}-barangay`}>Barangay</Label>
+						{isBarangayAdminUser ? (
+							<Input value={currentUser.barangay ?? ""} disabled />
+						) : (
+							<Select value={barangay} onValueChange={setBarangay}>
+								<SelectTrigger>
+									<SelectValue placeholder="Select barangay" />
+								</SelectTrigger>
+								<SelectContent>
+									{LORETO_BARANGAYS.map((brgy) => (
+										<SelectItem key={brgy} value={brgy}>
+											{brgy}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
+					</div>
+				)}
 				{error && <p className="text-sm text-destructive">{error}</p>}
 			</div>
 			<DialogFooter>
@@ -492,6 +610,7 @@ function AddUserForm({ departments, onSuccess, onCancel }: AddUserFormProps) {
 }
 
 interface EditUserFormProps {
+	currentUser: AuthenticatedUser;
 	user: UserListItem;
 	departments: DepartmentListItem[];
 	onSuccess: (user: UserListItem) => void;
@@ -499,12 +618,15 @@ interface EditUserFormProps {
 }
 
 function EditUserForm({
+	currentUser,
 	user,
 	departments,
 	onSuccess,
 	onCancel,
 }: EditUserFormProps) {
 	const id = useId();
+	const isBarangayAdminUser = currentUser.role === "barangay_admin";
+
 	const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber);
 	const [email, setEmail] = useState(user.email ?? "");
 	const [firstName, setFirstName] = useState(user.firstName);
@@ -513,8 +635,13 @@ function EditUserForm({
 	const [departmentId, setDepartmentId] = useState<string>(
 		user.departmentId ?? "",
 	);
+	const [barangay, setBarangay] = useState<string>(user.barangay ?? "");
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	const isBarangayRole = role === "barangay_admin" || role === "barangay_user";
+	const showDepartment = !isBarangayAdminUser && !isBarangayRole;
+	const showBarangay = isBarangayRole;
 
 	const initialValues = useMemo(
 		() => ({
@@ -524,6 +651,7 @@ function EditUserForm({
 			lastName: user.lastName,
 			role: user.role,
 			departmentId: user.departmentId ?? "",
+			barangay: user.barangay ?? "",
 		}),
 		[user],
 	);
@@ -535,7 +663,8 @@ function EditUserForm({
 			firstName !== initialValues.firstName ||
 			lastName !== initialValues.lastName ||
 			role !== initialValues.role ||
-			departmentId !== initialValues.departmentId
+			departmentId !== initialValues.departmentId ||
+			barangay !== initialValues.barangay
 		);
 	}, [
 		phoneNumber,
@@ -544,6 +673,7 @@ function EditUserForm({
 		lastName,
 		role,
 		departmentId,
+		barangay,
 		initialValues,
 	]);
 
@@ -573,7 +703,8 @@ function EditUserForm({
 						firstName,
 						lastName,
 						role,
-						departmentId: departmentId || null,
+						departmentId: showDepartment ? departmentId || null : null,
+						barangay: isBarangayRole ? barangay || null : null,
 					},
 				},
 			});
@@ -586,8 +717,9 @@ function EditUserForm({
 					firstName,
 					lastName,
 					role,
-					departmentId: departmentId || null,
-					departmentName: selectedDept?.name ?? null,
+					departmentId: showDepartment ? departmentId || null : null,
+					departmentName: showDepartment ? (selectedDept?.name ?? null) : null,
+					barangay: isBarangayRole ? barangay || null : null,
 				});
 			} else {
 				setError(result.error ?? "Failed to update user");
@@ -647,34 +779,81 @@ function EditUserForm({
 						/>
 					</div>
 				</div>
-				<div className="grid gap-2">
-					<Label htmlFor={`${id}-department`}>Department</Label>
-					<Select value={departmentId} onValueChange={setDepartmentId}>
-						<SelectTrigger>
-							<SelectValue placeholder="Select department" />
-						</SelectTrigger>
-						<SelectContent>
-							{departments.map((dept) => (
-								<SelectItem key={dept.id} value={dept.id}>
-									{dept.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
+				{showDepartment && (
+					<div className="grid gap-2">
+						<Label htmlFor={`${id}-department`}>Department</Label>
+						<Select value={departmentId} onValueChange={setDepartmentId}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select department" />
+							</SelectTrigger>
+							<SelectContent>
+								{departments.map((dept) => (
+									<SelectItem key={dept.id} value={dept.id}>
+										{dept.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				)}
 				<div className="grid gap-2">
 					<Label htmlFor={`${id}-role`}>Role</Label>
-					<Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
-						<SelectTrigger>
-							<SelectValue />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="user">User</SelectItem>
-							<SelectItem value="admin">Admin</SelectItem>
-							<SelectItem value="superuser">Superuser</SelectItem>
-						</SelectContent>
-					</Select>
+					{isBarangayAdminUser ? (
+						<Input value="Barangay User" disabled />
+					) : (
+						<Select
+							value={role}
+							onValueChange={(v) => {
+								const newRole = v as UserRole;
+								setRole(newRole);
+								if (
+									newRole === "barangay_admin" ||
+									newRole === "barangay_user"
+								) {
+									setDepartmentId("");
+								}
+								if (
+									newRole !== "barangay_admin" &&
+									newRole !== "barangay_user"
+								) {
+									setBarangay("");
+								}
+							}}
+						>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="user">User</SelectItem>
+								<SelectItem value="admin">Admin</SelectItem>
+								<SelectItem value="superuser">Superuser</SelectItem>
+								<SelectItem value="barangay_admin">Brgy Admin</SelectItem>
+								<SelectItem value="barangay_user">Brgy User</SelectItem>
+							</SelectContent>
+						</Select>
+					)}
 				</div>
+				{showBarangay && (
+					<div className="grid gap-2">
+						<Label htmlFor={`${id}-barangay`}>Barangay</Label>
+						{isBarangayAdminUser ? (
+							<Input value={user.barangay ?? ""} disabled />
+						) : (
+							<Select value={barangay} onValueChange={setBarangay}>
+								<SelectTrigger>
+									<SelectValue placeholder="Select barangay" />
+								</SelectTrigger>
+								<SelectContent>
+									{LORETO_BARANGAYS.map((brgy) => (
+										<SelectItem key={brgy} value={brgy}>
+											{brgy}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
+					</div>
+				)}
 				{error && <p className="text-sm text-destructive">{error}</p>}
 			</div>
 			<DialogFooter>

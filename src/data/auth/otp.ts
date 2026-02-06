@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
-import { otpVerifications, sessions, users } from "@/db/schema";
+import { otpVerifications, sessions, type UserRole, users } from "@/db/schema";
 import { resend } from "@/lib/resend";
 import { getAppSession } from "@/lib/session";
 
@@ -206,9 +206,10 @@ export const verifyOtp = createServerFn({ method: "POST" })
 			phoneNumber: user.phoneNumber,
 			firstName: user.firstName,
 			lastName: user.lastName,
-			role: user.role as "superuser" | "admin" | "user",
+			role: user.role as UserRole,
 			departmentId: user.departmentId,
 			departmentName: user.department?.name ?? null,
+			barangay: user.barangay ?? null,
 		});
 
 		return { success: true };
@@ -372,9 +373,10 @@ export const verifyEmailOtp = createServerFn({ method: "POST" })
 			phoneNumber: user.phoneNumber,
 			firstName: user.firstName,
 			lastName: user.lastName,
-			role: user.role as "superuser" | "admin" | "user",
+			role: user.role as UserRole,
 			departmentId: user.departmentId,
 			departmentName: user.department?.name ?? null,
+			barangay: user.barangay ?? null,
 		});
 
 		return { success: true };

@@ -42,6 +42,9 @@ export default function Header() {
 	};
 
 	const isAdmin = session?.role === "admin" || session?.role === "superuser";
+	const isBarangay =
+		session?.role === "barangay_admin" || session?.role === "barangay_user";
+	const canAccessUsers = isAdmin || session?.role === "barangay_admin";
 
 	const isActive = (path: string) => {
 		if (path === "/") {
@@ -64,12 +67,17 @@ export default function Header() {
 						<img src="/favicon.png" alt="" className="h-7 w-7" />
 						<span>
 							LoreCard
-							{session?.departmentName && (
+							{isBarangay && session?.barangay ? (
+								<span className="text-muted-foreground font-normal">
+									{" "}
+									· {session.barangay}
+								</span>
+							) : session?.departmentName ? (
 								<span className="text-muted-foreground font-normal">
 									{" "}
 									· {session.departmentName}
 								</span>
-							)}
+							) : null}
 						</span>
 					</Link>
 
@@ -86,38 +94,42 @@ export default function Header() {
 								</Button>
 							</Link>
 
-							<Link to="/vouchers">
-								<Button
-									variant="ghost"
-									size="sm"
-									className={`gap-2 ${isActive("/vouchers") ? "bg-muted" : ""}`}
-								>
-									<Ticket className="h-4 w-4" />
-									<span className="hidden sm:inline">Vouchers</span>
-								</Button>
-							</Link>
+							{!isBarangay && (
+								<>
+									<Link to="/vouchers">
+										<Button
+											variant="ghost"
+											size="sm"
+											className={`gap-2 ${isActive("/vouchers") ? "bg-muted" : ""}`}
+										>
+											<Ticket className="h-4 w-4" />
+											<span className="hidden sm:inline">Vouchers</span>
+										</Button>
+									</Link>
 
-							<Link to="/benefits">
-								<Button
-									variant="ghost"
-									size="sm"
-									className={`gap-2 ${isActive("/benefits") ? "bg-muted" : ""}`}
-								>
-									<Gift className="h-4 w-4" />
-									<span className="hidden sm:inline">Benefits</span>
-								</Button>
-							</Link>
+									<Link to="/benefits">
+										<Button
+											variant="ghost"
+											size="sm"
+											className={`gap-2 ${isActive("/benefits") ? "bg-muted" : ""}`}
+										>
+											<Gift className="h-4 w-4" />
+											<span className="hidden sm:inline">Benefits</span>
+										</Button>
+									</Link>
 
-							<Link to="/activity">
-								<Button
-									variant="ghost"
-									size="sm"
-									className={`gap-2 ${isActive("/activity") ? "bg-muted" : ""}`}
-								>
-									<Clock className="h-4 w-4" />
-									<span className="hidden sm:inline">Activity</span>
-								</Button>
-							</Link>
+									<Link to="/activity">
+										<Button
+											variant="ghost"
+											size="sm"
+											className={`gap-2 ${isActive("/activity") ? "bg-muted" : ""}`}
+										>
+											<Clock className="h-4 w-4" />
+											<span className="hidden sm:inline">Activity</span>
+										</Button>
+									</Link>
+								</>
+							)}
 						</nav>
 					)}
 				</div>
@@ -125,7 +137,7 @@ export default function Header() {
 				{/* Right group: admin + user menu */}
 				{session && (
 					<div className="flex items-center gap-3">
-						{isAdmin && (
+						{canAccessUsers && (
 							<Link to="/users">
 								<Button
 									variant="ghost"

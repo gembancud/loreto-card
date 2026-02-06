@@ -9,6 +9,7 @@ import {
 	personIdentifications,
 	type ResidencyStatus,
 } from "@/db/schema";
+import { getAppSession } from "@/lib/session";
 import { getPresignedUrl } from "@/lib/storage";
 import { computeChanges, logActivity } from "./audit";
 import type { LoretoBarangay } from "./barangays";
@@ -149,11 +150,23 @@ async function transformDbPersonToPerson(
 export const getPeople = createServerFn({
 	method: "GET",
 }).handler(async (): Promise<Person[]> => {
+	const session = await getAppSession();
+	const role = session.data.role;
+	const isBarangay = role === "barangay_admin" || role === "barangay_user";
+
+	const whereClause =
+		isBarangay && session.data.barangay
+			? and(
+					ne(people.status, "deleted"),
+					eq(people.barangay, session.data.barangay),
+				)
+			: ne(people.status, "deleted");
+
 	const dbPeople = await db.query.people.findMany({
 		with: {
 			identifications: true,
 		},
-		where: ne(people.status, "deleted"),
+		where: whereClause,
 		orderBy: (people, { asc }) => [asc(people.lastName), asc(people.firstName)],
 	});
 
@@ -178,6 +191,17 @@ export const getPersonById = createServerFn({
 			throw new Error(`Person with ID ${personId} not found`);
 		}
 
+		// Barangay staff can only view people in their barangay
+		const session = await getAppSession();
+		const role = session.data.role;
+		if (
+			(role === "barangay_admin" || role === "barangay_user") &&
+			session.data.barangay &&
+			dbPerson.barangay !== session.data.barangay
+		) {
+			throw new Error("Unauthorized: Person is not in your barangay");
+		}
+
 		return await transformDbPersonToPerson(dbPerson, dbPerson.identifications);
 	});
 
@@ -191,6 +215,15 @@ export const updatePerson = createServerFn({
 })
 	.inputValidator((input: UpdatePersonInput) => input)
 	.handler(async ({ data: { personId, updates } }): Promise<Person> => {
+		// Barangay staff cannot edit people
+		const session = await getAppSession();
+		const role = session.data.role;
+		if (role === "barangay_admin" || role === "barangay_user") {
+			throw new Error(
+				"Unauthorized: Barangay staff cannot edit people records",
+			);
+		}
+
 		// Verify person exists
 		const existingPerson = await db.query.people.findFirst({
 			where: eq(people.id, personId),
@@ -373,6 +406,15 @@ export const createPerson = createServerFn({
 })
 	.inputValidator((input: CreatePersonInput) => input)
 	.handler(async ({ data }): Promise<Person> => {
+		// Barangay staff cannot create people
+		const session = await getAppSession();
+		const role = session.data.role;
+		if (role === "barangay_admin" || role === "barangay_user") {
+			throw new Error(
+				"Unauthorized: Barangay staff cannot create people records",
+			);
+		}
+
 		// Insert person
 		const [newPerson] = await db
 			.insert(people)
@@ -491,6 +533,15 @@ export const deletePerson = createServerFn({
 		async ({
 			data: personId,
 		}): Promise<{ success: boolean; error?: string }> => {
+			// Barangay staff cannot delete people
+			const session = await getAppSession();
+			const role = session.data.role;
+			if (role === "barangay_admin" || role === "barangay_user") {
+				throw new Error(
+					"Unauthorized: Barangay staff cannot delete people records",
+				);
+			}
+
 			const person = await db.query.people.findFirst({
 				where: eq(people.id, personId),
 			});

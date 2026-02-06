@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { getCurrentUser } from "@/data/auth/session";
+import { getCurrentUser, isBarangayStaff } from "@/data/auth/session";
 import { LORETO_BARANGAYS, type LoretoBarangay } from "@/data/barangays";
 import {
 	type BenefitListItem,
@@ -46,6 +46,12 @@ import type { BenefitEligibility, IdentificationType } from "@/db/schema";
 
 export const Route = createFileRoute("/_authed/benefits/")({
 	component: BenefitsPage,
+	beforeLoad: async () => {
+		const user = await getCurrentUser();
+		if (isBarangayStaff(user)) {
+			throw redirect({ to: "/" });
+		}
+	},
 	loader: async () => {
 		const [benefits, currentUser] = await Promise.all([
 			getBenefits(),

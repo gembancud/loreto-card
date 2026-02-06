@@ -10,6 +10,7 @@ export interface AuthenticatedUser {
 	firstName: string;
 	lastName: string;
 	role: UserRole;
+	barangay: string | null;
 	isActive: boolean;
 }
 
@@ -39,6 +40,7 @@ export const getCurrentUser = createServerFn({ method: "GET" }).handler(
 			firstName: user.firstName,
 			lastName: user.lastName,
 			role: user.role as UserRole,
+			barangay: user.barangay ?? null,
 			isActive: user.isActive,
 		};
 	},
@@ -77,4 +79,14 @@ export function isAdmin(user: AuthenticatedUser | null): boolean {
 // Helper to check if user is superuser
 export function isSuperuser(user: AuthenticatedUser | null): boolean {
 	return hasRole(user, ["superuser"]);
+}
+
+// Helper to check if user is barangay staff (admin or user)
+export function isBarangayStaff(user: AuthenticatedUser | null): boolean {
+	return hasRole(user, ["barangay_admin", "barangay_user"]);
+}
+
+// Helper to check if user is barangay admin
+export function isBarangayAdmin(user: AuthenticatedUser | null): boolean {
+	return hasRole(user, ["barangay_admin"]);
 }

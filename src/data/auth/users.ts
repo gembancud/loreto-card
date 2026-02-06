@@ -1,27 +1,33 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, type SQL } from "drizzle-orm";
 import { computeChanges, logActivity } from "@/data/audit";
 import { db } from "@/db";
 import { type UserRole, users } from "@/db/schema";
 import { getAppSession, type SessionData } from "@/lib/session";
 import { normalizePhoneNumber } from "./otp";
 
-// Helper to verify current user is superuser
-async function requireSuperuser(): Promise<void> {
-	const session = await getAppSession();
-	if (!session.data.userId || session.data.role !== "superuser") {
-		throw new Error("Unauthorized: Superuser access required");
-	}
-}
-
-// Helper to verify current user is admin or superuser, returns session data
-async function requireAdmin(): Promise<SessionData> {
+// Helper to verify current user is admin, superuser, or barangay_admin; returns session data
+async function requireAdminOrBarangayAdmin(): Promise<SessionData> {
 	const session = await getAppSession();
 	if (!session.data.userId) {
 		throw new Error("Unauthorized: Not authenticated");
 	}
-	if (session.data.role !== "admin" && session.data.role !== "superuser") {
+	const role = session.data.role;
+	if (role !== "admin" && role !== "superuser" && role !== "barangay_admin") {
 		throw new Error("Unauthorized: Admin access required");
+	}
+	return session.data as SessionData;
+}
+
+// Helper to verify current user can manage users (superuser or barangay_admin)
+async function requireUserManager(): Promise<SessionData> {
+	const session = await getAppSession();
+	if (!session.data.userId) {
+		throw new Error("Unauthorized: Not authenticated");
+	}
+	const role = session.data.role;
+	if (role !== "superuser" && role !== "barangay_admin") {
+		throw new Error("Unauthorized: User management access required");
 	}
 	return session.data as SessionData;
 }
@@ -35,24 +41,39 @@ export interface UserListItem {
 	role: UserRole;
 	departmentId: string | null;
 	departmentName: string | null;
+	barangay: string | null;
 	isActive: boolean;
 	createdAt: Date | null;
 }
 
 export const getUsers = createServerFn({ method: "GET" }).handler(
 	async (): Promise<UserListItem[]> => {
-		const currentUser = await requireAdmin();
+		const currentUser = await requireAdminOrBarangayAdmin();
 
-		// Superusers see all users, admins only see users in their department
 		const isSuperuser = currentUser.role === "superuser";
+		const isBarangayAdmin = currentUser.role === "barangay_admin";
+
+		let whereClause: SQL | undefined;
+		if (isSuperuser) {
+			whereClause = undefined;
+		} else if (isBarangayAdmin) {
+			// Barangay admins see only barangay users in their barangay
+			whereClause = currentUser.barangay
+				? and(
+						eq(users.barangay, currentUser.barangay),
+						inArray(users.role, ["barangay_admin", "barangay_user"]),
+					)
+				: eq(users.id, currentUser.userId);
+		} else {
+			// Regular admins see users in their department
+			whereClause = currentUser.departmentId
+				? eq(users.departmentId, currentUser.departmentId)
+				: eq(users.id, currentUser.userId);
+		}
 
 		const allUsers = await db.query.users.findMany({
 			with: { department: true },
-			where: isSuperuser
-				? undefined
-				: currentUser.departmentId
-					? eq(users.departmentId, currentUser.departmentId)
-					: eq(users.id, currentUser.userId), // Admin with no dept only sees themselves
+			where: whereClause,
 			orderBy: (users, { asc }) => [asc(users.lastName), asc(users.firstName)],
 		});
 
@@ -65,6 +86,7 @@ export const getUsers = createServerFn({ method: "GET" }).handler(
 			role: user.role as UserRole,
 			departmentId: user.departmentId,
 			departmentName: user.department?.name ?? null,
+			barangay: user.barangay,
 			isActive: user.isActive,
 			createdAt: user.createdAt,
 		}));
@@ -74,21 +96,30 @@ export const getUsers = createServerFn({ method: "GET" }).handler(
 export const getUserById = createServerFn({ method: "GET" })
 	.inputValidator((userId: string) => userId)
 	.handler(async ({ data: userId }): Promise<UserListItem | null> => {
-		const currentUser = await requireAdmin();
+		const currentUser = await requireAdminOrBarangayAdmin();
 
-		// Superusers can view any user, admins can only view users in their department
 		const isSuperuser = currentUser.role === "superuser";
+		const isBarangayAdmin = currentUser.role === "barangay_admin";
+
+		let whereClause: SQL | undefined;
+		if (isSuperuser) {
+			whereClause = eq(users.id, userId);
+		} else if (isBarangayAdmin) {
+			whereClause = currentUser.barangay
+				? and(eq(users.id, userId), eq(users.barangay, currentUser.barangay))
+				: and(eq(users.id, userId), eq(users.id, currentUser.userId));
+		} else {
+			whereClause = currentUser.departmentId
+				? and(
+						eq(users.id, userId),
+						eq(users.departmentId, currentUser.departmentId),
+					)
+				: and(eq(users.id, userId), eq(users.id, currentUser.userId));
+		}
 
 		const user = await db.query.users.findFirst({
 			with: { department: true },
-			where: isSuperuser
-				? eq(users.id, userId)
-				: currentUser.departmentId
-					? and(
-							eq(users.id, userId),
-							eq(users.departmentId, currentUser.departmentId),
-						)
-					: and(eq(users.id, userId), eq(users.id, currentUser.userId)),
+			where: whereClause,
 		});
 
 		if (!user) return null;
@@ -102,6 +133,7 @@ export const getUserById = createServerFn({ method: "GET" })
 			role: user.role as UserRole,
 			departmentId: user.departmentId,
 			departmentName: user.department?.name ?? null,
+			barangay: user.barangay,
 			isActive: user.isActive,
 			createdAt: user.createdAt,
 		};
@@ -114,6 +146,7 @@ interface CreateUserInput {
 	lastName: string;
 	role: UserRole;
 	departmentId?: string;
+	barangay?: string;
 }
 
 export const createUser = createServerFn({ method: "POST" })
@@ -122,7 +155,21 @@ export const createUser = createServerFn({ method: "POST" })
 		async ({
 			data,
 		}): Promise<{ success: boolean; error?: string; user?: UserListItem }> => {
-			await requireSuperuser();
+			const currentUser = await requireUserManager();
+
+			const isBarangayAdmin = currentUser.role === "barangay_admin";
+
+			// Barangay admins can only create barangay_user in their own barangay
+			if (isBarangayAdmin) {
+				if (data.role !== "barangay_user") {
+					return {
+						success: false,
+						error: "You can only create barangay users",
+					};
+				}
+				// Force barangay to match the admin's own barangay
+				data.barangay = currentUser.barangay ?? undefined;
+			}
 
 			const normalizedPhone = normalizePhoneNumber(data.phoneNumber);
 
@@ -155,6 +202,7 @@ export const createUser = createServerFn({ method: "POST" })
 					lastName: data.lastName,
 					role: data.role,
 					departmentId: data.departmentId ?? null,
+					barangay: data.barangay ?? null,
 				})
 				.returning();
 
@@ -185,6 +233,7 @@ export const createUser = createServerFn({ method: "POST" })
 					role: newUser.role as UserRole,
 					departmentId: newUser.departmentId,
 					departmentName: userWithDept?.department?.name ?? null,
+					barangay: newUser.barangay,
 					isActive: newUser.isActive,
 					createdAt: newUser.createdAt,
 				},
@@ -201,6 +250,7 @@ interface UpdateUserInput {
 		lastName?: string;
 		role?: UserRole;
 		departmentId?: string | null;
+		barangay?: string | null;
 		isActive?: boolean;
 	};
 }
@@ -208,17 +258,47 @@ interface UpdateUserInput {
 export const updateUser = createServerFn({ method: "POST" })
 	.inputValidator((data: UpdateUserInput) => data)
 	.handler(async ({ data }): Promise<{ success: boolean; error?: string }> => {
-		await requireSuperuser();
+		const currentUser = await requireUserManager();
 
 		const { userId, updates } = data;
+		const isBarangayAdmin = currentUser.role === "barangay_admin";
 
-		// Get current user to check they exist
-		const currentUser = await db.query.users.findFirst({
+		// Get target user to check they exist
+		const targetUser = await db.query.users.findFirst({
 			where: eq(users.id, userId),
 		});
 
-		if (!currentUser) {
+		if (!targetUser) {
 			return { success: false, error: "User not found" };
+		}
+
+		// Barangay admin restrictions
+		if (isBarangayAdmin) {
+			// Can only edit barangay_user in their own barangay
+			if (
+				targetUser.role !== "barangay_user" ||
+				targetUser.barangay !== currentUser.barangay
+			) {
+				return {
+					success: false,
+					error: "You can only edit barangay users in your barangay",
+				};
+			}
+			// Cannot change role to anything other than barangay_user
+			if (updates.role && updates.role !== "barangay_user") {
+				return {
+					success: false,
+					error: "You can only assign the barangay user role",
+				};
+			}
+			// Cannot change barangay assignment
+			if (updates.barangay !== undefined) {
+				delete updates.barangay;
+			}
+			// Cannot change department
+			if (updates.departmentId !== undefined) {
+				delete updates.departmentId;
+			}
 		}
 
 		// If updating phone number, normalize and check for duplicates
@@ -266,7 +346,7 @@ export const updateUser = createServerFn({ method: "POST" })
 
 		// Log activity with changes
 		const changes = computeChanges(
-			currentUser as Record<string, unknown>,
+			targetUser as Record<string, unknown>,
 			updates as Record<string, unknown>,
 		);
 		await logActivity({
@@ -274,7 +354,7 @@ export const updateUser = createServerFn({ method: "POST" })
 				action: "update",
 				entityType: "user",
 				entityId: userId,
-				entityName: `${currentUser.firstName} ${currentUser.lastName}`,
+				entityName: `${targetUser.firstName} ${targetUser.lastName}`,
 				changes,
 			},
 		});
@@ -286,7 +366,9 @@ export const deleteUser = createServerFn({ method: "POST" })
 	.inputValidator((userId: string) => userId)
 	.handler(
 		async ({ data: userId }): Promise<{ success: boolean; error?: string }> => {
-			await requireSuperuser();
+			const currentUser = await requireUserManager();
+
+			const isBarangayAdmin = currentUser.role === "barangay_admin";
 
 			// Get current session to prevent self-deletion
 			const session = await getAppSession();
@@ -300,6 +382,19 @@ export const deleteUser = createServerFn({ method: "POST" })
 
 			if (!user) {
 				return { success: false, error: "User not found" };
+			}
+
+			// Barangay admin can only deactivate barangay_user in their barangay
+			if (isBarangayAdmin) {
+				if (
+					user.role !== "barangay_user" ||
+					user.barangay !== currentUser.barangay
+				) {
+					return {
+						success: false,
+						error: "You can only deactivate barangay users in your barangay",
+					};
+				}
 			}
 
 			// Soft delete by deactivating instead of hard delete

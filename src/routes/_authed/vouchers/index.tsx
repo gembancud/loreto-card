@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { CheckCircle, Clock, Gift, Search, Send, XCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -17,6 +17,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getCurrentUser, isBarangayStaff } from "@/data/auth/session";
 import {
 	cancelVoucher,
 	getMyAssignedBenefits,
@@ -26,6 +27,12 @@ import {
 
 export const Route = createFileRoute("/_authed/vouchers/")({
 	component: VoucherDashboardPage,
+	beforeLoad: async () => {
+		const user = await getCurrentUser();
+		if (isBarangayStaff(user)) {
+			throw redirect({ to: "/" });
+		}
+	},
 	loader: async () => {
 		const [assignedBenefits, myVouchers, myReleasedVouchers] =
 			await Promise.all([

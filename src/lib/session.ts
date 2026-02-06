@@ -9,6 +9,7 @@ export interface SessionData {
 	role: UserRole;
 	departmentId: string | null;
 	departmentName: string | null;
+	barangay: string | null;
 }
 
 export function getAppSession() {

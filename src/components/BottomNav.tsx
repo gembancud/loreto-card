@@ -28,11 +28,26 @@ export default function BottomNav() {
 		return null;
 	}
 
-	const navItems = [
-		{ to: "/", icon: Users, label: "People", path: "/" },
-		{ to: "/vouchers", icon: Ticket, label: "Vouchers", path: "/vouchers" },
-		{ to: "/benefits", icon: Gift, label: "Benefits", path: "/benefits" },
-	] as const;
+	const isBarangay =
+		session.role === "barangay_admin" || session.role === "barangay_user";
+
+	const navItems = isBarangay
+		? ([{ to: "/", icon: Users, label: "People", path: "/" }] as const)
+		: ([
+				{ to: "/", icon: Users, label: "People", path: "/" },
+				{
+					to: "/vouchers",
+					icon: Ticket,
+					label: "Vouchers",
+					path: "/vouchers",
+				},
+				{
+					to: "/benefits",
+					icon: Gift,
+					label: "Benefits",
+					path: "/benefits",
+				},
+			] as const);
 
 	return (
 		<nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-white pb-safe">

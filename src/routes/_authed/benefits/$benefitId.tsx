@@ -1,4 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	redirect,
+	useNavigate,
+} from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	CheckCircle,
@@ -22,12 +27,19 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getCurrentUser, isBarangayStaff } from "@/data/auth/session";
 import { getBenefitById } from "@/data/benefits";
 import { getVouchersForBenefit, type VoucherListItem } from "@/data/vouchers";
 import type { BenefitEligibility, IdentificationType } from "@/db/schema";
 
 export const Route = createFileRoute("/_authed/benefits/$benefitId")({
 	component: BenefitDetailPage,
+	beforeLoad: async () => {
+		const user = await getCurrentUser();
+		if (isBarangayStaff(user)) {
+			throw redirect({ to: "/" });
+		}
+	},
 	loader: async ({ params }) => {
 		const [benefit, vouchers] = await Promise.all([
 			getBenefitById({ data: params.benefitId }),
