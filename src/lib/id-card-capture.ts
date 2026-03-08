@@ -4,10 +4,14 @@
 import { toPng } from "html-to-image";
 import QRCode from "qrcode";
 import type { Person } from "@/data/people";
-import { defaultConfig, type IdCardConfig } from "./id-card-config";
+import {
+	type DesignVariant,
+	defaultConfig,
+	designAssets,
+	type IdCardConfig,
+} from "./id-card-config";
 
 // Asset paths for client-side
-const BACKGROUND_PATH = "/id-card/id-background.jpeg";
 const SEAL_PATH = "/id-card/loreto-seal.png";
 const LOGO_PATH = "/id-card/shine-loreto-logo.png";
 
@@ -19,7 +23,8 @@ const MONTSERRAT_BOLD_PATH = "/fonts/Montserrat-Bold.ttf";
 let fontEmbedCSSCache: string | null = null;
 
 export interface CaptureAssets {
-	backgroundDataUrl: string;
+	frontBackgroundDataUrl: string;
+	backBackgroundDataUrl: string;
 	sealDataUrl: string;
 	logoDataUrl: string;
 	qrDataUrl: string;
@@ -111,16 +116,20 @@ async function loadProfilePhoto(
  */
 export async function loadCaptureAssets(
 	person: Person,
+	variant: DesignVariant = "new",
 ): Promise<CaptureAssets> {
+	const assets = designAssets[variant];
 	const [
-		backgroundDataUrl,
+		frontBackgroundDataUrl,
+		backBackgroundDataUrl,
 		sealDataUrl,
 		logoDataUrl,
 		qrDataUrl,
 		profilePhotoDataUrl,
 		fontEmbedCSS,
 	] = await Promise.all([
-		loadAsDataUrl(BACKGROUND_PATH),
+		loadAsDataUrl(assets.frontBackground),
+		loadAsDataUrl(assets.backBackground),
 		loadAsDataUrl(SEAL_PATH),
 		loadAsDataUrl(LOGO_PATH),
 		QRCode.toDataURL(person.id, {
@@ -133,7 +142,8 @@ export async function loadCaptureAssets(
 	]);
 
 	return {
-		backgroundDataUrl,
+		frontBackgroundDataUrl,
+		backBackgroundDataUrl,
 		sealDataUrl,
 		logoDataUrl,
 		qrDataUrl,

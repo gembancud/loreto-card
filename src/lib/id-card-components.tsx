@@ -214,7 +214,7 @@ export function IdCardFront({
 						style={{
 							fontSize: front.header.province.fontSize,
 							fontWeight: 700,
-							color: colors.textDark,
+							color: colors.headerText,
 						}}
 					>
 						PROVINCE OF AGUSAN DEL SUR
@@ -223,7 +223,7 @@ export function IdCardFront({
 						style={{
 							fontSize: front.header.municipality.fontSize,
 							fontWeight: 700,
-							color: colors.textDark,
+							color: colors.headerText,
 							marginTop: front.header.municipality.marginTop,
 						}}
 					>
@@ -233,7 +233,7 @@ export function IdCardFront({
 						style={{
 							fontSize: front.header.lorecard.fontSize,
 							fontWeight: 700,
-							color: colors.textDark,
+							color: colors.headerText,
 							marginTop: front.header.lorecard.marginTop,
 							letterSpacing: front.header.lorecard.letterSpacing,
 						}}
@@ -243,7 +243,7 @@ export function IdCardFront({
 					<span
 						style={{
 							fontSize: front.header.subtitle.fontSize,
-							color: colors.textDark,
+							color: colors.headerText,
 							letterSpacing: front.header.subtitle.letterSpacing,
 							marginTop: front.header.subtitle.marginTop,
 						}}
@@ -448,7 +448,7 @@ export function IdCardFront({
 					<span
 						style={{
 							fontSize: front.details.nameLabel.fontSize,
-							color: colors.textLight,
+							color: colors.textDark,
 						}}
 					>
 						Last Name, First Name, Middle Name
@@ -482,7 +482,7 @@ export function IdCardFront({
 							<span
 								style={{
 									fontSize: front.details.fieldLabel.fontSize,
-									color: colors.textLight,
+									color: colors.textDark,
 								}}
 							>
 								Civil Status
@@ -508,7 +508,7 @@ export function IdCardFront({
 							<span
 								style={{
 									fontSize: front.details.fieldLabel.fontSize,
-									color: colors.textLight,
+									color: colors.textDark,
 								}}
 							>
 								Date of Birth
@@ -544,7 +544,7 @@ export function IdCardFront({
 							<span
 								style={{
 									fontSize: front.details.fieldLabel.fontSize,
-									color: colors.textLight,
+									color: colors.textDark,
 								}}
 							>
 								Date Issued
@@ -570,7 +570,7 @@ export function IdCardFront({
 							<span
 								style={{
 									fontSize: front.details.fieldLabel.fontSize,
-									color: colors.textLight,
+									color: colors.textDark,
 								}}
 							>
 								Valid Until
@@ -620,7 +620,7 @@ export function IdCardFront({
 				<span
 					style={{
 						fontSize: front.addressBar.labelSize,
-						color: colors.textLight,
+						color: colors.textDark,
 					}}
 				>
 					Address
@@ -708,7 +708,7 @@ export function IdCardBack({
 				<span
 					style={{
 						fontSize: back.leftColumn.labelSize,
-						color: colors.textLight,
+						color: colors.textDark,
 					}}
 				>
 					Blood Type
@@ -728,7 +728,7 @@ export function IdCardBack({
 				<span
 					style={{
 						fontSize: back.leftColumn.labelSize,
-						color: colors.textLight,
+						color: colors.textDark,
 						marginTop: back.leftColumn.fieldGap,
 					}}
 				>
@@ -749,7 +749,7 @@ export function IdCardBack({
 				<span
 					style={{
 						fontSize: back.leftColumn.labelSize,
-						color: colors.textLight,
+						color: colors.textDark,
 						marginTop: back.leftColumn.fieldGap,
 					}}
 				>
@@ -770,7 +770,7 @@ export function IdCardBack({
 				<span
 					style={{
 						fontSize: back.leftColumn.labelSize,
-						color: colors.textLight,
+						color: colors.textDark,
 						marginTop: back.leftColumn.fieldGap,
 					}}
 				>
@@ -794,7 +794,7 @@ export function IdCardBack({
 				<span
 					style={{
 						fontSize: back.leftColumn.labelSize,
-						color: colors.textLight,
+						color: colors.textDark,
 						marginTop: back.leftColumn.fieldGap,
 					}}
 				>
@@ -825,7 +825,7 @@ export function IdCardBack({
 				<span
 					style={{
 						fontSize: back.emergency.labelSize,
-						color: colors.textLight,
+						color: colors.textDark,
 					}}
 				>
 					Emergency Contact
@@ -867,7 +867,7 @@ export function IdCardBack({
 				<span
 					style={{
 						fontSize: back.authority.labelSize,
-						color: colors.textLight,
+						color: colors.textDark,
 						whiteSpace: "nowrap",
 					}}
 				>
@@ -887,7 +887,7 @@ export function IdCardBack({
 				<span
 					style={{
 						fontSize: back.authority.titleSize,
-						color: colors.textLight,
+						color: colors.textDark,
 						marginTop: back.authority.gaps.afterName,
 						whiteSpace: "nowrap",
 					}}

@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import type { Person } from "@/data/people";
 import { captureElementAsPng, loadCaptureAssets } from "@/lib/id-card-capture";
 import { IdCardBack, IdCardFront } from "@/lib/id-card-components";
-import { defaultConfig } from "@/lib/id-card-config";
+import { getConfigForVariant } from "@/lib/id-card-config";
+
+const cardConfig = getConfigForVariant("new");
 
 interface IdCardDownloadButtonProps {
 	person: Person;
@@ -16,8 +18,10 @@ export function IdCardDownloadButton({ person }: IdCardDownloadButtonProps) {
 	const [isGenerating, setIsGenerating] = useState(false);
 	const frontRef = useRef<HTMLDivElement>(null);
 	const backRef = useRef<HTMLDivElement>(null);
+
 	const [renderData, setRenderData] = useState<{
-		backgroundDataUrl: string;
+		frontBackgroundDataUrl: string;
+		backBackgroundDataUrl: string;
 		sealDataUrl: string;
 		logoDataUrl: string;
 		qrDataUrl: string;
@@ -52,8 +56,8 @@ export function IdCardDownloadButton({ person }: IdCardDownloadButtonProps) {
 
 			// Capture both sides
 			const [frontBlob, backBlob] = await Promise.all([
-				captureElementAsPng(front, assets.fontEmbedCSS, defaultConfig),
-				captureElementAsPng(back, assets.fontEmbedCSS, defaultConfig),
+				captureElementAsPng(front, assets.fontEmbedCSS, cardConfig),
+				captureElementAsPng(back, assets.fontEmbedCSS, cardConfig),
 			]);
 
 			// Create ZIP file
@@ -121,8 +125,8 @@ export function IdCardDownloadButton({ person }: IdCardDownloadButtonProps) {
 								person={person}
 								qrDataUrl={renderData.qrDataUrl}
 								profilePhotoDataUrl={renderData.profilePhotoDataUrl}
-								config={defaultConfig}
-								backgroundDataUrl={renderData.backgroundDataUrl}
+								config={cardConfig}
+								backgroundDataUrl={renderData.frontBackgroundDataUrl}
 								sealDataUrl={renderData.sealDataUrl}
 								logoDataUrl={renderData.logoDataUrl}
 							/>
@@ -132,8 +136,8 @@ export function IdCardDownloadButton({ person }: IdCardDownloadButtonProps) {
 						<div ref={backRef}>
 							<IdCardBack
 								person={person}
-								config={defaultConfig}
-								backgroundDataUrl={renderData.backgroundDataUrl}
+								config={cardConfig}
+								backgroundDataUrl={renderData.backBackgroundDataUrl}
 							/>
 						</div>
 					</div>,

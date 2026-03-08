@@ -3,7 +3,9 @@ import QRCode from "qrcode";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { IdCardBack, IdCardFront } from "@/lib/id-card-components";
 import {
-	defaultConfig,
+	type DesignVariant,
+	designAssets,
+	getConfigForVariant,
 	type IdCardConfig,
 	mockPerson,
 } from "@/lib/id-card-config";
@@ -13,7 +15,6 @@ export const Route = createFileRoute("/dev/id-card-editor")({
 });
 
 // Asset paths for client-side preview
-const BACKGROUND_PATH = "/id-card/id-background.jpeg";
 const SEAL_PATH = "/id-card/loreto-seal.png";
 const LOGO_PATH = "/id-card/shine-loreto-logo.png";
 
@@ -95,7 +96,10 @@ function Section({
 }
 
 function IdCardEditor() {
-	const [config, setConfig] = useState<IdCardConfig>(deepClone(defaultConfig));
+	const [designVariant, setDesignVariant] = useState<DesignVariant>("new");
+	const [config, setConfig] = useState<IdCardConfig>(
+		deepClone(getConfigForVariant("new")),
+	);
 	const [activeTab, setActiveTab] = useState<"front" | "back">("front");
 	const [qrDataUrl, setQrDataUrl] = useState<string>("");
 	const [scale, setScale] = useState(0.5);
@@ -133,10 +137,10 @@ function IdCardEditor() {
 		alert("Config copied to clipboard!");
 	}, [config]);
 
-	// Reset to default
+	// Reset to default for current variant
 	const resetConfig = useCallback(() => {
-		setConfig(deepClone(defaultConfig));
-	}, []);
+		setConfig(deepClone(getConfigForVariant(designVariant)));
+	}, [designVariant]);
 
 	// Memoize the preview component to avoid re-renders
 	const preview = useMemo(() => {
@@ -146,6 +150,7 @@ function IdCardEditor() {
 			transform: `scale(${scale})`,
 			transformOrigin: "top left",
 		};
+		const assets = designAssets[designVariant];
 
 		if (activeTab === "front") {
 			return (
@@ -155,7 +160,7 @@ function IdCardEditor() {
 						qrDataUrl={qrDataUrl}
 						profilePhotoDataUrl={null}
 						config={config}
-						backgroundDataUrl={BACKGROUND_PATH}
+						backgroundDataUrl={assets.frontBackground}
 						sealDataUrl={SEAL_PATH}
 						logoDataUrl={LOGO_PATH}
 					/>
@@ -167,18 +172,30 @@ function IdCardEditor() {
 				<IdCardBack
 					person={mockPerson}
 					config={config}
-					backgroundDataUrl={BACKGROUND_PATH}
+					backgroundDataUrl={assets.backBackground}
 				/>
 			</div>
 		);
-	}, [activeTab, config, qrDataUrl, scale]);
+	}, [activeTab, config, designVariant, qrDataUrl, scale]);
 
 	return (
 		<div className="h-full flex flex-col">
 			{/* Header */}
 			<div className="flex items-center justify-between px-4 py-2 bg-gray-800 text-white">
 				<h1 className="text-lg font-bold">ID Card Editor (Dev Tool)</h1>
-				<div className="flex gap-2">
+				<div className="flex items-center gap-2">
+					<select
+						value={designVariant}
+						onChange={(e) => {
+							const v = e.target.value as DesignVariant;
+							setDesignVariant(v);
+							setConfig(deepClone(getConfigForVariant(v)));
+						}}
+						className="px-2 py-1 text-sm bg-gray-700 border border-gray-500 rounded text-white"
+					>
+						<option value="classic">Classic</option>
+						<option value="new">New Design</option>
+					</select>
 					<button
 						type="button"
 						onClick={resetConfig}
@@ -1111,8 +1128,8 @@ function IdCardEditor() {
 							<img
 								src={
 									activeTab === "front"
-										? "/id-card/reference-front.jpg"
-										: "/id-card/reference-back.jpg"
+										? designAssets[designVariant].referenceFront
+										: designAssets[designVariant].referenceBack
 								}
 								alt="Reference overlay"
 								style={{

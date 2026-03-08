@@ -3,6 +3,30 @@
 
 import type { Person } from "@/data/people";
 
+export type DesignVariant = "classic" | "new";
+
+export interface DesignAssets {
+	frontBackground: string;
+	backBackground: string;
+	referenceFront: string;
+	referenceBack: string;
+}
+
+export const designAssets: Record<DesignVariant, DesignAssets> = {
+	classic: {
+		frontBackground: "/id-card/id-background.jpeg",
+		backBackground: "/id-card/id-background.jpeg",
+		referenceFront: "/id-card/reference-front.jpg",
+		referenceBack: "/id-card/reference-back.jpg",
+	},
+	new: {
+		frontBackground: "/id-card/new-design/front-bg.jpg",
+		backBackground: "/id-card/new-design/back-bg.jpg",
+		referenceFront: "/id-card/new-design/front.jpg",
+		referenceBack: "/id-card/new-design/back.jpg",
+	},
+};
+
 export interface IdCardConfig {
 	// Global dimensions - CR80 standard at 300 DPI
 	card: {
@@ -16,6 +40,7 @@ export interface IdCardConfig {
 		nonResidentBar: string;
 		pwdBar: string;
 		seniorBar: string;
+		headerText: string;
 		textDark: string;
 		textLight: string;
 		textWhite: string;
@@ -171,6 +196,7 @@ export const defaultConfig: IdCardConfig = {
 		nonResidentBar: "#fe0204",
 		pwdBar: "#008100",
 		seniorBar: "#F5A623",
+		headerText: "#1a1a1a",
 		textDark: "#1a1a1a",
 		textLight: "#4a4a4a",
 		textWhite: "#ffffff",
@@ -295,6 +321,69 @@ export const defaultConfig: IdCardConfig = {
 		},
 	},
 };
+
+// New design config - same layout, white header text for dark navy background
+export const newDesignConfig: IdCardConfig = {
+	...defaultConfig,
+	colors: {
+		...defaultConfig.colors,
+		headerText: "#ffffff",
+		blueBar: "#3e487b",
+	},
+	front: {
+		...defaultConfig.front,
+		header: {
+			...defaultConfig.front.header,
+			height: 142,
+			paddingTop: 52,
+			municipality: { fontSize: 23, marginTop: -9 },
+			lorecard: {
+				...defaultConfig.front.header.lorecard,
+				fontSize: 75,
+				letterSpacing: 2,
+			},
+		},
+		seal: { ...defaultConfig.front.seal, y: 52, size: 141 },
+		logo: { ...defaultConfig.front.logo, height: 120 },
+		residentBar: { ...defaultConfig.front.residentBar, y: 247 },
+		photo: {
+			...defaultConfig.front.photo,
+			y: 298,
+			width: 222,
+			height: 235,
+			borderRadius: 3,
+		},
+		details: {
+			...defaultConfig.front.details,
+			x: 291,
+			y: 291,
+			nameValue: { fontSize: 40, marginTop: -14 },
+			nameGap: 35,
+			rowGap: 27,
+		},
+		qrCode: {
+			...defaultConfig.front.qrCode,
+			size: 153,
+			rightOffset: 53,
+			y: 440,
+		},
+		addressBar: {
+			...defaultConfig.front.addressBar,
+			height: 104,
+			paddingLeft: 53,
+			valueGap: -9,
+		},
+	},
+	back: {
+		...defaultConfig.back,
+		emergency: { ...defaultConfig.back.emergency, x: 63, bottomOffset: 71 },
+		terms: { ...defaultConfig.back.terms, x: 538, gap: -4 },
+	},
+};
+
+export function getConfigForVariant(variant: DesignVariant): IdCardConfig {
+	return variant === "new" ? newDesignConfig : defaultConfig;
+}
 
 // Mock person data for testing/preview
 export const mockPerson: Person = {
