@@ -1,5 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Search, X } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,8 @@ function BenefitsPage() {
 	const [editingBenefit, setEditingBenefit] = useState<BenefitListItem | null>(
 		null,
 	);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [departmentFilter, setDepartmentFilter] = useState("all");
 
 	const handleBenefitCreated = (newBenefit: BenefitListItem) => {
 		setBenefits((prev) => [...prev, newBenefit]);
@@ -128,6 +130,64 @@ function BenefitsPage() {
 		return parts.length > 0 ? parts.join(" / ") : "—";
 	};
 
+	const formatAssignments = (
+		assignments: BenefitListItem["providers"],
+		variant: "secondary" | "outline",
+	) => {
+		if (assignments.length === 0) {
+			return <span className="text-muted-foreground">—</span>;
+		}
+
+		const [firstAssignment, ...remainingAssignments] = assignments;
+
+		return (
+			<div className="flex min-w-0 items-center gap-1">
+				<Badge variant={variant} className="min-w-0 max-w-full">
+					<span className="truncate">{firstAssignment.userName}</span>
+				</Badge>
+				{remainingAssignments.length > 0 && (
+					<span className="shrink-0 text-xs text-muted-foreground">
+						+{remainingAssignments.length}
+					</span>
+				)}
+			</div>
+		);
+	};
+
+	const filteredBenefits = useMemo(() => {
+		const query = searchQuery.trim().toLowerCase();
+
+		return benefits.filter((benefit) => {
+			if (
+				departmentFilter !== "all" &&
+				benefit.departmentId !== departmentFilter
+			) {
+				return false;
+			}
+
+			if (!query) {
+				return true;
+			}
+
+			const searchableText = [
+				benefit.name,
+				benefit.description,
+				benefit.departmentName,
+				benefit.createdByName,
+				...benefit.providers.map((provider) => provider.userName),
+				...benefit.releasers.map((releaser) => releaser.userName),
+			]
+				.filter(Boolean)
+				.join(" ")
+				.toLowerCase();
+
+			return searchableText.includes(query);
+		});
+	}, [benefits, departmentFilter, searchQuery]);
+
+	const hasActiveFilters =
+		searchQuery.trim() !== "" || departmentFilter !== "all";
+
 	return (
 		<div className="container mx-auto py-8 px-4">
 			<div className="max-w-6xl mx-auto">
@@ -157,16 +217,64 @@ function BenefitsPage() {
 
 				<Card>
 					<CardContent className="pt-6">
+						<div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+							<div className="relative min-w-0 flex-1 lg:max-w-md">
+								<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+								<Input
+									placeholder="Search benefits"
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									className="pl-9"
+								/>
+							</div>
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+								{canManage && (
+									<Select
+										value={departmentFilter}
+										onValueChange={setDepartmentFilter}
+									>
+										<SelectTrigger className="w-full sm:w-80">
+											<SelectValue placeholder="All departments" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">All departments</SelectItem>
+											{departments.map((department) => (
+												<SelectItem key={department.id} value={department.id}>
+													{department.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+								{hasActiveFilters && (
+									<Button
+										type="button"
+										variant="outline"
+										className="gap-2"
+										onClick={() => {
+											setSearchQuery("");
+											setDepartmentFilter("all");
+										}}
+									>
+										<X className="h-4 w-4" />
+										Clear
+									</Button>
+								)}
+							</div>
+						</div>
+
 						{/* Mobile card view */}
-						<div className="md:hidden space-y-3">
-							{benefits.length === 0 ? (
+						<div className="lg:hidden space-y-3">
+							{filteredBenefits.length === 0 ? (
 								<div className="text-center text-muted-foreground py-8">
-									{canManage
-										? "No benefits found. Create your first benefit to get started."
-										: "No benefits available for your department."}
+									{benefits.length === 0
+										? canManage
+											? "No benefits found. Create your first benefit to get started."
+											: "No benefits available for your department."
+										: "No benefits match your filters."}
 								</div>
 							) : (
-								benefits.map((benefit) => {
+								filteredBenefits.map((benefit) => {
 									const cardContent = (
 										<>
 											{/* Header: Name + Status */}
@@ -314,34 +422,44 @@ function BenefitsPage() {
 						</div>
 
 						{/* Desktop table view */}
-						<div className="hidden md:block">
-							<Table>
+						<div className="hidden lg:block">
+							<Table className="table-fixed">
 								<TableHeader>
 									<TableRow>
-										<TableHead>Name</TableHead>
-										{canManage && <TableHead>Department</TableHead>}
-										<TableHead>Value</TableHead>
-										<TableHead>Providers</TableHead>
-										<TableHead>Releasers</TableHead>
-										<TableHead>Created By</TableHead>
-										<TableHead>Status</TableHead>
-										{canManage && <TableHead>Actions</TableHead>}
+										<TableHead className={canManage ? "w-[25%]" : "w-[34%]"}>
+											Name
+										</TableHead>
+										{canManage && (
+											<TableHead className="w-[24%]">Department</TableHead>
+										)}
+										<TableHead className="w-[7%]">Value</TableHead>
+										<TableHead className="w-[10%]">Providers</TableHead>
+										<TableHead className="w-[10%]">Releasers</TableHead>
+										<TableHead className="w-[9%]">Created By</TableHead>
+										<TableHead className="w-[7%]">Status</TableHead>
+										{canManage && (
+											<TableHead className="w-[8%] text-right">
+												Actions
+											</TableHead>
+										)}
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{benefits.length === 0 ? (
+									{filteredBenefits.length === 0 ? (
 										<TableRow>
 											<TableCell
 												colSpan={canManage ? 8 : 6}
 												className="text-center text-muted-foreground py-8"
 											>
-												{canManage
-													? "No benefits found. Create your first benefit to get started."
-													: "No benefits available for your department."}
+												{benefits.length === 0
+													? canManage
+														? "No benefits found. Create your first benefit to get started."
+														: "No benefits available for your department."
+													: "No benefits match your filters."}
 											</TableCell>
 										</TableRow>
 									) : (
-										benefits.map((benefit) => (
+										filteredBenefits.map((benefit) => (
 											<TableRow
 												key={benefit.id}
 												className={
@@ -357,54 +475,46 @@ function BenefitsPage() {
 														: undefined
 												}
 											>
-												<TableCell>
-													<div>
-														<span className="font-medium">{benefit.name}</span>
+												<TableCell className="min-w-0 whitespace-normal">
+													<div className="min-w-0">
+														<div className="truncate font-medium">
+															{benefit.name}
+														</div>
 														{benefit.description && (
-															<div className="text-sm text-muted-foreground">
+															<div className="truncate text-sm text-muted-foreground">
 																{benefit.description}
 															</div>
 														)}
 													</div>
 												</TableCell>
 												{canManage && (
-													<TableCell>
-														{benefit.departmentName ?? (
+													<TableCell className="min-w-0">
+														{benefit.departmentName ? (
+															<div className="truncate">
+																{benefit.departmentName}
+															</div>
+														) : (
 															<span className="text-muted-foreground">
 																Unknown
 															</span>
 														)}
 													</TableCell>
 												)}
-												<TableCell>{formatValue(benefit)}</TableCell>
-												<TableCell>
-													<div className="flex flex-wrap gap-1">
-														{benefit.providers.length === 0 ? (
-															<span className="text-muted-foreground">—</span>
-														) : (
-															benefit.providers.map((p) => (
-																<Badge key={p.id} variant="secondary">
-																	{p.userName}
-																</Badge>
-															))
-														)}
-													</div>
+												<TableCell className="truncate">
+													{formatValue(benefit)}
 												</TableCell>
-												<TableCell>
-													<div className="flex flex-wrap gap-1">
-														{benefit.releasers.length === 0 ? (
-															<span className="text-muted-foreground">—</span>
-														) : (
-															benefit.releasers.map((r) => (
-																<Badge key={r.id} variant="outline">
-																	{r.userName}
-																</Badge>
-															))
-														)}
-													</div>
+												<TableCell className="min-w-0">
+													{formatAssignments(benefit.providers, "secondary")}
 												</TableCell>
-												<TableCell>
-													{benefit.createdByName ?? (
+												<TableCell className="min-w-0">
+													{formatAssignments(benefit.releasers, "outline")}
+												</TableCell>
+												<TableCell className="min-w-0">
+													{benefit.createdByName ? (
+														<div className="truncate">
+															{benefit.createdByName}
+														</div>
+													) : (
 														<span className="text-muted-foreground">
 															Unknown
 														</span>
@@ -422,8 +532,11 @@ function BenefitsPage() {
 													</span>
 												</TableCell>
 												{canManage && (
-													<TableCell onClick={(e) => e.stopPropagation()}>
-														<div className="flex items-center gap-2">
+													<TableCell
+														className="text-right"
+														onClick={(e) => e.stopPropagation()}
+													>
+														<div className="flex items-center justify-end gap-1">
 															<Dialog
 																open={editingBenefit?.id === benefit.id}
 																onOpenChange={(open) =>
