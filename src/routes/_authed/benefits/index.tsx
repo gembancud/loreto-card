@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Pencil, Plus } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +42,10 @@ import {
 	getDepartmentUsersForAssignment,
 	updateBenefit,
 } from "@/data/benefits";
+import {
+	type DepartmentListItem,
+	getActiveDepartments,
+} from "@/data/departments";
 import type { BenefitEligibility, IdentificationType } from "@/db/schema";
 
 export const Route = createFileRoute("/_authed/benefits/")({
@@ -57,19 +61,16 @@ export const Route = createFileRoute("/_authed/benefits/")({
 			getBenefits(),
 			getCurrentUser(),
 		]);
-		// Only fetch department users for admins/superusers (needed for management UI)
 		const canManage = currentUser?.role === "superuser";
-		const departmentUsers = canManage
-			? await getDepartmentUsersForAssignment({ data: undefined })
-			: [];
-		return { benefits, currentUser, departmentUsers, canManage };
+		const departments = canManage ? await getActiveDepartments() : [];
+		return { benefits, currentUser, departments, canManage };
 	},
 });
 
 function BenefitsPage() {
 	const {
 		benefits: initialBenefits,
-		departmentUsers,
+		departments,
 		canManage,
 	} = Route.useLoaderData();
 	const navigate = useNavigate();
@@ -145,7 +146,7 @@ function BenefitsPage() {
 							</DialogTrigger>
 							<DialogContent className="max-w-2xl">
 								<BenefitForm
-									departmentUsers={departmentUsers}
+									departments={departments}
 									onSuccess={handleBenefitCreated}
 									onCancel={() => setIsAddDialogOpen(false)}
 								/>
@@ -191,6 +192,11 @@ function BenefitsPage() {
 											<div className="text-sm font-medium">
 												{formatValue(benefit)}
 											</div>
+											{canManage && (
+												<div className="text-sm text-muted-foreground">
+													Department: {benefit.departmentName ?? "Unknown"}
+												</div>
+											)}
 
 											{/* Providers */}
 											<div className="pt-2 border-t">
@@ -257,7 +263,7 @@ function BenefitsPage() {
 															<DialogContent className="max-w-2xl">
 																<BenefitForm
 																	benefit={benefit}
-																	departmentUsers={departmentUsers}
+																	departments={departments}
 																	onSuccess={handleBenefitUpdated}
 																	onCancel={() => setEditingBenefit(null)}
 																/>
@@ -313,6 +319,7 @@ function BenefitsPage() {
 								<TableHeader>
 									<TableRow>
 										<TableHead>Name</TableHead>
+										{canManage && <TableHead>Department</TableHead>}
 										<TableHead>Value</TableHead>
 										<TableHead>Providers</TableHead>
 										<TableHead>Releasers</TableHead>
@@ -325,7 +332,7 @@ function BenefitsPage() {
 									{benefits.length === 0 ? (
 										<TableRow>
 											<TableCell
-												colSpan={canManage ? 7 : 6}
+												colSpan={canManage ? 8 : 6}
 												className="text-center text-muted-foreground py-8"
 											>
 												{canManage
@@ -360,6 +367,15 @@ function BenefitsPage() {
 														)}
 													</div>
 												</TableCell>
+												{canManage && (
+													<TableCell>
+														{benefit.departmentName ?? (
+															<span className="text-muted-foreground">
+																Unknown
+															</span>
+														)}
+													</TableCell>
+												)}
 												<TableCell>{formatValue(benefit)}</TableCell>
 												<TableCell>
 													<div className="flex flex-wrap gap-1">
@@ -422,7 +438,7 @@ function BenefitsPage() {
 																<DialogContent className="max-w-2xl">
 																	<BenefitForm
 																		benefit={benefit}
-																		departmentUsers={departmentUsers}
+																		departments={departments}
 																		onSuccess={handleBenefitUpdated}
 																		onCancel={() => setEditingBenefit(null)}
 																	/>
@@ -457,7 +473,7 @@ function BenefitsPage() {
 
 interface BenefitFormProps {
 	benefit?: BenefitListItem;
-	departmentUsers: Array<{ id: string; name: string }>;
+	departments: DepartmentListItem[];
 	onSuccess: (benefit: BenefitListItem) => void;
 	onCancel: () => void;
 }
@@ -492,7 +508,7 @@ const ELIGIBILITY_CATEGORIES: IdentificationType[] = [
 
 function BenefitForm({
 	benefit,
-	departmentUsers,
+	departments,
 	onSuccess,
 	onCancel,
 }: BenefitFormProps) {
@@ -504,6 +520,7 @@ function BenefitForm({
 		() => ({
 			name: benefit?.name ?? "",
 			description: benefit?.description ?? "",
+			departmentId: benefit?.departmentId ?? "",
 			valuePesos: benefit?.valuePesos?.toString() ?? "",
 			quantity: benefit?.quantity?.toString() ?? "",
 			providerIds: benefit?.providers.map((p) => p.userId) ?? [],
@@ -525,8 +542,16 @@ function BenefitForm({
 
 	const [name, setName] = useState(initialValues.name);
 	const [description, setDescription] = useState(initialValues.description);
+	const [selectedDepartmentId, setSelectedDepartmentId] = useState(
+		initialValues.departmentId,
+	);
 	const [valuePesos, setValuePesos] = useState(initialValues.valuePesos);
 	const [quantity, setQuantity] = useState(initialValues.quantity);
+	const [departmentUsers, setDepartmentUsers] = useState<
+		Array<{ id: string; name: string }>
+	>([]);
+	const [isLoadingDepartmentUsers, setIsLoadingDepartmentUsers] =
+		useState(false);
 	const [providerIds, setProviderIds] = useState<string[]>(
 		initialValues.providerIds,
 	);
@@ -561,11 +586,44 @@ function BenefitForm({
 		initialValues.categoryMode,
 	);
 
+	useEffect(() => {
+		if (!selectedDepartmentId) {
+			setDepartmentUsers([]);
+			return;
+		}
+
+		let isActive = true;
+		setIsLoadingDepartmentUsers(true);
+		getDepartmentUsersForAssignment({ data: selectedDepartmentId })
+			.then((users) => {
+				if (isActive) {
+					setDepartmentUsers(users);
+				}
+			})
+			.catch((err) => {
+				console.error(err);
+				if (isActive) {
+					setDepartmentUsers([]);
+					setError("Failed to load department users");
+				}
+			})
+			.finally(() => {
+				if (isActive) {
+					setIsLoadingDepartmentUsers(false);
+				}
+			});
+
+		return () => {
+			isActive = false;
+		};
+	}, [selectedDepartmentId]);
+
 	// Detect if form has unsaved changes
 	const isDirty = useMemo(() => {
 		return (
 			name !== initialValues.name ||
 			description !== initialValues.description ||
+			selectedDepartmentId !== initialValues.departmentId ||
 			valuePesos !== initialValues.valuePesos ||
 			quantity !== initialValues.quantity ||
 			!arraysEqual(providerIds, initialValues.providerIds) ||
@@ -583,6 +641,7 @@ function BenefitForm({
 	}, [
 		name,
 		description,
+		selectedDepartmentId,
 		valuePesos,
 		quantity,
 		providerIds,
@@ -619,6 +678,26 @@ function BenefitForm({
 		.map((pid) => departmentUsers.find((u) => u.id === pid)?.name)
 		.filter(Boolean)
 		.join(", ");
+	const selectedDepartment = departments.find(
+		(department) => department.id === selectedDepartmentId,
+	);
+	const selectedDepartmentName =
+		selectedDepartment?.name ?? benefit?.departmentName ?? null;
+	const canSelectAssignments =
+		!!selectedDepartmentId && !isLoadingDepartmentUsers;
+	const canSubmit =
+		!isSubmitting &&
+		!hasDuplicates &&
+		(isEditing || (name.trim().length > 0 && selectedDepartmentId.length > 0));
+
+	const handleDepartmentChange = (departmentId: string) => {
+		setSelectedDepartmentId(departmentId);
+		setError(null);
+		if (!isEditing) {
+			setProviderIds([]);
+			setReleaserIds([]);
+		}
+	};
 
 	const handleProviderToggle = (userId: string) => {
 		setProviderIds((prev) =>
@@ -736,9 +815,15 @@ function BenefitForm({
 					setError(result.error ?? "Failed to update benefit");
 				}
 			} else {
+				if (!selectedDepartmentId) {
+					setError("Department is required");
+					return;
+				}
+
 				const result = await createBenefit({
 					data: {
 						name,
+						departmentId: selectedDepartmentId,
 						description: description || undefined,
 						valuePesos: valuePesos
 							? Number.parseInt(valuePesos, 10)
@@ -772,7 +857,7 @@ function BenefitForm({
 				<DialogDescription>
 					{isEditing
 						? "Update benefit information and assignments."
-						: "Create a new benefit type for your department."}
+						: "Create a new benefit type for a selected department."}
 				</DialogDescription>
 			</DialogHeader>
 			<div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
@@ -785,6 +870,32 @@ function BenefitForm({
 						onChange={(e) => setName(e.target.value)}
 						required
 					/>
+				</div>
+				<div className="grid gap-2">
+					<Label htmlFor={`${formId}-department`}>Department</Label>
+					{isEditing ? (
+						<Input
+							id={`${formId}-department`}
+							value={benefit.departmentName ?? "Unknown department"}
+							disabled
+						/>
+					) : (
+						<Select
+							value={selectedDepartmentId}
+							onValueChange={handleDepartmentChange}
+						>
+							<SelectTrigger id={`${formId}-department`}>
+								<SelectValue placeholder="Select department" />
+							</SelectTrigger>
+							<SelectContent>
+								{departments.map((department) => (
+									<SelectItem key={department.id} value={department.id}>
+										{department.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					)}
 				</div>
 				<div className="grid gap-2">
 					<Label htmlFor={`${formId}-description`}>
@@ -980,11 +1091,27 @@ function BenefitForm({
 
 				{/* Provider/Releaser Section */}
 				<div className="border-t pt-4 mt-2">
+					<div className="mb-3">
+						<Label className="text-base">Department Assignments</Label>
+						<p className="text-sm text-muted-foreground">
+							{selectedDepartmentName
+								? `Assign active users from ${selectedDepartmentName}.`
+								: "Select a department before assigning users."}
+						</p>
+					</div>
 					<div className="grid grid-cols-2 gap-4">
 						<div className="grid gap-2">
 							<Label>Providers (can issue vouchers)</Label>
 							<div className="border rounded-md p-3 max-h-36 overflow-y-auto space-y-2">
-								{departmentUsers.length === 0 ? (
+								{!selectedDepartmentId ? (
+									<p className="text-sm text-muted-foreground">
+										Select a department first
+									</p>
+								) : isLoadingDepartmentUsers ? (
+									<p className="text-sm text-muted-foreground">
+										Loading department users...
+									</p>
+								) : departmentUsers.length === 0 ? (
 									<p className="text-sm text-muted-foreground">
 										No users available in department
 									</p>
@@ -994,11 +1121,13 @@ function BenefitForm({
 											<Checkbox
 												id={`${formId}-provider-${user.id}`}
 												checked={providerIds.includes(user.id)}
+												disabled={!canSelectAssignments}
 												onCheckedChange={() => handleProviderToggle(user.id)}
 											/>
 											<Label
 												htmlFor={`${formId}-provider-${user.id}`}
-												className="text-sm font-normal cursor-pointer"
+												className="text-sm font-normal cursor-pointer data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50"
+												data-disabled={!canSelectAssignments}
 											>
 												{user.name}
 											</Label>
@@ -1010,7 +1139,15 @@ function BenefitForm({
 						<div className="grid gap-2">
 							<Label>Releasers (can release vouchers)</Label>
 							<div className="border rounded-md p-3 max-h-36 overflow-y-auto space-y-2">
-								{departmentUsers.length === 0 ? (
+								{!selectedDepartmentId ? (
+									<p className="text-sm text-muted-foreground">
+										Select a department first
+									</p>
+								) : isLoadingDepartmentUsers ? (
+									<p className="text-sm text-muted-foreground">
+										Loading department users...
+									</p>
+								) : departmentUsers.length === 0 ? (
 									<p className="text-sm text-muted-foreground">
 										No users available in department
 									</p>
@@ -1020,11 +1157,13 @@ function BenefitForm({
 											<Checkbox
 												id={`${formId}-releaser-${user.id}`}
 												checked={releaserIds.includes(user.id)}
+												disabled={!canSelectAssignments}
 												onCheckedChange={() => handleReleaserToggle(user.id)}
 											/>
 											<Label
 												htmlFor={`${formId}-releaser-${user.id}`}
-												className="text-sm font-normal cursor-pointer"
+												className="text-sm font-normal cursor-pointer data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50"
+												data-disabled={!canSelectAssignments}
 											>
 												{user.name}
 											</Label>
@@ -1047,7 +1186,7 @@ function BenefitForm({
 				<Button type="button" variant="outline" onClick={handleCancel}>
 					Cancel
 				</Button>
-				<Button type="submit" disabled={isSubmitting || hasDuplicates}>
+				<Button type="submit" disabled={!canSubmit}>
 					{isSubmitting
 						? isEditing
 							? "Saving..."

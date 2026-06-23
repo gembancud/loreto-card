@@ -6,6 +6,7 @@ import {
 	type BenefitEligibility,
 	benefitAssignments,
 	benefits,
+	departments,
 	users,
 } from "@/db/schema";
 import { getAppSession, type SessionData } from "@/lib/session";
@@ -189,7 +190,7 @@ interface CreateBenefitInput {
 	valuePesos?: number;
 	quantity?: number;
 	eligibility?: BenefitEligibility | null;
-	departmentId?: string; // Only superusers can set this
+	departmentId?: string;
 	providerIds: string[];
 	releaserIds: string[];
 }
@@ -205,15 +206,22 @@ export const createBenefit = createServerFn({ method: "POST" })
 			benefit?: BenefitListItem;
 		}> => {
 			const currentUser = await requireSuperuser();
-			const isSuperuser = currentUser.role === "superuser";
 
-			// Determine department - superusers can specify, admins use their own
-			const departmentId = isSuperuser
-				? data.departmentId || currentUser.departmentId
-				: currentUser.departmentId;
+			const departmentId = data.departmentId;
 
 			if (!departmentId) {
 				return { success: false, error: "Department is required" };
+			}
+
+			const department = await db.query.departments.findFirst({
+				where: and(
+					eq(departments.id, departmentId),
+					eq(departments.isActive, true),
+				),
+			});
+
+			if (!department) {
+				return { success: false, error: "Active department is required" };
 			}
 
 			// Validate no user is assigned to both provider AND releaser roles
@@ -227,24 +235,32 @@ export const createBenefit = createServerFn({ method: "POST" })
 						"A user cannot be both provider and releaser for the same benefit",
 				};
 			}
+			if (
+				new Set(data.providerIds).size !== data.providerIds.length ||
+				new Set(data.releaserIds).size !== data.releaserIds.length
+			) {
+				return { success: false, error: "A user can only be assigned once" };
+			}
 
-			// Validate that assigned users are in the same department (for admins)
-			if (!isSuperuser) {
-				const allUserIds = [...data.providerIds, ...data.releaserIds];
-				if (allUserIds.length > 0) {
-					const assignedUsers = await db.query.users.findMany({
-						where: inArray(users.id, allUserIds),
-					});
+			const allUserIds = [...data.providerIds, ...data.releaserIds];
+			const uniqueUserIds = [...new Set(allUserIds)];
+			if (allUserIds.length > 0) {
+				const assignedUsers = await db.query.users.findMany({
+					where: inArray(users.id, uniqueUserIds),
+				});
 
-					const invalidUsers = assignedUsers.filter(
-						(u) => u.departmentId !== departmentId,
-					);
-					if (invalidUsers.length > 0) {
-						return {
-							success: false,
-							error: "Can only assign users from your department",
-						};
-					}
+				if (assignedUsers.length !== uniqueUserIds.length) {
+					return { success: false, error: "Assigned user not found" };
+				}
+
+				const invalidUsers = assignedUsers.filter(
+					(u) => u.departmentId !== departmentId,
+				);
+				if (invalidUsers.length > 0) {
+					return {
+						success: false,
+						error: "Can only assign users from the selected department",
+					};
 				}
 			}
 
@@ -350,25 +366,33 @@ export const updateBenefit = createServerFn({ method: "POST" })
 						"A user cannot be both provider and releaser for the same benefit",
 				};
 			}
+			if (
+				new Set(providerIds).size !== providerIds.length ||
+				new Set(releaserIds).size !== releaserIds.length
+			) {
+				return { success: false, error: "A user can only be assigned once" };
+			}
 		}
 
-		// Validate new user assignments (for admins)
-		if (!isSuperuser) {
-			const allUserIds = [...(providerIds ?? []), ...(releaserIds ?? [])];
-			if (allUserIds.length > 0) {
-				const assignedUsers = await db.query.users.findMany({
-					where: inArray(users.id, allUserIds),
-				});
+		const allUserIds = [...(providerIds ?? []), ...(releaserIds ?? [])];
+		const uniqueUserIds = [...new Set(allUserIds)];
+		if (allUserIds.length > 0) {
+			const assignedUsers = await db.query.users.findMany({
+				where: inArray(users.id, uniqueUserIds),
+			});
 
-				const invalidUsers = assignedUsers.filter(
-					(u) => u.departmentId !== existingBenefit.departmentId,
-				);
-				if (invalidUsers.length > 0) {
-					return {
-						success: false,
-						error: "Can only assign users from the benefit's department",
-					};
-				}
+			if (assignedUsers.length !== uniqueUserIds.length) {
+				return { success: false, error: "Assigned user not found" };
+			}
+
+			const invalidUsers = assignedUsers.filter(
+				(u) => u.departmentId !== existingBenefit.departmentId,
+			);
+			if (invalidUsers.length > 0) {
+				return {
+					success: false,
+					error: "Can only assign users from the benefit's department",
+				};
 			}
 		}
 
