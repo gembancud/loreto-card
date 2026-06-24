@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, or, type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type AuditAction,
@@ -132,6 +132,24 @@ export interface AuditLogListItem {
 	createdAt: Date;
 }
 
+function buildAuditPermissionFilter(currentUser: SessionData): SQL | undefined {
+	if (currentUser.role === "superuser") {
+		return undefined;
+	}
+
+	if (currentUser.role === "department_admin" && currentUser.departmentId) {
+		return and(
+			eq(auditLogs.actorDepartmentId, currentUser.departmentId),
+			or(
+				eq(auditLogs.actorRole, "department_admin"),
+				eq(auditLogs.actorRole, "department_user"),
+			),
+		);
+	}
+
+	return eq(auditLogs.actorId, currentUser.userId);
+}
+
 // Query audit logs with permission filtering + pagination
 interface GetAuditLogsInput {
 	entityType?: AuditEntityType;
@@ -159,44 +177,7 @@ export const getAuditLogs = createServerFn({ method: "GET" })
 			const pageSize = data.pageSize ?? 20;
 			const offset = (page - 1) * pageSize;
 
-			// Build permission filter based on role
-			// - Superuser: No filter (sees all)
-			// - Admin: Filter by actorDepartmentId = currentUser.departmentId AND actorRole IN ('admin', 'user')
-			// - User: Filter by actorDepartmentId = currentUser.departmentId AND actorRole = 'user'
-			const permissionConditions = [];
-
-			if (currentUser.role === "superuser") {
-				// Superuser sees all - no permission filter
-			} else if (currentUser.role === "department_admin") {
-				// Department admin sees department_admin and department_user activities in their department
-				if (currentUser.departmentId) {
-					permissionConditions.push(
-						and(
-							eq(auditLogs.actorDepartmentId, currentUser.departmentId),
-							or(
-								eq(auditLogs.actorRole, "department_admin"),
-								eq(auditLogs.actorRole, "department_user"),
-							),
-						),
-					);
-				} else {
-					// Admin without department only sees their own activities
-					permissionConditions.push(eq(auditLogs.actorId, currentUser.userId));
-				}
-			} else {
-				// Regular department user sees only department_user activities in their department
-				if (currentUser.departmentId) {
-					permissionConditions.push(
-						and(
-							eq(auditLogs.actorDepartmentId, currentUser.departmentId),
-							eq(auditLogs.actorRole, "department_user"),
-						),
-					);
-				} else {
-					// User without department only sees their own activities
-					permissionConditions.push(eq(auditLogs.actorId, currentUser.userId));
-				}
-			}
+			const permissionCondition = buildAuditPermissionFilter(currentUser);
 
 			// Build additional filters
 			const filterConditions = [];
@@ -219,7 +200,10 @@ export const getAuditLogs = createServerFn({ method: "GET" })
 			}
 
 			// Combine all conditions
-			const allConditions = [...permissionConditions, ...filterConditions];
+			const allConditions = [
+				...(permissionCondition ? [permissionCondition] : []),
+				...filterConditions,
+			];
 			const whereClause =
 				allConditions.length > 0 ? and(...allConditions) : undefined;
 
@@ -275,38 +259,7 @@ export const getEntityHistory = createServerFn({ method: "GET" })
 		const currentUser = await requireAuth();
 
 		const limit = data.limit ?? 10;
-
-		// Build permission filter (same logic as getAuditLogs)
-		const permissionConditions = [];
-
-		if (currentUser.role === "superuser") {
-			// Superuser sees all
-		} else if (currentUser.role === "department_admin") {
-			if (currentUser.departmentId) {
-				permissionConditions.push(
-					and(
-						eq(auditLogs.actorDepartmentId, currentUser.departmentId),
-						or(
-							eq(auditLogs.actorRole, "department_admin"),
-							eq(auditLogs.actorRole, "department_user"),
-						),
-					),
-				);
-			} else {
-				permissionConditions.push(eq(auditLogs.actorId, currentUser.userId));
-			}
-		} else {
-			if (currentUser.departmentId) {
-				permissionConditions.push(
-					and(
-						eq(auditLogs.actorDepartmentId, currentUser.departmentId),
-						eq(auditLogs.actorRole, "department_user"),
-					),
-				);
-			} else {
-				permissionConditions.push(eq(auditLogs.actorId, currentUser.userId));
-			}
-		}
+		const permissionCondition = buildAuditPermissionFilter(currentUser);
 
 		// Entity filter
 		const entityConditions = [
@@ -314,7 +267,10 @@ export const getEntityHistory = createServerFn({ method: "GET" })
 			eq(auditLogs.entityId, data.entityId),
 		];
 
-		const allConditions = [...permissionConditions, ...entityConditions];
+		const allConditions = [
+			...(permissionCondition ? [permissionCondition] : []),
+			...entityConditions,
+		];
 		const whereClause = and(...allConditions);
 
 		const logs = await db.query.auditLogs.findMany({
